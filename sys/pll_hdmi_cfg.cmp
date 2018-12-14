@@ -1,0 +1,23 @@
+	component pll_hdmi_cfg is
+		generic (
+			ENABLE_BYTEENABLE   : boolean := false;
+			BYTEENABLE_WIDTH    : integer := 4;
+			RECONFIG_ADDR_WIDTH : integer := 6;
+			RECONFIG_DATA_WIDTH : integer := 32;
+			reconf_width        : integer := 64;
+			WAIT_FOR_LOCK       : boolean := true
+		);
+		port (
+			mgmt_clk          : in  std_logic                     := 'X';             -- clk
+			mgmt_reset        : in  std_logic                     := 'X';             -- reset
+			mgmt_waitrequest  : out std_logic;                                        -- waitrequest
+			mgmt_read         : in  std_logic                     := 'X';             -- read
+			mgmt_write        : in  std_logic                     := 'X';             -- write
+			mgmt_readdata     : out std_logic_vector(31 downto 0);                    -- readdata
+			mgmt_address      : in  std_logic_vector(5 downto 0)  := (others => 'X'); -- address
+			mgmt_writedata    : in  std_logic_vector(31 downto 0) := (others => 'X'); -- writedata
+			reconfig_to_pll   : out std_logic_vector(63 downto 0);                    -- reconfig_to_pll
+			reconfig_from_pll : in  std_logic_vector(63 downto 0) := (others => 'X')  -- reconfig_from_pll
+		);
+	end component pll_hdmi_cfg;
+

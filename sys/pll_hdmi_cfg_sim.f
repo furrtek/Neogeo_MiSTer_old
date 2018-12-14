@@ -1,0 +1,4 @@
+pll_hdmi_cfg_sim/pll_hdmi_cfg.v
+pll_hdmi_cfg_sim/altera_pll_reconfig/altera_pll_reconfig_top.v
+pll_hdmi_cfg_sim/altera_pll_reconfig/altera_pll_reconfig_core.v
+pll_hdmi_cfg_sim/altera_pll_reconfig/altera_std_synchronizer.v
