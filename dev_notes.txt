@@ -1,14 +1,59 @@
 The code running on the ARM CPU (HPS) loads the requested core as
 an .rbf file via fpga_load_rbf in fpga_io.cpp in Main_MiSTer
 
-In the menu, the FPGA core acts like a graphics card for the linux
+In the menu, the FPGA core acts as a special graphics card for the linux
 system (which is only able to display a menu-style interface)
 
 In each core, the stuff in /sys/ provides the video scaling, video
-and audio output, and HPS interface logic.
+and audio output, the OSD menu, and the HPS interface logic.
 The hps_io module "breaks out" a bunch of signals for the core to
 utilize.
 
-The core itself must take care of giving access
-to the SDRAM controller for the HPS, and then switch to run mode
-to read the data.
+The core itself must take care of giving access to the SDRAM controller
+for the HPS during loading, and then switch to run mode to read the data.
+
+To connect to the DE10 via ethernet: run D:\OpenDHCPServer\runstandalone.bat
+NOTE: It may already be running as a service !
+Make sure the LAN network connection is enabled in the Windows control panel
+It will assign 192.168.1.200 to the DE10 by matching its MAC address
+It's then possible to use FTP or SSH with root:1 as login
+
+The generated .rbf is output_files\neogeo-lite.rbf
+
+neogeo-lite allows for faster compilation time by omitting the HDMI upscaler,
+it outputs 6-6-6 VGA video on the GPIO_1 header as follows:
+VGA_R[0]: GPIO_1_D35
+VGA_R[1]: GPIO_1_D33
+VGA_R[2]: GPIO_1_D31
+VGA_R[3]: GPIO_1_D29
+VGA_R[4]: GPIO_1_D27
+VGA_R[5]: GPIO_1_D25
+
+VGA_G[0]: GPIO_1_D34
+VGA_G[1]: GPIO_1_D32
+VGA_G[2]: GPIO_1_D30
+VGA_G[3]: GPIO_1_D28
+VGA_G[4]: GPIO_1_D26
+VGA_G[5]: GPIO_1_D24
+
+VGA_B[0]: GPIO_1_D19
+VGA_B[1]: GPIO_1_D21
+VGA_B[2]: GPIO_1_D23
+VGA_B[3]: GPIO_1_D22
+VGA_B[4]: GPIO_1_D20
+VGA_B[5]: GPIO_1_D18
+
+VGA_HS: GPIO_1_D17
+VGA_VS: GPIO_1_D16
+
+Bottom header, pin 1 is upper right
+ _39________________________________________________________01
+|                                                             |
+| G0 G1 G2 G3 G4 +3 G5 B3 B4 B5 VS -- -- -- -- +5 -- -- -- -- |
+|                                                             |
+| R0 R1 R2 R3 R4 gn R5 B2 B1 B0 HS -- -- -- -- gn -- -- -- -- |
+|_____________________________________________________________|
+  40                                                        02
+
+A pin has to be shorted to ground to enable the VGA output. This is used to
+detect the extension board.

@@ -96,12 +96,13 @@ module emu
 	output        SDRAM_nWE
 );
 
+assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 
-assign AUDIO_S   = 1;
+assign AUDIO_S   = 1;		// Signed
 assign AUDIO_MIX = status[3:2];
-assign AUDIO_L = 16'h0000;
-assign AUDIO_R = 16'h0000;
+assign AUDIO_L = 16'h0000;	// No audio for now
+assign AUDIO_R = 16'h0000;	// No audio for now
 
 assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
@@ -110,31 +111,30 @@ assign LED_POWER = 0;
 assign VIDEO_ARX = 8'd10;	// 320/32
 assign VIDEO_ARY = 8'd7;	// 224/32
 
-assign VGA_DE = ~nBNKB;		// Is this ok ?
+assign VGA_DE = ~(CHBL | ~nBNKB);
 
 `include "build_id.v"
 localparam CONF_STR1 = {
-	"Neogeo;;",
+	"NEOGEO;;",
+	"-;",
 	"F,BIN,Load Cart;",
 	"-;",
 	"O1,Test Option 1,On,Off;",
 	"-;",
-	"O23,Test Option 2,none,25%,50%,100%;",
+	"O23,Stereo mix,none,25%,50%,100%;",
 	"R0,Reset & apply;",
 	"J1,Fire 1,Fire 2;",
-	"V,v0.01.",`BUILD_DATE
+	"V,v",`BUILD_DATE
 };
 
 
 ////////////////////   CLOCKS   ///////////////////
 
-assign CLK_VIDEO = clk_sys;
-assign CE_PIXEL = CLK_6MB;
-
 wire locked;
 wire clk_sys;
 
 // 50MHz in, 6*24=144MHz out
+// CAS latency = 3 (22.5ns)
 pll pll
 (
 	.refclk(CLK_50M),
@@ -144,17 +144,25 @@ pll pll
 	.locked(locked)
 );
 
+assign CLK_VIDEO = clk_sys;
+assign CE_PIXEL = CLK_6MB;
 
-reg  CLK_24M;
+reg CLK_24M;
+reg [2:0] counter = 0;
+
+// 144MHz:
+// 012345012345
+// ___'''___'''
+// 96MHz:
+// 01230123
+// __''__''
 
 always @(negedge clk_sys)
 begin
-	reg [2:0] counter = 0;
-
-	if (counter == 3'd2)
+	if (counter == 3'd1)	// Was 2
 		CLK_24M <= 1'b1;
 	
-	if (counter == 3'd5)
+	if (counter == 3'd3)	// Was 5
 	begin
 		CLK_24M <= 1'b0;
 		counter <= 3'd0;
@@ -175,7 +183,7 @@ wire [31:0] status;
 
 wire        ioctl_wr;
 wire [24:0] ioctl_addr;
-wire  [7:0] ioctl_dout;
+wire [15:0] ioctl_dout;
 wire        ioctl_download;
 wire  [7:0] ioctl_index;
 wire        ioctl_wait;
@@ -208,13 +216,6 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	.ioctl_wait(ioctl_wait)
 );
 
-/*reg  [2:0] cur_mode = 0;
-wire       need_apply = status[12:10] != cur_mode;
-
-always @(posedge clk_sys) begin
-	if(reset) cur_mode <= status[12:10];
-end*/
-
 	// INFOS:
 	// 68k RAM is in Block RAM
 	// Slow VRAM is in Block RAM
@@ -236,8 +237,8 @@ end*/
 	reg [31:0] CR;
 	
 	wire [15:0] S_LATCH;
-	//wire [16:0] FIX_ROM_ADDR;
-	wire [7:0] FIXD;
+	wire [16:0] FIX_ROM_ADDR;
+	reg [7:0] FIXD;
 	
 	wire [14:0] SLOW_VRAM_ADDR;
 	reg [15:0] SLOW_VRAM_DATA_IN;
@@ -271,19 +272,18 @@ end*/
 	wire [7:0] WRAMU_OUT;
 	
 	assign SDD = 8'bzzzzzzzz;
-
-	// 143MHz clock, CAS latency = 3 (22.5ns)
-	//PLL U0(CLOCK_50, PLL_CLK, PLL_CLK_SHIFTED, PLL_LOCKED);
-	//assign DRAM_CLK = PLL_CLK & PLL_LOCKED;
 	
-	//reg [1:0] SR_INIT_WR_REQ;
 	reg [1:0] SR_SDRAM_M68K_REQ;
 	reg [1:0] SR_SDRAM_CROM_REQ;
 	reg [1:0] SR_SDRAM_SROM_REQ;
-	reg [15:0] SROM_DATA;
+	reg [1:0] SR_SDRAM_SROM_REQ_B;
+	//reg [15:0] SROM_DATA;
 	reg [15:0] PROM_DATA;
 	reg M68K_RD_REQ, CROM_RD_REQ, SROM_RD_REQ;
 	reg CROM_RD_STEP;
+	reg M68K_LATCH_FLAG, M68K_LATCH_FLAG_PREV;
+	reg SROM_LATCH_FLAG, SROM_LATCH_FLAG_PREV;
+	reg SDRAM_RD_PULSE;
 	
 	fast_vram UFV(
 		FAST_VRAM_ADDR,
@@ -314,25 +314,12 @@ end*/
 	assign M68K_DATA = M68K_RW ? 16'bzzzzzzzzzzzzzzzz : TG68K_DATAOUT;
 	assign TG68K_DATAIN = M68K_RW ? M68K_DATA_BYTE_MASK : 16'h0000;
 
+	assign nRESET = ~ioctl_download;
+	
 	assign SDRAM_M68K_REQ = ~&{nSROMOE, nROMOE};
-	assign READ_REQ = CROM_RD_REQ | SROM_RD_REQ | M68K_RD_REQ;
+	//assign READ_REQ = CROM_RD_REQ | SROM_RD_REQ | M68K_RD_REQ;
 	
 	assign nROMOE = nROMOEL & nROMOEU;
-	
-	// C ROM, S ROM and P ROM mux machine
-	/*SDRAMCtrl U2(
-		KEY[0],
-		PLL_CLK_SHIFTED, DRAM_ADDR, DRAM_DQ, DRAM_BA_0, DRAM_BA_1,
-		DRAM_CKE, DRAM_CS_N, DRAM_RAS_N, DRAM_CAS_N, DRAM_WE_N,
-		DRAM_LDQM, DRAM_UDQM,
-		DRAM_CTRL_ADDR,
-		INIT_SDRAM_DATA,	//DRAM_CTRL_DQWR,
-		DRAM_CTRL_DQRD,
-		WRITE_REQ, WRITE_ACK,
-		READ_REQ, READ_ACK,
-		READY
-	);
-	*/
 	
 	always @(posedge clk_sys)
 	begin
@@ -341,6 +328,7 @@ end*/
 			CROM_RD_REQ <= 0;
 			SROM_RD_REQ <= 0;
 			M68K_RD_REQ <= 0;
+			M68K_LATCH_FLAG <= 0;
 		end
 		else
 		begin
@@ -350,44 +338,72 @@ end*/
 				M68K_RD_REQ <= 1'b1;
 			
 			// Detect rising edge of PCK1B
-			SR_SDRAM_CROM_REQ <= {SR_SDRAM_CROM_REQ[0], ~PCK1};
+			/*SR_SDRAM_CROM_REQ <= {SR_SDRAM_CROM_REQ[0], ~PCK1};
 			if ((SR_SDRAM_CROM_REQ == 2'b01) & nRESET)
 			begin
 				CROM_RD_REQ <= 1'b1;
 				CROM_RD_STEP <= 1'b0;
-			end
-			// Detect rising edge of PCK2B
+			end*/
+			
+			// Detect rising edge of PCK2B or S2H1
 			SR_SDRAM_SROM_REQ <= {SR_SDRAM_SROM_REQ[0], ~PCK2};
 			if ((SR_SDRAM_SROM_REQ == 2'b01) & nRESET)
 				SROM_RD_REQ <= 1'b1;
+			SR_SDRAM_SROM_REQ_B <= {SR_SDRAM_SROM_REQ_B[0], S2H1};
+			if ((SR_SDRAM_SROM_REQ_B == 2'b01) & nRESET)
+				SROM_RD_REQ <= 1'b1;
+			
+			if (SDRAM_RD_PULSE)
+				SDRAM_RD_PULSE <= 0;
 			
 			if (sdram_ready)
 			begin
-				if (!CROM_RD_STEP)
+				
+				/*if (!CROM_RD_STEP)
 				begin
 					CROM_RD_STEP <= 1;	// Repeat request for second 16bit word
-					CROM_RD_REQ <= 1;
-				end
+					//CROM_RD_REQ <= 1;
+				end*/
 				
 				// Prioritize C ROM read
-				if (CROM_RD_REQ)
+				/*if (CROM_RD_REQ)
 				begin
 					if (!CROM_RD_STEP)
 						CR[31:16] <= sdram_dout;
 					else
 						CR[15:0] <= sdram_dout;
 					CROM_RD_REQ <= 0;
+					SDRAM_RD_PULSE <= 1;
 				end
-				else if (SROM_RD_REQ)
+				else*/
+				if (SROM_RD_REQ)
 				begin
-					SROM_DATA <= sdram_dout;
-					SROM_RD_REQ <= 0;
+					SROM_LATCH_FLAG <= 1;
+					SROM_RD_REQ <= 0;		// Request is being fulfilled
+					SDRAM_RD_PULSE <= 1;	// Tell SDRAM controller to do a read
 				end
 				else if (M68K_RD_REQ)
 				begin
-					PROM_DATA <= sdram_dout;
+					M68K_LATCH_FLAG <= 1;
 					M68K_RD_REQ <= 0;
+					SDRAM_RD_PULSE <= 1;
 				end
+				
+				// Ugly :(
+				if (M68K_LATCH_FLAG)
+					M68K_LATCH_FLAG <= 0;
+				// Falling edge detector
+				M68K_LATCH_FLAG_PREV <= M68K_LATCH_FLAG;
+				if (M68K_LATCH_FLAG_PREV & ~M68K_LATCH_FLAG)
+					PROM_DATA <= {sdram_dout[7:0], sdram_dout[15:8]};
+					
+				// Ugly :(
+				if (SROM_LATCH_FLAG)
+					SROM_LATCH_FLAG <= 0;
+				// Falling edge detector
+				SROM_LATCH_FLAG_PREV <= SROM_LATCH_FLAG;
+				if (SROM_LATCH_FLAG_PREV & ~SROM_LATCH_FLAG)
+					FIXD <= FIX_ROM_ADDR[0] ? sdram_dout[15:8] : sdram_dout[7:0];
 			end
 		end
 	end
@@ -406,16 +422,24 @@ end*/
 	
 	wire [15:0] sdram_dout;
 	wire [15:0] sdram_din = ioctl_download ? ioctl_dout : 16'h0000;
-	wire sdram_rd = ~ioctl_download & READ_REQ;
+	wire sdram_rd = ~ioctl_download & SDRAM_RD_PULSE;
 	wire sdram_we = ioctl_download ? ioctl_wr : 1'b0;
 	
+	// TODO: make sdram_addr a register ?
+	// sdram_addr is 25 bits, LSB is ignored in word mode
 	always_comb begin
-		casez ({ioctl_download, CROM_RD_REQ, SROM_RD_REQ, nROMOE, nSROMOE})
+		casez ({ioctl_download, CROM_RD_REQ, (SROM_LATCH_FLAG_PREV | SROM_LATCH_FLAG) & ~M68K_RD_REQ, ~nROMOE, ~nSROMOE})
 			5'b1zzzz: sdram_addr = ioctl_addr;	// Loading mode, let hps_io use the SDRAM
-			5'b01zzz: sdram_addr = {4'b0010, SPR_ROM_ADDR[18:0], CROM_RD_STEP, 1'b0};	// C ROMs Bytes $400000~$5FFFFF
-			5'b001zz: sdram_addr = {8'b00010000, S_LATCH[15:0], 1'b0};		// Fix ROM Bytes $200000~$21FFFF
-			5'b0001z: sdram_addr = {5'b00000, M68K_ADDR[19:1], 1'b0};		// P ROM $000000~$0FFFFF
-			5'b00001: sdram_addr = {5'b01110, M68K_ADDR[19:1], 1'b0};		// System ROM $F00000~$F7FFFF
+			// The following mapping currently depends on the test cartridge structure !
+			// See pbobble/structure.txt
+			//5'b01zzz: sdram_addr = {1'b0, {SPR_ROM_ADDR[19:0], CROM_RD_STEP, 1'b0} + 24'h100000};	// C ROMs Bytes $100000~$6FFFFF
+			// Testing
+			5'b1zzzz: sdram_addr = 25'h0000000;
+			5'b01zzz: sdram_addr = 25'h0000000;
+			//5'b001zz: sdram_addr = 25'h0000000;
+			5'b001zz: sdram_addr = {8'b00000100, FIX_ROM_ADDR[16:1], 1'b0};	// Fix ROM Bytes $080000~$09FFFF
+			5'b0001z: sdram_addr = {5'b00000, M68K_ADDR[19:1], 1'b0};			// P ROM $000000~$07FFFF
+			5'b00001: sdram_addr = {7'b0011100, M68K_ADDR[17:1], 1'b0};			// System ROM $700000~$71FFFF
 			5'b00000: sdram_addr = 25'h0000000;
 		endcase
 	end
@@ -423,19 +447,19 @@ end*/
 	// This is used in 16-bit mode
 	sdram ram
 	(
-		.*,					// Connect all net with the same names (SDRAM_* pins)
+		.*,					// Connect all nets with the same names (SDRAM_* pins)
 		.init(~locked),	// Init SDRAM as soon as the PLL is locked
 		.clk(clk_sys),
 		.dout(sdram_dout),
 		.din(sdram_din),
 		.addr(sdram_addr),
-		.wtbt(2'b11),		// Loading is done in 16-bit words
+		.wtbt(2'b11),		// SDRAM is always used in 16-bit words
 		.we(sdram_we),
 		.rd(sdram_rd),
 		.ready(sdram_ready)
 	);
 
-	assign FIXD = S2H1 ? SROM_DATA[7:0] : SROM_DATA[15:8];
+	//assign FIXD = S2H1 ? SROM_DATA[7:0] : SROM_DATA[15:8];
 	assign M68K_DATA = (nROMOE & nSROMOE) ? 16'bzzzzzzzzzzzzzzzz : {PROM_DATA[7:0], PROM_DATA[15:8]};
 	
 	m68k_ram U8(M68K_ADDR[15:1], CLK_24M, M68K_DATA[7:0], ~nWWL, WRAML_OUT);
@@ -460,7 +484,7 @@ end*/
 	
 	neo_273	U4(PBUS[19:0], ~PCK1, ~PCK2, C_LATCH, S_LATCH);
 
-	neo_zmc2 ZMC2(CLK_12M, EVEN1, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
+	neo_zmc2 ZMC2(CLK_12M, EVEN1, LOAD, H, 32'h00000000, GAD, GBD, DOTA, DOTB);	// CR DEBUG
 	
 	// VCS is normally used as nOE but the NeoGeo's design relies on the fact that the LO ROM
 	// will have its output still active for a short moment (~50ns) after its nOE goes high
@@ -508,7 +532,7 @@ end*/
 
 	// Cartridge PCB
 	assign SPR_ROM_ADDR = {C_LATCH[19:4], CA4, C_LATCH[3:0]};
-	//assign FIX_ROM_ADDR = {S_LATCH[15:3], S2H1, S_LATCH[2:0]};
+	assign FIX_ROM_ADDR = {S_LATCH[15:3], S2H1, S_LATCH[2:0]};
 
 	pal_ram U7(PAL_RAM_ADDR, CLK_12M, M68K_DATA, (~nPAL & ~M68K_RW), PAL_RAM_DATA);
 	
@@ -525,5 +549,22 @@ end*/
 	assign VGA_R = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], PAL_RAM_REG[15], 2'b00};
 	assign VGA_G = {PAL_RAM_REG[7:4], PAL_RAM_REG[13], PAL_RAM_REG[15], 2'b00};
 	assign VGA_B = {PAL_RAM_REG[3:0], PAL_RAM_REG[12], PAL_RAM_REG[15], 2'b00};
+	
+	// VGA DAC tester
+	/*reg [23:0] TEMP;
+	reg [1:0] TEST_COLOR;
+	always @(posedge CLK_24M)
+	begin
+		TEMP <= TEMP + 1'b1;
+		if (TEMP >= 24'd12000000)
+		begin
+			TEMP <= 24'd0;
+			TEST_COLOR <= TEST_COLOR + 1'b1;
+		end
+	end
+	
+	assign VGA_R = (TEST_COLOR == 2'd0) ? 8'hFF : 8'h00;
+	assign VGA_G = (TEST_COLOR == 2'd1) ? 8'hFF : 8'h00;
+	assign VGA_B = (TEST_COLOR == 2'd2) ? 8'hFF : 8'h00;*/
 
 endmodule
