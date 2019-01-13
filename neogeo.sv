@@ -18,6 +18,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
+// The SDRAM phase shift seems good enough
+// BUG: the CA4 and S2H1 phase relationship changes randomly at reset ?
+
 module emu
 (
 	//Master input clock
@@ -46,7 +49,7 @@ module emu
 	output  [7:0] VGA_B,
 	output        VGA_HS,
 	output        VGA_VS,
-	output        VGA_DE,    // = ~(VBlank | HBlank)
+	output        VGA_DE,
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
 
@@ -111,7 +114,7 @@ assign LED_POWER = 0;
 assign VIDEO_ARX = 8'd10;	// 320/32
 assign VIDEO_ARY = 8'd7;	// 224/32
 
-assign VGA_DE = ~(CHBL | ~nBNKB);
+assign VGA_DE = ~CHBL & nBNKB;
 
 `include "build_id.v"
 localparam CONF_STR1 = {
@@ -119,11 +122,11 @@ localparam CONF_STR1 = {
 	"-;",
 	"F,BIN,Load Cart;",
 	"-;",
-	"O1,Test Option 1,On,Off;",
+	"O1,System type,Console,Arcade;",
 	"-;",
 	"O23,Stereo mix,none,25%,50%,100%;",
 	"R0,Reset & apply;",
-	"J1,Fire 1,Fire 2;",
+	"J1,A,B,C,D,Start,Select;",
 	"V,v",`BUILD_DATE
 };
 
@@ -146,36 +149,34 @@ pll pll
 
 assign CLK_VIDEO = clk_sys;
 assign CE_PIXEL = CLK_6MB;
+assign nRESET = ~(ioctl_download | status[0]);
 
 reg CLK_24M;
 reg [2:0] counter = 0;
+reg SYSTEM_MODE;
 
-// 144MHz:
-// 012345012345
-// ___'''___'''
-// 96MHz:
-// 01230123
-// __''__''
-
-always @(negedge clk_sys)
+always @(negedge clk_sys)	// posedge ?
 begin
-	if (counter == 3'd1)	// Was 2
+	if (counter == 3'd2)
 		CLK_24M <= 1'b1;
 	
-	if (counter == 3'd3)	// Was 5
+	if (counter == 3'd5)
 	begin
 		CLK_24M <= 1'b0;
 		counter <= 3'd0;
 	end
 	else
 		counter <= counter + 1'd1;
+	
+	if (~nRESET)
+		SYSTEM_MODE <= status[1];	// Latch the system mode (AES/MVS) at reset
 end
 
 
 //////////////////   HPS I/O   ///////////////////
 //wire [24:0] ps2_mouse;
 
-wire [15:0] joystick_0;
+wire [15:0] joystick_0;	// xxxxxxLS DCBAUDLR
 wire [15:0] joystick_1;
 wire  [1:0] buttons;
 wire        forced_scandoubler;
@@ -188,8 +189,6 @@ wire        ioctl_download;
 wire  [7:0] ioctl_index;
 wire        ioctl_wait;
 
-reg  [31:0] status_out;
-
 hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 (
 	.clk_sys(clk_sys),
@@ -201,7 +200,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1),
-	.buttons(buttons),			// What buttons ?
+	.buttons(buttons),			// DE10 buttons ?
 	//.forced_scandoubler(forced_scandoubler),
 	.status(status),				// status read (32 bits)
 	//.status_set(speed_set|arch_set|snap_hwset),	// status load on rising edge
@@ -216,18 +215,27 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	.ioctl_wait(ioctl_wait)
 );
 
-	// INFOS:
+	// Memory info:
 	// 68k RAM is in Block RAM
 	// Slow VRAM is in Block RAM
 	// Fast VRAM is in Block RAM
 	// Palette RAM is in Block RAM
 	// Line buffers are in Block RAM
+	// LO ROM data is in Block RAM
 	// P ROM data is in SDRAM
 	// C ROM data is in SDRAM
 	// S ROM data is in SDRAM
-	// LO ROM data is in Block RAM
 	
 	reg  [24:0] sdram_addr;
+	
+	wire [15:0] M68K_DATA;
+	wire [23:1] M68K_ADDR;
+	wire M68K_RW, nAS, nLDS, nUDS;
+	wire [15:0] M68K_DATA_BYTE_MASK;
+	wire [15:0] TG68K_DATAIN;
+	wire [15:0] TG68K_DATAOUT;
+	
+	wire [7:0] SDD;
 
 	wire [23:0] PBUS;
 	wire [7:0] LO_ROM_DATA;
@@ -237,8 +245,8 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	reg [31:0] CR;
 	
 	wire [15:0] S_LATCH;
-	wire [16:0] FIX_ROM_ADDR;
-	reg [7:0] FIXD;
+	//wire [16:0] FIX_ROM_ADDR;
+	wire [7:0] FIXD;
 	
 	wire [14:0] SLOW_VRAM_ADDR;
 	reg [15:0] SLOW_VRAM_DATA_IN;
@@ -257,17 +265,6 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	wire [3:0] WE;
 	wire [3:0] CK;
 	
-	wire [15:0] M68K_DATA;
-	wire [23:1] M68K_ADDR;
-	wire M68K_RW, nAS, nLDS, nUDS;
-	wire [15:0] M68K_DATA_BYTE_MASK;
-	wire [15:0] TG68K_DATAIN;
-	wire [15:0] TG68K_DATAOUT;
-	
-	wire [7:0] SDD;
-
-	wire READY;
-	
 	wire [7:0] WRAML_OUT;
 	wire [7:0] WRAMU_OUT;
 	
@@ -275,14 +272,15 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	
 	reg [1:0] SR_SDRAM_M68K_REQ;
 	reg [1:0] SR_SDRAM_CROM_REQ;
+	reg [1:0] SR_SDRAM_CROM_REQ_B;
 	reg [1:0] SR_SDRAM_SROM_REQ;
-	reg [1:0] SR_SDRAM_SROM_REQ_B;
-	//reg [15:0] SROM_DATA;
+	reg [15:0] SROM_DATA;
 	reg [15:0] PROM_DATA;
 	reg M68K_RD_REQ, CROM_RD_REQ, SROM_RD_REQ;
-	reg CROM_RD_STEP;
-	reg M68K_LATCH_FLAG, M68K_LATCH_FLAG_PREV;
-	reg SROM_LATCH_FLAG, SROM_LATCH_FLAG_PREV;
+	reg CROM_RD_STEP, CROM_RD_STEP_SHIFT;
+	reg M68K_LATCH_FLAG, M68K_LATCH_FLAG_PREV, M68K_LATCH_FLAG_PREV_PREV;
+	reg SROM_LATCH_FLAG, SROM_LATCH_FLAG_PREV, SROM_LATCH_FLAG_PREV_PREV;
+	reg CROM_LATCH_FLAG, CROM_LATCH_FLAG_PREV, CROM_LATCH_FLAG_PREV_PREV;
 	reg SDRAM_RD_PULSE;
 	
 	fast_vram UFV(
@@ -313,8 +311,6 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 
 	assign M68K_DATA = M68K_RW ? 16'bzzzzzzzzzzzzzzzz : TG68K_DATAOUT;
 	assign TG68K_DATAIN = M68K_RW ? M68K_DATA_BYTE_MASK : 16'h0000;
-
-	assign nRESET = ~ioctl_download;
 	
 	assign SDRAM_M68K_REQ = ~&{nSROMOE, nROMOE};
 	//assign READ_REQ = CROM_RD_REQ | SROM_RD_REQ | M68K_RD_REQ;
@@ -337,52 +333,47 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			if ((SR_SDRAM_M68K_REQ == 2'b01) & nRESET)
 				M68K_RD_REQ <= 1'b1;
 			
-			// Detect rising edge of PCK1B
-			/*SR_SDRAM_CROM_REQ <= {SR_SDRAM_CROM_REQ[0], ~PCK1};
-			if ((SR_SDRAM_CROM_REQ == 2'b01) & nRESET)
+			// Detect rising edge of PCK1B or ~CA4
+			// These are the two cases that trigger sprite ROM reads, which are actually
+			// two consecutive reads to get a 32-bit word
+			SR_SDRAM_CROM_REQ <= {SR_SDRAM_CROM_REQ[0], ~PCK1};
+			SR_SDRAM_CROM_REQ_B <= {SR_SDRAM_CROM_REQ_B[0], ~CA4};
+			if ((SR_SDRAM_CROM_REQ == 2'b01) | (SR_SDRAM_CROM_REQ_B == 2'b01) & nRESET)
 			begin
 				CROM_RD_REQ <= 1'b1;
 				CROM_RD_STEP <= 1'b0;
-			end*/
+				CROM_RD_STEP_SHIFT <= 1'b0;
+			end
 			
-			// Detect rising edge of PCK2B or S2H1
+			// Detect rising edge of PCK2B
 			SR_SDRAM_SROM_REQ <= {SR_SDRAM_SROM_REQ[0], ~PCK2};
 			if ((SR_SDRAM_SROM_REQ == 2'b01) & nRESET)
-				SROM_RD_REQ <= 1'b1;
-			SR_SDRAM_SROM_REQ_B <= {SR_SDRAM_SROM_REQ_B[0], S2H1};
-			if ((SR_SDRAM_SROM_REQ_B == 2'b01) & nRESET)
 				SROM_RD_REQ <= 1'b1;
 			
 			if (SDRAM_RD_PULSE)
 				SDRAM_RD_PULSE <= 0;
 			
+			// TESTING
+			if (~CROM_RD_STEP & CROM_LATCH_FLAG_PREV & ~CROM_LATCH_FLAG_PREV_PREV)
+				CROM_RD_STEP_SHIFT <= 1;
+			
 			if (sdram_ready)
 			begin
 				
-				/*if (!CROM_RD_STEP)
-				begin
-					CROM_RD_STEP <= 1;	// Repeat request for second 16bit word
-					//CROM_RD_REQ <= 1;
-				end*/
-				
 				// Prioritize C ROM read
-				/*if (CROM_RD_REQ)
+				if (CROM_RD_REQ)
 				begin
-					if (!CROM_RD_STEP)
-						CR[31:16] <= sdram_dout;
-					else
-						CR[15:0] <= sdram_dout;
+					CROM_LATCH_FLAG <= 1;
 					CROM_RD_REQ <= 0;
 					SDRAM_RD_PULSE <= 1;
 				end
-				else*/
-				if (SROM_RD_REQ)
+				else if (SROM_RD_REQ & ~CROM_LATCH_FLAG & ~CROM_LATCH_FLAG_PREV & ~CROM_LATCH_FLAG_PREV_PREV)
 				begin
 					SROM_LATCH_FLAG <= 1;
 					SROM_RD_REQ <= 0;		// Request is being fulfilled
 					SDRAM_RD_PULSE <= 1;	// Tell SDRAM controller to do a read
 				end
-				else if (M68K_RD_REQ)
+				else if (M68K_RD_REQ & ~CROM_LATCH_FLAG & ~CROM_LATCH_FLAG_PREV & ~SROM_RD_REQ & ~SROM_LATCH_FLAG & ~SROM_LATCH_FLAG_PREV)
 				begin
 					M68K_LATCH_FLAG <= 1;
 					M68K_RD_REQ <= 0;
@@ -390,61 +381,97 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 				end
 				
 				// Ugly :(
+				if (CROM_LATCH_FLAG)
+					CROM_LATCH_FLAG <= 0;
+				// Falling edge detector
+				CROM_LATCH_FLAG_PREV <= CROM_LATCH_FLAG;
+				CROM_LATCH_FLAG_PREV_PREV <= CROM_LATCH_FLAG_PREV;
+				if (CROM_LATCH_FLAG_PREV_PREV & ~CROM_LATCH_FLAG_PREV)
+				begin
+					if (!CROM_RD_STEP)
+					begin
+						CR[15:0] <= sdram_dout;
+						CROM_LATCH_FLAG <= 1;
+						SDRAM_RD_PULSE <= 1;
+						CROM_RD_STEP <= 1;	// Repeat request for second 16bit word
+					end
+					else
+						CR[31:16] <= sdram_dout;
+				end
+				
+				// Ugly :(
 				if (M68K_LATCH_FLAG)
 					M68K_LATCH_FLAG <= 0;
 				// Falling edge detector
 				M68K_LATCH_FLAG_PREV <= M68K_LATCH_FLAG;
-				if (M68K_LATCH_FLAG_PREV & ~M68K_LATCH_FLAG)
+				M68K_LATCH_FLAG_PREV_PREV <= M68K_LATCH_FLAG_PREV;
+				if (M68K_LATCH_FLAG_PREV_PREV & ~M68K_LATCH_FLAG_PREV)
 					PROM_DATA <= {sdram_dout[7:0], sdram_dout[15:8]};
-					
+				
 				// Ugly :(
 				if (SROM_LATCH_FLAG)
 					SROM_LATCH_FLAG <= 0;
 				// Falling edge detector
 				SROM_LATCH_FLAG_PREV <= SROM_LATCH_FLAG;
-				if (SROM_LATCH_FLAG_PREV & ~SROM_LATCH_FLAG)
-					FIXD <= FIX_ROM_ADDR[0] ? sdram_dout[15:8] : sdram_dout[7:0];
+				SROM_LATCH_FLAG_PREV_PREV <= SROM_LATCH_FLAG_PREV;
+				if (SROM_LATCH_FLAG_PREV_PREV & ~SROM_LATCH_FLAG_PREV)
+					SROM_DATA <= sdram_dout;
 			end
 		end
 	end
 	
-	/*
-	// SDRAM address mux
-	assign DRAM_CTRL_ADDR = nRESET ?
-		CROM_RD_REQ ? {2'b01, SPR_ROM_ADDR[18:0], CROM_RD_STEP} :		// $200000~$3FFFFF
-		SROM_RD_REQ ? {6'b001000, S_LATCH[15:0]} :	// FIX_ROM_ADDR $100000~$10FFFF
-		~nROMOE ? {3'b000, M68K_ADDR[19:1]} :		// $000000~$0FFFFF
-		~nSROMOE ? {3'b111, M68K_ADDR[19:1]} :		// $700000~$7FFFFF
-		22'h0 : // Could remove this and ~nSROMOE condition ?
-		INIT_SDRAM_ADDR;
-	*/
-	//assign CR = 32'b00000000_00000000_00000000_10101010;
-	
 	wire [15:0] sdram_dout;
 	wire [15:0] sdram_din = ioctl_download ? ioctl_dout : 16'h0000;
-	wire sdram_rd = ~ioctl_download & SDRAM_RD_PULSE;
+	wire sdram_rd = ioctl_download ? 1'b0 : SDRAM_RD_PULSE;
 	wire sdram_we = ioctl_download ? ioctl_wr : 1'b0;
+	wire [23:0] CROM_ADDR = {2'b00, SPR_ROM_ADDR[20:0], 1'b0};
+	wire [23:0] CROM_OFFSET = CROM_RD_STEP_SHIFT ? 24'h400000 + CROM_ADDR : 24'h100000 + CROM_ADDR;	// C odd/even ROM zone switch
 	
 	// TODO: make sdram_addr a register ?
-	// sdram_addr is 25 bits, LSB is ignored in word mode
-	always_comb begin
-		casez ({ioctl_download, CROM_RD_REQ, (SROM_LATCH_FLAG_PREV | SROM_LATCH_FLAG) & ~M68K_RD_REQ, ~nROMOE, ~nSROMOE})
-			5'b1zzzz: sdram_addr = ioctl_addr;	// Loading mode, let hps_io use the SDRAM
+	// sdram_addr is 25 bits, LSB is = 0 in word mode
+	always_comb begin 
+		casez ({ioctl_download, (CROM_RD_REQ | CROM_LATCH_FLAG | CROM_LATCH_FLAG_PREV | CROM_LATCH_FLAG_PREV_PREV) & ~M68K_LATCH_FLAG & (~M68K_LATCH_FLAG_PREV | sdram_ready), (SROM_RD_REQ | SROM_LATCH_FLAG_PREV | SROM_LATCH_FLAG) & ~M68K_LATCH_FLAG & ~M68K_LATCH_FLAG_PREV, ~nROMOE, ~nSROMOE})
+
+			// Load the fix graphics in a way that takes advantage of the 16-bit wide SDRAM data bus
+			// Since fix pixels are stored in columns but always read in lines,
+			// instead of: column 2 (lines 0~7), column 3 (lines 0~7), column 0 (lines 0~7), column 1 (lines 0~7)
+			// 10 18 00 08
+			// 11 19 01 09
+			// 12 1A 02 0A
+			// 13 1B 03 0B
+			// 14 1C 04 0C
+			// 15 1D 05 0D
+			// 16 1E 06 0E
+			// 17 1F 07 0F
+			// load like: line 0 (columns 0~3), line 1 (columns 0~3)...
+			// 8-bit mode:
+			// ioctl_addr 00 01 02 03 04 05 06 07, 08 09 0A 0B 0C 0D 0E 0F, 10 11 12 13 14 15 16 17, 18 19 1A 1B 1C 1D 1E 1F ->
+			// sdram_addr 02 06 0A 0E 12 16 1A 1E, 03 07 0B 0F 13 17 1B 1F, 00 04 08 0C 10 14 18 1C, 01 05 09 0D 11 15 19 1D
+			// 16-bit mode:
+			// ioctl_addr 00    02    04    06   , 08    0A    0C    0E   , 10    12    14    16   , 18    1A    1C    1E    ->
+			// sdram_addr 02 06 0A 0E 12 16 1A 1E, 03 07 0B 0F 13 17 1B 1F, 00 04 08 0C 10 14 18 1C, 01 05 09 0D 11 15 19 1D
+			// sdram_addr = ioctl_addr[2:0], ~ioctl_addr[4], ioctl_addr[3]
+			// Actually, let the HPS do the format convertion for fix tiles. It's more suited for this task and makes things
+			// simpler.
+			
+			// Loading pass-through
+			5'b1zzzz: sdram_addr = ioctl_addr;
+			
 			// The following mapping currently depends on the test cartridge structure !
-			// See pbobble/structure.txt
-			//5'b01zzz: sdram_addr = {1'b0, {SPR_ROM_ADDR[19:0], CROM_RD_STEP, 1'b0} + 24'h100000};	// C ROMs Bytes $100000~$6FFFFF
-			// Testing
-			5'b1zzzz: sdram_addr = 25'h0000000;
-			5'b01zzz: sdram_addr = 25'h0000000;
-			//5'b001zz: sdram_addr = 25'h0000000;
-			5'b001zz: sdram_addr = {8'b00000100, FIX_ROM_ADDR[16:1], 1'b0};	// Fix ROM Bytes $080000~$09FFFF
-			5'b0001z: sdram_addr = {5'b00000, M68K_ADDR[19:1], 1'b0};			// P ROM $000000~$07FFFF
-			5'b00001: sdram_addr = {7'b0011100, M68K_ADDR[17:1], 1'b0};			// System ROM $700000~$71FFFF
+			// See structure.txt
+			
+			// C ROMs Bytes $100000~$6FFFFF
+			5'b01zzz: sdram_addr = {1'b0, CROM_OFFSET};
+			// S ROM Bytes $080000~$09FFFF
+			5'b001zz: sdram_addr = {8'b00000100, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
+			// P ROM $000000~$07FFFF
+			5'b0001z: sdram_addr = {5'b00000, M68K_ADDR[19:1], 1'b0};
+			// System ROM $700000~$71FFFF
+			5'b00001: sdram_addr = {7'b0011100, M68K_ADDR[17:1], 1'b0};
 			5'b00000: sdram_addr = 25'h0000000;
 		endcase
 	end
 	
-	// This is used in 16-bit mode
 	sdram ram
 	(
 		.*,					// Connect all nets with the same names (SDRAM_* pins)
@@ -453,13 +480,13 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 		.dout(sdram_dout),
 		.din(sdram_din),
 		.addr(sdram_addr),
-		.wtbt(2'b11),		// SDRAM is always used in 16-bit words
+		.wtbt(2'b11),		// Always used in 16-bit mode
 		.we(sdram_we),
 		.rd(sdram_rd),
 		.ready(sdram_ready)
 	);
 
-	//assign FIXD = S2H1 ? SROM_DATA[7:0] : SROM_DATA[15:8];
+	assign FIXD = S2H1 ? SROM_DATA[15:8] : SROM_DATA[7:0];
 	assign M68K_DATA = (nROMOE & nSROMOE) ? 16'bzzzzzzzzzzzzzzzz : {PROM_DATA[7:0], PROM_DATA[15:8]};
 	
 	m68k_ram U8(M68K_ADDR[15:1], CLK_24M, M68K_DATA[7:0], ~nWWL, WRAML_OUT);
@@ -476,20 +503,21 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	neo_c1	C1(M68K_ADDR[21:17], M68K_DATA[15:8], A22Z, A23Z, nLDS, nUDS, M68K_RW, nAS, nROMOEL, nROMOEU,
 				nPORTOEL, nPORTOEU, nPORTWEL, nPORTWEU, nPORTADRS, nWRL, nWRU, nWWL, nWWU, nSROMOEL, nSROMOEU, 
 				nSRAMOEL, nSRAMOEU, nSRAMWEL, nSRAMWEU, nLSPOE, nLSPWE, nCRDO, nCRDW, nCRDC, nSDW,
-				~joystick_0[9:0], ~joystick_1[9:0],
+				~{joystick_0[9:4], joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]},
+				~{joystick_1[9:4], joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]},
 				1'b1, 1'b1, 1'b1,	//nCD1, nCD2, nWP,
 				1'b1, 1'b1, 1'b1, 1'b1,	// nROMWAIT, nPWAIT0, nPWAIT1, PDTACK,
 				SDD, 1'b1, 1'b1, 1'b1, CLK_68KCLK,
-				nDTACK, nBITW0, nBITW1, nDIPRD0, nDIPRD1, nPAL, 1'b1);	// SYSTEM_MODE
+				nDTACK, nBITW0, nBITW1, nDIPRD0, nDIPRD1, nPAL, SYSTEM_MODE);
 	
 	neo_273	U4(PBUS[19:0], ~PCK1, ~PCK2, C_LATCH, S_LATCH);
 
-	neo_zmc2 ZMC2(CLK_12M, EVEN1, LOAD, H, 32'h00000000, GAD, GBD, DOTA, DOTB);	// CR DEBUG
+	neo_zmc2 ZMC2(CLK_12M, EVEN1, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
 	
-	// VCS is normally used as nOE but the NeoGeo's design relies on the fact that the LO ROM
-	// will have its output still active for a short moment (~50ns) after its nOE goes high
+	// VCS is normally used as the LO ROM's nOE but the NeoGeo relies on the fact that the LO ROM
+	// will have its output still active for a short moment (~50ns) after nOE goes high
 	// nPBUS_OUT_EN is used internally by LSPC2 but it's broken out here to use the additional
-	// half mclk cycle it provides compared to VCS
+	// half mclk cycle it provides compared to VCS. This makes sure LO_ROM_DATA is valid when latched.
 	lo_rom LO(PBUS[15:0], CLK_24M, LO_ROM_DATA);
 	assign PBUS[23:16] = nPBUS_OUT_EN ? LO_ROM_DATA : 8'bzzzzzzzz;
 	
@@ -500,8 +528,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 					M68K_DATA,
 					nLSPOE, nLSPWE,
 					DOTA, DOTB,
-					CA4,
-					S2H1,	S1H1,
+					CA4, S2H1, S1H1,
 					LOAD,
 					H, EVEN1, EVEN2,
 					IPL0, IPL1,
@@ -532,7 +559,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 
 	// Cartridge PCB
 	assign SPR_ROM_ADDR = {C_LATCH[19:4], CA4, C_LATCH[3:0]};
-	assign FIX_ROM_ADDR = {S_LATCH[15:3], S2H1, S_LATCH[2:0]};
+	//assign FIX_ROM_ADDR = {S_LATCH[15:3], S2H1, S_LATCH[2:0]};
 
 	pal_ram U7(PAL_RAM_ADDR, CLK_12M, M68K_DATA, (~nPAL & ~M68K_RW), PAL_RAM_DATA);
 	

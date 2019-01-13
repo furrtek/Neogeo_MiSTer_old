@@ -1,8 +1,9 @@
 The code running on the ARM CPU (HPS) loads the requested core as
 an .rbf file via fpga_load_rbf in fpga_io.cpp in Main_MiSTer
 
-In the menu, the FPGA core acts as a special graphics card for the linux
-system (which is only able to display a menu-style interface)
+In the menu, the FPGA core acts as a special graphics & sound card for the linux
+system which is able to display a menu-style interface through the OSD
+module integrated in each core
 
 In each core, the stuff in /sys/ provides the video scaling, video
 and audio output, the OSD menu, and the HPS interface logic.
@@ -11,6 +12,10 @@ utilize.
 
 The core itself must take care of giving access to the SDRAM controller
 for the HPS during loading, and then switch to run mode to read the data.
+
+The ROM files are loaded by user_io_file_tx in user_io.cpp
+There's core-specific code in there (to skip the SNES ROM header for example)
+so adding format convertion code for NeoGeo graphics here should be ok
 
 To connect to the DE10 via ethernet: run D:\OpenDHCPServer\runstandalone.bat
 NOTE: It may already be running as a service !
