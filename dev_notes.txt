@@ -1,9 +1,8 @@
 The code running on the ARM CPU (HPS) loads the requested core as
-an .rbf file via fpga_load_rbf in fpga_io.cpp in Main_MiSTer
+an .rbf file via fpga_load_rbf in fpga_io.cpp in Main_MiSTer.
 
-In the menu, the FPGA core acts as a special graphics & sound card for the linux
-system which is able to display a menu-style interface through the OSD
-module integrated in each core
+In the main menu, the FPGA core acts as a special graphics & sound card for the
+linux system which is able to display a text interface.
 
 In each core, the stuff in /sys/ provides the video scaling, video
 and audio output, the OSD menu, and the HPS interface logic.
@@ -11,11 +10,11 @@ The hps_io module "breaks out" a bunch of signals for the core to
 utilize.
 
 The core itself must take care of giving access to the SDRAM controller
-for the HPS during loading, and then switch to run mode to read the data.
+for the HPS during ROM loading, and then switch to run mode to use the data.
 
 The ROM files are loaded by user_io_file_tx in user_io.cpp
 There's core-specific code in there (to skip the SNES ROM header for example)
-so adding format convertion code for NeoGeo graphics here should be ok
+so adding format convertion code for NeoGeo graphics here should be ok.
 
 To connect to the DE10 via ethernet: run D:\OpenDHCPServer\runstandalone.bat
 NOTE: It may already be running as a service !
@@ -62,3 +61,72 @@ Bottom header, pin 1 is upper right
 
 A pin has to be shorted to ground to enable the VGA output. This is used to
 detect the extension board.
+
+
+SDRAM multiplexing:
+The main SDRAM holds the 68k program, sprites and fix graphics.
+
+The system may request:
+-68k data as soon as nSROMOE or nROMOE goes low (TODO: use nPORTOE too !)
+-Fix graphics as soon as PCK2B rises
+  Since the SDRAM provides 16-bit words and there's only an 8-bit data bus for the
+  fix (2 pixels), here one read gives 4 pixels.
+  The fix data is re-organized so that pixel pairs are kept adjacent in memory
+  This allows to do only one read for 4 pixels and use S2H1 to select which
+  pair must be used.
+-Sprite graphics as soon as PCK1B rises or CA4 falls
+  The sprite graphics data bus is 32-bit so for each read request, two read cycles
+  must be performed (for two 16-bit words).
+  Data doesn't have to be re-organized, the bitplane data can be used as-is.
+  The PCK1B edge is used to trigger a double-read for the left sprite tile column.
+  The CA4 edge is used to trigger another double-read for the right sprite tile
+  column.
+
+If there's only one active request, just start the corresponding read cycle.
+If there's multiple active requests use the following priorities:
+-Sprite graphics
+-Fix graphics
+-68k data
+
+FIXD is latched on rising edge of CLK_1MB: 36 sys_clk to valid data (250ns)
+CR is latched on rising edge of CLK_12M+LOAD: 36 sys_clk to valid data (250ns)
+The sprite graphics double-read takes 18 sys_clk
+The fix graphics read takes 9 sys_clk
+
+If there's a read cycle already going on, DO NOT interrupt it. Keep sdram_addr valid.
+
+Howto:
+Detect edges of PCK1B, PCK2B, CA4 and nROMOE, etc... with two chained 1-bit registers
+On the correct edges:
+  If the *_REQ registers are all low, start the appropriate read cycle(s)
+  Otherwise, set the appropriate *_REQ register
+
+// Load the fix graphics in a way that takes advantage of the 16-bit wide SDRAM data bus
+// Since fix pixels are stored in columns but always read in lines,
+// instead of: column 2 (lines 0~7), column 3 (lines 0~7), column 0 (lines 0~7), column 1 (lines 0~7)
+// 10 18 00 08
+// 11 19 01 09
+// 12 1A 02 0A
+// 13 1B 03 0B
+// 14 1C 04 0C
+// 15 1D 05 0D
+// 16 1E 06 0E
+// 17 1F 07 0F
+// load like: line 0 (columns 0~3), line 1 (columns 0~3)...
+// 8-bit mode:
+// ioctl_addr 00 01 02 03 04 05 06 07, 08 09 0A 0B 0C 0D 0E 0F, 10 11 12 13 14 15 16 17, 18 19 1A 1B 1C 1D 1E 1F ->
+// sdram_addr 02 06 0A 0E 12 16 1A 1E, 03 07 0B 0F 13 17 1B 1F, 00 04 08 0C 10 14 18 1C, 01 05 09 0D 11 15 19 1D
+// 16-bit mode:
+// ioctl_addr 00    02    04    06   , 08    0A    0C    0E   , 10    12    14    16   , 18    1A    1C    1E    ->
+// sdram_addr 02 06 0A 0E 12 16 1A 1E, 03 07 0B 0F 13 17 1B 1F, 00 04 08 0C 10 14 18 1C, 01 05 09 0D 11 15 19 1D
+// sdram_addr = ioctl_addr[2:0], ~ioctl_addr[4], ioctl_addr[3]
+
+Burst reads for sprites gfx were not working because row and columns were inverted in
+the SDRAM controller.
+
+To debug Main_MiSTer:
+Putty root:1@192.168.1.200
+killall MiSTer
+Ctrl+shift+B in VS
+Upload new binary via FTP
+/media/fat/MiSTer

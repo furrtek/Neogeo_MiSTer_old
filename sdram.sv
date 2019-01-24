@@ -23,7 +23,7 @@
 //
 // ------------------------------------------
 //
-// v2.1 - Add universal 8/16 bit mode.
+// furrtek 2019-01-24 : Added ugly burst reading
 //
 
 module sdram
@@ -48,24 +48,29 @@ module sdram
                                   // Ignored while reading.
                                   //
    input      [24:0] addr,        // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
-   output     [15:0] dout,        // data output to cpu
+   output     [63:0] dout,  		 // data output to cpu
    input      [15:0] din,         // data input from cpu
    input             we,          // cpu requests write
    input             rd,          // cpu requests read
-   output reg        ready        // dout is valid. Ready to accept new read/write.
+   output reg        ready_word,  // dout is valid. Ready to accept new read/write.
+   output reg        ready_quad
 );
+
+wire [15:0] dout_first;
 
 assign SDRAM_nCS  = command[3];
 assign SDRAM_nRAS = command[2];
 assign SDRAM_nCAS = command[1];
 assign SDRAM_nWE  = command[0];
 assign SDRAM_CKE  = cke;
-assign dout       = latched ? data_l : data_d;
 
-// no burst configured
-localparam BURST_LENGTH        = 3'b000;   // 000=1, 001=2, 010=4, 011=8
+assign dout = {dout_first, data_second, data_third, data_fourth};
+assign dout_first = latched_first ? data_first : SDRAM_DQ;
+
+// Burst length = 4
+localparam BURST_LENGTH        = 3'b010;   // 000=1, 001=2, 010=4, 011=8
 localparam ACCESS_TYPE         = 1'b0;     // 0=sequential, 1=interleaved
-localparam CAS_LATENCY         = 3'd3;     // 2 for < 100MHz, 3 for >100MHz
+localparam CAS_LATENCY         = 3'd2;     // 2 for < 100MHz, 3 for >100MHz
 localparam OP_MODE             = 2'b00;    // only 00 (standard operation) allowed
 localparam NO_WRITE_BURST      = 1'b1;     // 0= write burst enabled, 1=only single access write
 localparam MODE                = {3'b000, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
@@ -90,10 +95,11 @@ reg  [3:0] command = CMD_INHIBIT;
 reg        cke     = 0;
 reg [24:0] save_addr;
 
-reg        latched;
-reg [15:0] data;
-wire[15:0] data_l = save_addr[0] ? {data[7:0],     data[15:8]}     : {data[15:8],     data[7:0]};
-wire[15:0] data_d = save_addr[0] ? {SDRAM_DQ[7:0], SDRAM_DQ[15:8]} : {SDRAM_DQ[15:8], SDRAM_DQ[7:0]};
+reg        latched_first;
+reg [15:0] data_first;
+reg [15:0] data_second;
+reg [15:0] data_third;
+reg [15:0] data_fourth;
 
 typedef enum
 {
@@ -102,12 +108,13 @@ typedef enum
 	STATE_WRITE,
 	STATE_READ,
 	STATE_IDLE,	  STATE_IDLE_1, STATE_IDLE_2, STATE_IDLE_3,
-	STATE_IDLE_4, STATE_IDLE_5, STATE_IDLE_6, STATE_IDLE_7
+	STATE_IDLE_4, STATE_IDLE_5, STATE_IDLE_6, STATE_IDLE_7,
+	STATE_IDLE_8
 } state_t;
 
 always @(posedge clk) begin
 	reg old_we, old_rd;
-	reg [CAS_LATENCY:0] data_ready_delay;
+	reg [CAS_LATENCY+3:0] data_ready_delay;
 
 	reg [15:0] new_data;
 	reg  [1:0] new_wtbt;
@@ -120,11 +127,14 @@ always @(posedge clk) begin
 	command <= CMD_NOP;
 	refresh_count  <= refresh_count+1'b1;
 
-	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY:1]};
+	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY+3:1]};
 
 	// make it ready 1T in advance
-	if(data_ready_delay[1]) {latched, ready} <= {1'b0, 1'b1};
-	if(data_ready_delay[0]) {latched, data}  <= {1'b1, SDRAM_DQ};
+	if(data_ready_delay[4]) {latched_first, ready_word} <= {1'b0, 1'b1};
+	if(data_ready_delay[3])	{latched_first, data_first}  <= {1'b1, SDRAM_DQ};
+	if(data_ready_delay[2]) data_second  <= SDRAM_DQ;
+	if(data_ready_delay[1]) data_third  <= SDRAM_DQ;
+	if(data_ready_delay[0]) {ready_quad, data_fourth}  <= {1'b1, SDRAM_DQ};
 
 	case(state)
 		STATE_STARTUP: begin
@@ -177,11 +187,13 @@ always @(posedge clk) begin
 			//------------------------------------------------------
 			if(!refresh_count) begin
 				state   <= STATE_IDLE;
-				ready   <= 1;
+				ready_word   <= 1;
+				ready_quad   <= 1;
 				refresh_count <= 0;
 			end
 		end
 
+		STATE_IDLE_8: state <= STATE_IDLE_7;
 		STATE_IDLE_7: state <= STATE_IDLE_6;
 		STATE_IDLE_6: state <= STATE_IDLE_5;
 		STATE_IDLE_5: state <= STATE_IDLE_4;
@@ -195,9 +207,9 @@ always @(posedge clk) begin
 			if(refresh_count > cycles_per_refresh) begin
             //------------------------------------------------------------------------
             //-- Start the refresh cycle. 
-            //-- This tasks tRFC (66ns), so 6 idle cycles are needed @ 100MHz
+            //-- This tasks tRFC (66ns), so 7 idle cycles are needed @ 120MHz
             //------------------------------------------------------------------------
-				state    <= STATE_IDLE_7;
+				state    <= STATE_IDLE_8;
 				command  <= CMD_AUTO_REFRESH;
 				refresh_count <= refresh_count - cycles_per_refresh + 1'd1;
 			end
@@ -213,7 +225,7 @@ always @(posedge clk) begin
 				save_we  <= new_we;
 				state    <= STATE_OPEN_1;
 				command  <= CMD_ACTIVE;
-				SDRAM_A  <= addr[13:1];
+				SDRAM_A  <= addr[22:10];		// addr[13:1] = 13 bits
 				SDRAM_BA <= addr[24:23];
 			end
 		end
@@ -221,7 +233,7 @@ always @(posedge clk) begin
 		// ACTIVE-to-READ or WRITE delay >20ns (-75)
 		STATE_OPEN_1: state <= STATE_OPEN_2;
 		STATE_OPEN_2: begin
-			SDRAM_A     <= {4'b0010, save_addr[22:14]}; 
+			SDRAM_A     <= {4'b0010, save_addr[9:1]}; 		// addr[22:14] = 9 bits
 			SDRAM_DQML  <= save_we & (new_wtbt ? ~new_wtbt[0] :  save_addr[0]);
 			SDRAM_DQMH  <= save_we & (new_wtbt ? ~new_wtbt[1] : ~save_addr[0]);
 			state       <= save_we ? STATE_WRITE : STATE_READ;
@@ -233,14 +245,14 @@ always @(posedge clk) begin
 			SDRAM_DQ    <= 16'bZZZZZZZZZZZZZZZZ;
 
 			// Schedule reading the data values off the bus
-			data_ready_delay[CAS_LATENCY] <= 1;
+			data_ready_delay[CAS_LATENCY+3] <= 1;
 		end
 
 		STATE_WRITE: begin
 			state       <= STATE_IDLE_5;
 			command     <= CMD_WRITE;
 			SDRAM_DQ    <= new_wtbt ? new_data : {new_data[7:0], new_data[7:0]};
-			ready       <= 1;
+			ready_word <= 1;
 		end
 	endcase
 
@@ -250,12 +262,12 @@ always @(posedge clk) begin
 	end
 
 	old_we <= we;
-	if(we & ~old_we) {ready, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
+	if(we & ~old_we) {ready_word, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
 
 	old_rd <= rd;
 	if(rd & ~old_rd) begin
-		if(ready & ~save_we & (save_addr[24:1] == addr[24:1])) save_addr <= addr;
-			else {ready, new_rd} <= {1'b0, 1'b1};
+		if(ready_word & ~save_we & (save_addr[24:1] == addr[24:1])) save_addr <= addr;
+			else {ready_word, ready_quad, new_rd} <= {1'b0, 1'b0, 1'b1};
 	end
 end
 

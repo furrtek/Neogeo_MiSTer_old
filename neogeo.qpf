@@ -18,15 +18,14 @@
 #
 # Quartus Prime
 # Version 18.1.0 Build 625 09/12/2018 SJ Lite Edition
-# Date created = 23:45:11  January 05, 2019
+# Date created = 03:42:28  January 24, 2019
 #
 # -------------------------------------------------------------------------- #
 
 QUARTUS_VERSION = "18.1"
-DATE = "23:45:11  January 05, 2019"
+DATE = "03:42:28  January 24, 2019"
 
 # Revisions
 
 PROJECT_REVISION = "neogeo-lite"
-PROJECT_REVISION = "neogeo-lite-blockram"
 PROJECT_REVISION = "neogeo"
