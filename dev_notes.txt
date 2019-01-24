@@ -5,7 +5,7 @@ In the main menu, the FPGA core acts as a special graphics & sound card for the
 linux system which is able to display a text interface.
 
 In each core, the stuff in /sys/ provides the video scaling, video
-and audio output, the OSD menu, and the HPS interface logic.
+and audio output, the OSD, and the HPS interface logic.
 The hps_io module "breaks out" a bunch of signals for the core to
 utilize.
 
@@ -18,14 +18,21 @@ so adding format convertion code for NeoGeo graphics here should be ok.
 
 To connect to the DE10 via ethernet: run D:\OpenDHCPServer\runstandalone.bat
 NOTE: It may already be running as a service !
-Make sure the LAN network connection is enabled in the Windows control panel
+Make sure the LAN connection is enabled in the Windows control panel
 It will assign 192.168.1.200 to the DE10 by matching its MAC address
 It's then possible to use FTP or SSH with root:1 as login
+
+To debug linux-side stuff (Main_MiSTer):
+Putty root:1@192.168.1.200
+killall MiSTer so that the binary can be replaced
+Ctrl+shift+B in VS to build
+Upload new binary via FTP
+Run /media/fat/MiSTer
 
 The generated .rbf is output_files\neogeo-lite.rbf
 
 neogeo-lite allows for faster compilation time by omitting the HDMI upscaler,
-it outputs 6-6-6 VGA video on the GPIO_1 header as follows:
+it outputs 6-6-6 VGA video for the IO board on the GPIO_1 header as follows:
 VGA_R[0]: GPIO_1_D35
 VGA_R[1]: GPIO_1_D33
 VGA_R[2]: GPIO_1_D31
@@ -60,73 +67,58 @@ Bottom header, pin 1 is upper right
   40                                                        02
 
 A pin has to be shorted to ground to enable the VGA output. This is used to
-detect the extension board.
+detect the IO extension board.
 
 
 SDRAM multiplexing:
 The main SDRAM holds the 68k program, sprites and fix graphics.
+It currently runs at 96MHz, 68k must run with 1 wait cycle :(
 
 The system may request:
--68k data as soon as nSROMOE or nROMOE goes low (TODO: use nPORTOE too !)
+-68k data as soon as nSROMOE, nROMOE or nPORTOE goes low
 -Fix graphics as soon as PCK2B rises
   Since the SDRAM provides 16-bit words and there's only an 8-bit data bus for the
-  fix (2 pixels), here one read gives 4 pixels.
-  The fix data is re-organized so that pixel pairs are kept adjacent in memory
-  This allows to do only one read for 4 pixels and use S2H1 to select which
-  pair must be used.
--Sprite graphics as soon as PCK1B rises or CA4 falls
-  The sprite graphics data bus is 32-bit so for each read request, two read cycles
-  must be performed (for two 16-bit words).
-  Data doesn't have to be re-organized, the bitplane data can be used as-is.
-  The PCK1B edge is used to trigger a double-read for the left sprite tile column.
-  The CA4 edge is used to trigger another double-read for the right sprite tile
-  column.
+  fix (2 pixels), one SDRAM read gives 4 pixels.
+  The fix data is re-organized during loading so that pixel pairs are kept adjacent
+  in the SDRAM. This allows to do only one read for 4 pixels and use S2H1 to select
+  which pair must be fed to NEO-B1 at the right time.
+-Sprite graphics as soon as PCK1B rises
+  The sprite graphics data bus is 32-bit so for one 8-pixel line, two words must be
+  read.
+  The data is reorganized so that the bitplane data can be read in 4-word bursts and
+  used as-is. The PCK1B edge is used to trigger the reads, and CA4 is used to select
+  which 8-pixel group must be fed to NEO-ZMC2 at the right time.
 
 If there's only one active request, just start the corresponding read cycle.
-If there's multiple active requests use the following priorities:
+If there are multiple active requests use the following priorities:
 -Sprite graphics
 -Fix graphics
 -68k data
 
-FIXD is latched on rising edge of CLK_1MB: 36 sys_clk to valid data (250ns)
-CR is latched on rising edge of CLK_12M+LOAD: 36 sys_clk to valid data (250ns)
-The sprite graphics double-read takes 18 sys_clk
-The fix graphics read takes 9 sys_clk
-
 If there's a read cycle already going on, DO NOT interrupt it. Keep sdram_addr valid.
 
+FIXD is latched on rising edge of CLK_1MB: 36 sys_clk to valid data (250ns)
+CR is latched on rising edge of CLK_12M+LOAD: 36 sys_clk to valid data (250ns)
+
 Howto:
-Detect edges of PCK1B, PCK2B, CA4 and nROMOE, etc... with two chained 1-bit registers
+Detect edges of PCK1B, PCK2B, and nROMOE, etc... with two chained 1-bit registers
 On the correct edges:
   If the *_REQ registers are all low, start the appropriate read cycle(s)
   Otherwise, set the appropriate *_REQ register
 
-// Load the fix graphics in a way that takes advantage of the 16-bit wide SDRAM data bus
-// Since fix pixels are stored in columns but always read in lines,
-// instead of: column 2 (lines 0~7), column 3 (lines 0~7), column 0 (lines 0~7), column 1 (lines 0~7)
-// 10 18 00 08
-// 11 19 01 09
-// 12 1A 02 0A
-// 13 1B 03 0B
-// 14 1C 04 0C
-// 15 1D 05 0D
-// 16 1E 06 0E
-// 17 1F 07 0F
-// load like: line 0 (columns 0~3), line 1 (columns 0~3)...
-// 8-bit mode:
-// ioctl_addr 00 01 02 03 04 05 06 07, 08 09 0A 0B 0C 0D 0E 0F, 10 11 12 13 14 15 16 17, 18 19 1A 1B 1C 1D 1E 1F ->
-// sdram_addr 02 06 0A 0E 12 16 1A 1E, 03 07 0B 0F 13 17 1B 1F, 00 04 08 0C 10 14 18 1C, 01 05 09 0D 11 15 19 1D
-// 16-bit mode:
-// ioctl_addr 00    02    04    06   , 08    0A    0C    0E   , 10    12    14    16   , 18    1A    1C    1E    ->
-// sdram_addr 02 06 0A 0E 12 16 1A 1E, 03 07 0B 0F 13 17 1B 1F, 00 04 08 0C 10 14 18 1C, 01 05 09 0D 11 15 19 1D
-// sdram_addr = ioctl_addr[2:0], ~ioctl_addr[4], ioctl_addr[3]
+Fix graphics are loaded in a way that takes advantage of the 16-bit wide SDRAM
+data bus. Since fix pixels are stored in columns but always read in lines,
+instead of storing:
+column 2 (lines 0~7), column 3 (lines 0~7), column 0 (lines 0~7), column 1 (lines 0~7)
+Load like:
+line 0 (columns 0~3), line 1 (columns 0~3)...
+
+Sprite gfx bytes are loaded in SDRAM like this:
+C2 C2 C1 C1 C2 C2 C1 C1...
+So bitplanes look like this:
+0  1  2  3  0  1  2  3
 
 Burst reads for sprites gfx were not working because row and columns were inverted in
-the SDRAM controller.
+the SDRAM controller :/
 
-To debug Main_MiSTer:
-Putty root:1@192.168.1.200
-killall MiSTer
-Ctrl+shift+B in VS
-Upload new binary via FTP
-/media/fat/MiSTer
+To load a complete 16-pixel line, 4*16 = 64 bits = 4 16-bit SDRAM words must be loaded

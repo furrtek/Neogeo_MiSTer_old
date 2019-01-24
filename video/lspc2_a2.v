@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // All pins listed ok. REF, DIVI and DIVO only used on AES for video PLL hack
-// Video mode pin is the VMODE parameter
 
 module lspc2_a2(
 	input CLK_24M,
@@ -57,12 +56,11 @@ module lspc2_a2(
 	output [15:0] FVRAM_DATA_OUT,
 	output CWE,
 	
-	output nPBUS_OUT_EN
+	output nPBUS_OUT_EN,
+	
+	input VMODE
 );
 
-	parameter VMODE = 1'b0;			// NTSC
-	
-	
 	wire [8:0] PIXELC;
 	wire [3:0] PIXEL_HPLUS;
 	wire [8:0] RASTERC;
@@ -76,7 +74,7 @@ module lspc2_a2(
 	wire [15:0] VRAM_HIGH_READ;
 	wire [15:0] REG_VRAMADDR;
 	wire [15:0] VRAM_ADDR;
-	wire [15:0] VRAM_ADDR_MUX /* synthesis keep */;		// DEBUG
+	wire [15:0] VRAM_ADDR_MUX;
 	wire [15:0] VRAM_ADDR_AUTOINC;
 	wire [15:0] REG_VRAMRW;
 	wire [15:0] VRAM_WRITE;

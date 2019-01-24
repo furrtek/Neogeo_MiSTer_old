@@ -29,10 +29,10 @@ module c1_wait(
 
 	assign nDTACK = nAS | ~WAIT_MUX;					// Is it nVALID instead of nAS ?
 	
-	assign WAIT_MUX = (!nROM_ZONE) ? (WAIT_CNT < 3) :
-			(!nPORT_ZONE) ? (WAIT_CNT < 3) :
+	assign WAIT_MUX = (!nROM_ZONE) ? (WAIT_CNT < 4) :
+			(!nPORT_ZONE) ? (WAIT_CNT < 4) :
 			(!nCARD_ZONE) ? (WAIT_CNT < 3) :
-			(!nSROM_ZONE) ? (WAIT_CNT < 3) :
+			(!nSROM_ZONE) ? (WAIT_CNT < 4) :
 			1'b1;
 	
 	//assign nCLK_68KCLK = ~nCLK_68KCLK;

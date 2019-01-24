@@ -1,7 +1,7 @@
 //============================================================================
 //  SNK NeoGeo for MiSTer
-//  Copyright (C) 2018 Sean 'Furrtek' Gonsalves
 //
+//  Copyright (C) 2018 Sean 'Furrtek' Gonsalves
 //
 //  This program is free software; you can redistribute it and/or modify it
 //  under the terms of the GNU General Public License as published by the Free
@@ -23,30 +23,22 @@
 // might be caused by the SDRAM controller latching the data when it isn't
 // stable. Why is that the case with gfx data and note code ?
 
-// P max: 2MBytes for now - some games have more in the PORT zone
+// P max: 2MBytes for now - some games have more than 1MiB in the PORT zone
 // C max: 16MBytes for now - the NeoGeo is limited to 128MBytes, does any game use bankswitching for more ?
 // S max: 1Mbytes (128kBytes is enough) - games using NEO-CMC are able to bankswitch S ROMs larger than 128kB
-// System rom: 1MBytes (128kBytes is enough)
-// SDRAM total: 0000000~1FFFFFF
+// System rom: 128kBytes
+// SDRAM total: 0000000~1FFFFFF (32MiB)
 // 0000000~01FFFFF: P1 and P2
 // 0200000~021FFFF: System ROM
 // 0220000~023FFFF: S ROM
 // 1000000~1FFFFFF: C data
 // Could the C data be stored in the DDR3 memory ?
-// Todo:
-// Put a memcard in block RAM and allow saving/loading from HPS ?
 
-// Sprite gfx bytes are loaded in SDRAM like this:
-// C1 C1 C2 C2 C1 C1 C2 C2...
-// So bitplanes look like this:
-// 0  1  2  3  0  1  2  3
-
-// To load a complete 16-pixel line, 4*16 = 64 bits = 4 16-bit SDRAM words must be loaded
-// The SDRAM needs to be organized like this (bytes):
-// Word 0: C1A C1B
-// Word 1: C2A C2B
-// Word 2: C1A C1B
-// Word 3: C1A C2B
+// Todo: Put a memcard in block RAM and allow saving/loading from HPS
+// Todo: Let the HPS load the LO ROM data instead of having it in the core
+// Todo: "FPGAize" LSPC and NEO-B1: Group logic and clocked always() blocks
+// Todo: Have a dip-switch OSD menu
+// Todo: Add minimal upd4990 test pulse logic so that MVS system ROM passes checks
 
 module emu
 (
@@ -130,7 +122,7 @@ assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DD
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 
 assign AUDIO_S   = 1;		// Signed
-assign AUDIO_MIX = status[3:2];
+assign AUDIO_MIX = status[4:3];
 assign AUDIO_L = 16'h0000;	// No audio for now
 assign AUDIO_R = 16'h0000;	// No audio for now
 
@@ -150,8 +142,9 @@ localparam CONF_STR1 = {
 	"F,EP1P1,Load romset;",
 	"-;",
 	"O1,System type,Console,Arcade;",
+	"O2,Video mode,NTSC,PAL;",
 	"-;",
-	"O23,Stereo mix,none,25%,50%,100%;",
+	"O34,Stereo mix,none,25%,50%,100%;",
 	"R0,Reset & apply;",
 	"J1,A,B,C,D,Start,Select;",
 	"V,v",`BUILD_DATE
@@ -196,11 +189,10 @@ begin
 		counter <= counter + 1'd1;
 	
 	if (~nRESET)
-		SYSTEM_MODE <= status[1];	// Latch the system mode (AES/MVS) at reset
+		SYSTEM_MODE <= status[1];	// Latch the system mode (AES/MVS) on reset
 end
 
 //////////////////   HPS I/O   ///////////////////
-//wire [24:0] ps2_mouse;
 
 wire [15:0] joystick_0;	// xxxxxxLS DCBAUDLR
 wire [15:0] joystick_1;
@@ -227,7 +219,6 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1),
 	.buttons(buttons),			// DE10 buttons ?
-	//.forced_scandoubler(forced_scandoubler),
 	.status(status),				// status read (32 bits)
 	//.status_set(speed_set|arch_set|snap_hwset),	// status load on rising edge
 	//.status_in({status[31:25], speed_set ? speed_req : 3'b000, status[21:13], arch_set ? arch : snap_hwset ? snap_hw : status[12:8], status[7:0]}),	// status write
@@ -267,6 +258,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	wire [7:0] LO_ROM_DATA;
 	
 	wire [19:0] C_LATCH;
+	reg [3:0] C_LATCH_EXT;
 	reg [63:0] CR_DOUBLE;
 	
 	wire [15:0] S_LATCH;
@@ -295,15 +287,15 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	assign SDD = 8'bzzzzzzzz;
 	
 	reg [1:0] SDRAM_M68K_SIG_SR;
-	reg [1:0] SDRAM_CROM_SIGA_SR;
+	reg [1:0] SDRAM_CROM_SIG_SR;
 	reg [1:0] SDRAM_SROM_SIG_SR;
 	reg [15:0] SROM_DATA;
 	reg [15:0] PROM_DATA;
 	reg M68K_RD_REQ, CROM_RD_REQ, SROM_RD_REQ;
 	reg M68K_RD_RUN, CROM_RD_RUN, SROM_RD_RUN;
 	reg SDRAM_RD_PULSE;
-	reg [2:0] SDRAM_READY_SR;
-	reg [2:0] SDRAM_READY_QUAD_SR;
+	reg [1:0] SDRAM_READY_SR;
+	reg [1:0] SDRAM_READY_QUAD_SR;
 	
 	fast_vram UFV(
 		FAST_VRAM_ADDR,
@@ -320,7 +312,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 		SLOW_VRAM_DATA_IN);
 
 	// Only clocks from NEO-D0 for now
-	clocks	U3(CLK_24M, nRESETP, CLK_12M, CLK_68KCLK, CLK_68KCLKB, CLK_6MB, CLK_1MB);
+	clocks	U3(CLK_24M, nRESETP, CLK_12M, CLK_68KCLK, CLK_68KCLKB, CLK_6MB, CLK_1HB);
 	
 	cpu_68k	M68KCPU(CLK_68KCLK, nRESET, IPL1, IPL0, nDTACK, M68K_ADDR,
 		TG68K_DATAIN, TG68K_DATAOUT, nLDS, nUDS, nAS, M68K_RW);
@@ -337,7 +329,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	
 	// SDRAM multiplexing stuff
 	assign nROMOE = nROMOEL & nROMOEU;
-	assign nPORTOE = nROMOEL & nROMOEU;
+	assign nPORTOE = nPORTOEL & nPORTOEU;
 	assign SDRAM_M68K_SIG = ~&{nSROMOE, nROMOE, nPORTOE};
 	
 	always @(posedge clk_sys)
@@ -364,18 +356,15 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 					end
 				end
 				else
-				begin
-					// Set request flag for later
-					M68K_RD_REQ <= 1;
-				end
+					M68K_RD_REQ <= 1;	// Set request flag for later
 			end
 			
 			// Detect rising edge of PCK1B
 			// CA4's polarity changes depending on the tile's h-flip attribute
 			// Normal: CA4 high, then low
 			// Flipped: CA4 low, then high
-			SDRAM_CROM_SIGA_SR <= {SDRAM_CROM_SIGA_SR[0], ~PCK1};
-			if ((SDRAM_CROM_SIGA_SR == 2'b01) & nRESET)
+			SDRAM_CROM_SIG_SR <= {SDRAM_CROM_SIG_SR[0], ~PCK1};
+			if ((SDRAM_CROM_SIG_SR == 2'b01) & nRESET)
 			begin
 				if (!M68K_RD_REQ && !SROM_RD_REQ && !M68K_RD_RUN && !SROM_RD_RUN)
 				begin
@@ -387,10 +376,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 					end
 				end
 				else
-				begin
-					// Set request flag for later
-					CROM_RD_REQ <= 1;
-				end
+					CROM_RD_REQ <= 1;	// Set request flag for later
 			end
 			
 			// Detect rising edge of PCK2B
@@ -409,10 +395,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 					end
 				end
 				else
-				begin
-					// Set request flag for later
-					SROM_RD_REQ <= 1;
-				end
+					SROM_RD_REQ <= 1;	// Set request flag for later
 			end
 			
 			if (SDRAM_RD_PULSE)
@@ -442,8 +425,8 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			end
 			
 			// Terminate running reads, if needed
-			SDRAM_READY_SR <= {SDRAM_READY_SR[1:0], sdram_ready};
-			if (SDRAM_READY_SR == 3'b011)
+			SDRAM_READY_SR <= {SDRAM_READY_SR[0], sdram_ready};
+			if (SDRAM_READY_SR == 2'b01)
 			begin
 				if (SROM_RD_RUN)
 				begin
@@ -457,8 +440,8 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 				end
 			end
 			
-			SDRAM_READY_QUAD_SR <= {SDRAM_READY_QUAD_SR[1:0], ready_quad};
-			if (SDRAM_READY_QUAD_SR == 3'b011)
+			SDRAM_READY_QUAD_SR <= {SDRAM_READY_QUAD_SR[0], ready_quad};
+			if (SDRAM_READY_QUAD_SR == 2'b01)
 			begin
 				if (CROM_RD_RUN)
 				begin
@@ -473,7 +456,8 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	wire [15:0] sdram_din = ioctl_download ? ioctl_dout : 16'h0000;
 	wire sdram_rd = ioctl_download ? 1'b0 : SDRAM_RD_PULSE;
 	wire sdram_we = ioctl_download ? ioctl_wr : 1'b0;
-	wire [23:0] CROM_ADDR = {1'b0, C_LATCH, 3'b000};
+	
+	wire [23:0] CROM_ADDR = {C_LATCH_EXT[0], C_LATCH, 3'b000};
 	
 	wire [24:0] ioctl_addr_offset =
 		(ioctl_index == 8'd0) ? ioctl_addr + 25'h0200000 :	// System ROM
@@ -488,12 +472,6 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 		casez ({ioctl_download, CROM_RD_RUN, SROM_RD_RUN, ~nROMOE & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN})
 			// Loading pass-through
 			6'b1zzzzz: sdram_addr = ioctl_addr_offset;
-
-			// 0000000~01FFFFF: P1 and P2
-			// 0200000~021FFFF: System ROM
-			// 0220000~023FFFF: S ROM
-			// 1000000~1FFFFFF: C data
-			
 			// C ROMs Bytes $1000000~$1FFFFFF
 			6'b01zzzz: sdram_addr = {1'b1, CROM_ADDR};
 			// S ROM Bytes $0220000~$023FFFF
@@ -504,7 +482,6 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			6'b00001z: sdram_addr = {5'b0_0001, M68K_ADDR[19:1], 1'b0};
 			// System ROM $0200000~$021FFFF
 			6'b000001: sdram_addr = {8'b0_0010_000, M68K_ADDR[16:1], 1'b0};
-			
 			6'b000000: sdram_addr = 25'h0000000;
 		endcase
 	end
@@ -525,7 +502,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	);
 
 	assign FIXD = S2H1 ? SROM_DATA[15:8] : SROM_DATA[7:0];
-	assign M68K_DATA = (nROMOE & nSROMOE) ? 16'bzzzzzzzzzzzzzzzz : {PROM_DATA[7:0], PROM_DATA[15:8]};
+	assign M68K_DATA = (nROMOE & nSROMOE & nPORTOE) ? 16'bzzzzzzzzzzzzzzzz : {PROM_DATA[7:0], PROM_DATA[15:8]};
 	
 	m68k_ram U8(M68K_ADDR[15:1], CLK_24M, M68K_DATA[7:0], ~nWWL, WRAML_OUT);
 	m68k_ram U9(M68K_ADDR[15:1], CLK_24M, M68K_DATA[15:8], ~nWWU, WRAMU_OUT);
@@ -538,7 +515,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 
 	neo_e0 E0(M68K_ADDR[23:1], 3'b000, nSROMOEU, nSROMOEL, nSROMOE, nVEC, A23Z, A22Z, );
 	
-	neo_c1	C1(M68K_ADDR[21:17], M68K_DATA[15:8], A22Z, A23Z, nLDS, nUDS, M68K_RW, nAS, nROMOEL, nROMOEU,
+	neo_c1 C1(M68K_ADDR[21:17], M68K_DATA[15:8], A22Z, A23Z, nLDS, nUDS, M68K_RW, nAS, nROMOEL, nROMOEU,
 				nPORTOEL, nPORTOEU, nPORTWEL, nPORTWEU, nPORTADRS, nWRL, nWRU, nWWL, nWWU, nSROMOEL, nSROMOEU, 
 				nSRAMOEL, nSRAMOEU, nSRAMWEL, nSRAMWEU, nLSPOE, nLSPWE, nCRDO, nCRDW, nCRDC, nSDW,
 				~{joystick_0[9:4], joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]},
@@ -549,7 +526,11 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 				nDTACK, nBITW0, nBITW1, nDIPRD0, nDIPRD1, nPAL, SYSTEM_MODE);
 	
 	neo_273	U4(PBUS[19:0], ~PCK1, ~PCK2, C_LATCH, S_LATCH);
+	// 4 MSBs not handled by NEO-273
+	always @(posedge ~PCK1)
+		C_LATCH_EXT <= PBUS[23:20];
 
+	// This is used to split burst-read sprite gfx data in half at the right time
 	reg [2:0] LOAD_SR;
 	reg CA4_REG;
 	
@@ -560,7 +541,8 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			CA4_REG <= CA4;
 	end
 	
-	wire [31:0] CR = CA4_REG ? CR_DOUBLE[31:0] : CR_DOUBLE[63:32];	// This might not work
+	wire [31:0] CR = CA4_REG ? CR_DOUBLE[31:0] : CR_DOUBLE[63:32];
+	
 	neo_zmc2 ZMC2(CLK_12M, EVEN1, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
 	
 	// VCS is normally used as the LO ROM's nOE but the NeoGeo relies on the fact that the LO ROM
@@ -591,17 +573,20 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 					LSPC_8M,	LSPC_4M,
 					SLOW_VRAM_ADDR, SLOW_VRAM_DATA_IN, SLOW_VRAM_DATA_OUT, BOE, BWE,
 					FAST_VRAM_ADDR, FAST_VRAM_DATA_IN, FAST_VRAM_DATA_OUT, CWE,
-					nPBUS_OUT_EN
+					nPBUS_OUT_EN,
+					status[2]
 					);
 	
-	neo_b1	U6(CLK_24M, CLK_6MB, CLK_1MB,
+	neo_b1	U6(CLK_24M, CLK_6MB, CLK_1HB,
 					PBUS,
 					FIXD,
 					PCK1, PCK2,
 					CHBL, nBNKB,
 					GAD, GBD,
-					WE[0], WE[1], WE[2], WE[3],
-					CK[0], CK[1], CK[2], CK[3],
+					//WE[0], WE[1], WE[2], WE[3],
+					WE,
+					//CK[0], CK[1], CK[2], CK[3],
+					CK,
 					CHG, LD1, LD2, SS1, SS2, S1H1, A23Z, A22Z,
 					PAL_RAM_ADDR, nLDS, M68K_RW, nAS, M68K_ADDR[21:17], M68K_ADDR[12:1],
 					, , 1'b1);
@@ -621,7 +606,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			PAL_RAM_REG <= PAL_RAM_DATA;
 	end
 
-	// Final video output
+	// Final video output 6 bits -> 8 bits
 	assign VGA_R = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], PAL_RAM_REG[15], 2'b00};
 	assign VGA_G = {PAL_RAM_REG[7:4], PAL_RAM_REG[13], PAL_RAM_REG[15], 2'b00};
 	assign VGA_B = {PAL_RAM_REG[3:0], PAL_RAM_REG[12], PAL_RAM_REG[15], 2'b00};
