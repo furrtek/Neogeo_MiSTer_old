@@ -1,0 +1,79 @@
+<romsets>
+    <romset name="eightman">
+		<file name="025-p1.p1" type="0" index="1" start="0" size="0x80000"/>
+		<file name="025-s1.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="025-c1.c1" type="2" index="33" start="0" size="0x100000"/>
+		<file name="025-c2.c2" type="2" index="32" start="0" size="0x100000"/>
+		<file name="025-c3.c3" type="2" index="37" start="0" size="0x80000"/>
+		<file name="025-c4.c4" type="2" index="36" start="0" size="0x80000"/>
+    </romset>
+    <romset name="lbowling">
+		<file name="019-p1.p1" type="0" index="1" start="0" size="0x80000"/>
+		<file name="019-s1.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="019-c1.c1" type="2" index="33" start="0" size="0x80000"/>
+		<file name="019-c2.c2" type="2" index="32" start="0" size="0x80000"/>
+    </romset>
+    <romset name="lresort">
+		<file name="024-p1.p1" type="0" index="1" start="0" size="0x80000"/>
+		<file name="024-s1.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="024-c1.c1" type="2" index="33" start="0" size="0x100000"/>
+		<file name="024-c2.c2" type="2" index="32" start="0" size="0x100000"/>
+		<file name="024-c3.c3" type="2" index="37" start="0" size="0x80000"/>
+		<file name="024-c4.c4" type="2" index="36" start="0" size="0x80000"/>
+    </romset>
+    <romset name="mslug">
+		<file name="201-p1.p1" type="0" index="1" start="0x100000" size="0x100000"/>
+		<file name="201-p1.p1" type="0" index="2" start="0" size="0x100000"/>
+		<file name="201-s1.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="201-c1.c1" type="2" index="33" start="0" size="0x400000"/>
+		<file name="201-c2.c2" type="2" index="32" start="0" size="0x400000"/>
+		<file name="201-c3.c3" type="2" index="49" start="0" size="0x400000"/>
+		<file name="201-c4.c4" type="2" index="48" start="0" size="0x400000"/>
+    </romset>
+    <romset name="nam1975">
+		<file name="001-p1.p1" type="0" index="1" start="0" size="0x80000"/>
+		<file name="001-s1.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="001-c1.c1" type="2" index="33" start="0" size="0x80000"/>
+		<file name="001-c2.c2" type="2" index="32" start="0" size="0x80000"/>
+		<file name="001-c3.c3" type="2" index="35" start="0" size="0x80000"/>
+		<file name="001-c4.c4" type="2" index="34" start="0" size="0x80000"/>
+		<file name="001-c5.c5" type="2" index="37" start="0" size="0x80000"/>
+		<file name="001-c6.c6" type="2" index="36" start="0" size="0x80000"/>
+    </romset>
+    <romset name="ncombat">
+		<file name="009-p1.p1" type="0" index="1" start="0" size="0x80000"/>
+		<file name="009-s1.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="009-c1.c1" type="2" index="33" start="0" size="0x80000"/>
+		<file name="009-c2.c2" type="2" index="32" start="0" size="0x80000"/>
+		<file name="009-c3.c3" type="2" index="35" start="0" size="0x80000"/>
+		<file name="009-c4.c4" type="2" index="34" start="0" size="0x80000"/>
+		<file name="009-c5.c5" type="2" index="37" start="0" size="0x80000"/>
+		<file name="009-c6.c6" type="2" index="36" start="0" size="0x80000"/>
+    </romset>
+    <romset name="neobombe">
+		<file name="093-p1.p1" type="0" index="1" start="0" size="0x100000"/>
+		<file name="093-s1.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="093-c1.c1" type="2" index="33" start="0" size="0x400000"/>
+		<file name="093-c2.c2" type="2" index="32" start="0" size="0x400000"/>
+		<file name="093-c3.c3" type="2" index="49" start="0" size="0x80000"/>
+		<file name="093-c4.c4" type="2" index="48" start="0" size="0x80000"/>
+    </romset>
+    <romset name="panicbom">
+		<file name="073-p1.p1" type="0" index="1" start="0" size="0x80000"/>
+		<file name="073-s1.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="073-c1.c1" type="2" index="33" start="0" size="0x100000"/>
+		<file name="073-c2.c2" type="2" index="32" start="0" size="0x100000"/>
+    </romset>
+    <romset name="pbobblen">
+		<file name="d96-07.ep1" type="0" index="1" start="0" size="0x80000"/>
+		<file name="d96-04.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="d96-02.c5" type="2" index="33" start="0" size="0x80000"/>
+		<file name="d96-03.c6" type="2" index="32" start="0" size="0x80000"/>
+    </romset>
+    <romset name="puzzledp">
+		<file name="202-p1.p1" type="0" index="1" start="0" size="0x80000"/>
+		<file name="202-s1.s1" type="1" index="3" start="0" size="0x20000"/>
+		<file name="202-c1.c1" type="2" index="33" start="0" size="0x100000"/>
+		<file name="202-c2.c2" type="2" index="32" start="0" size="0x100000"/>
+    </romset>
+</romsets>
