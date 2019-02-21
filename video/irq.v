@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`timescale 1ns/1ns
-
 module irq(
 	input WR_ACK,
 	input [2:0] ACK_BITS,
@@ -29,7 +27,7 @@ module irq(
 	wire [2:0] ACK;
 	wire [3:0] B32_Q;
 	
-	assign nWR_ACK = ~WR_ACK;
+	wire nWR_ACK = ~WR_ACK;
 
 	assign ACK[0] = ~&{nWR_ACK, ACK_BITS[0]};
 	assign ACK[1] = ~&{nWR_ACK, ACK_BITS[1]};
@@ -37,7 +35,7 @@ module irq(
 	
 	FD3 B56(RESET_IRQ, 1'b0, ACK[0], B56_Q, B56_nQ);
 	FD3 B52(TIMER_IRQ, 1'b0, ACK[1], B52_Q, B52_nQ);
-	FD3 C52(VBL_IRQ, 1'b0, ACK[2], C52_Q, );
+	FD3 C52(VBL_IRQ, 1'b0, ACK[2], C52_Q);
 	
 	// B49
 	assign B49_OUT = B52_Q | B56_nQ;
@@ -50,7 +48,7 @@ module irq(
 	assign IPL0 = ~|{~B32_Q[0], B32_Q[2]};
 	assign IPL1 = ~|{~B32_Q[1], ~B32_Q[0]};
 	
-	// Interrupt priority encoder (is priority right ?)
+	// Interrupt priority encoder
 	// IRQ  IPL
 	// xx1: 100 Reset IRQ
 	// x10: 101 Timer IRQ

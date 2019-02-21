@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -13,8 +13,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-`timescale 1ns/1ns
 
 module cpu_68k(
 	input CLK_68KCLK,

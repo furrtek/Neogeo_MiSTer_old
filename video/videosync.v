@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -72,16 +72,16 @@ module videosync(
 	
 	
 	// H277B H269B H275A
-	assign MATCH_PAL = ~&{RASTERC[4:3]} | RASTERC[5] | RASTERC[8];
+	wire MATCH_PAL = ~&{RASTERC[4:3]} | RASTERC[5] | RASTERC[8];
 	
-	FDM H272(RASTERC[2], MATCH_PAL, H272_Q, );
-	FDM I238(FLIP, H272_Q, BLANK_PAL, );
+	FDM H272(RASTERC[2], MATCH_PAL, H272_Q);
+	FDM I238(FLIP, H272_Q, BLANK_PAL);
 	
 	// J259A
-	assign MATCH_NTSC = ~&{RASTERC[7:5]};
+	wire MATCH_NTSC = ~&{RASTERC[7:5]};
 	
 	// J251
-	FD4 J251(~RASTERC[4], MATCH_NTSC, 1'b1, RESETP, BLANK_NTSC, );
+	FD4 J251(~RASTERC[4], MATCH_NTSC, 1'b1, RESETP, BLANK_NTSC);
 	
 	// J240A: T2E
 	assign VSYNC = VMODE ? BLANK_PAL : RASTERC[8];
@@ -102,7 +102,7 @@ module videosync(
 	BD3 U127(T116_REG[3], U127_OUT);
 	FS1 S122(S136A_OUT, ~U127_OUT, S122_REG);
 	BD3 S119A(S122_REG[3], S119_OUT);
-	FD2 S116(S136A_OUT, S119_OUT, S116_Q, );
+	FD2 S116(S136A_OUT, S119_OUT, S116_Q);
 	
 	// S131A
 	assign HSYNC = ~&{S116_Q, ~T116_REG[1]};

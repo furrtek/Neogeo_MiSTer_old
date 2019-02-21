@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`timescale 1ns/1ns
-
 module c1_wait(
 	input CLK_68KCLK, nAS,
 	input nROM_ZONE, nPORT_ZONE, nCARD_ZONE, nSROM_ZONE,
@@ -27,9 +25,12 @@ module c1_wait(
 	
 	//assign nPDTACK = ~(nPORT_ZONE | PDTACK);		// Really a NOR ? May stall CPU if PDTACK = GND
 
+	// Notes:
+	// Normally, nDTACK = nAS for nROM_ZONE
+	
 	assign nDTACK = nAS | ~WAIT_MUX;					// Is it nVALID instead of nAS ?
 	
-	assign WAIT_MUX = (!nROM_ZONE) ? (WAIT_CNT < 4) :
+	wire WAIT_MUX = (!nROM_ZONE) ? (WAIT_CNT < 4) :
 			(!nPORT_ZONE) ? (WAIT_CNT < 4) :
 			(!nCARD_ZONE) ? (WAIT_CNT < 3) :
 			(!nSROM_ZONE) ? (WAIT_CNT < 4) :

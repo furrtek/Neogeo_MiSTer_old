@@ -28,16 +28,8 @@ module neo_b1(
 	input CHBL,					// Force PA to zeros
 	input BNKB,					// For Watchdog and PA
 	input [3:0] GAD, GBD,	// 2 sprite pixels
-	//input WE1,					// LB writes
-	//input WE2,
-	//input WE3,
-	//input WE4,
-	input [3:0] WE,
-	//input CK1,					// LB address counter clocks
-	//input CK2,
-	//input CK3,
-	//input CK4,
-	input [3:0] CK,
+	input [3:0] WE,			// LB writes
+	input [3:0] CK,			// LB address counter clocks
 	input TMS0,					// LB flip
 	input LD1, LD2,			// Load LB addresses
 	input SS1, SS2,			// Clearing enable for each LB
@@ -72,8 +64,6 @@ module neo_b1(
 	wire [11:0] PA_MUX_B;
 	wire [11:0] RAM_MUX_OUT;
 	reg [11:0] PA_VIDEO;
-	
-	assign nHALT = nRESET;		// Yup (these are open-collector)
 
 	// 2px fix data reg
 	// BEKU AKUR...
@@ -85,7 +75,7 @@ module neo_b1(
 	assign FIX_COLOR = S1H1 ? FIXD_REG[7:4] : FIXD_REG[3:0];
 
 	// IDUF
-	assign FIX_OPAQUE = |{FIX_COLOR};
+	wire FIX_OPAQUE = |{FIX_COLOR};
 
 	// GETU FUCA...
 	always @(posedge PCK1)

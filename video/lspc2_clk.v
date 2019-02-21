@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -13,8 +13,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-`timescale 1ns/1ns
 
 module lspc2_clk(
 	input CLK_24M,
@@ -36,8 +34,8 @@ module lspc2_clk(
 	C43 Q53(CLK_24MB, 4'b0010, RESETP, 1'b1, 1'b1, 1'b1, {LSPC_1_5M, LSPC_3M, LSPC_6M, LSPC_12M}, Q53_CO);
 	
 	FJD R262(CLK_24M, R268_Q, 1'b1, 1'b1, R262_Q, R262_nQ);
-	FJD R268(CLK_24M, R262_nQ, 1'b1, 1'b1, R268_Q, );
-	FDM S276(CLK_24MB, R262_Q, S276_Q, );
+	FJD R268(CLK_24M, R262_nQ, 1'b1, 1'b1, R268_Q);
+	FDM S276(CLK_24MB, R262_Q, S276_Q);
 	
 	// S274A
 	assign LSPC_8M = ~|{S276_Q, R262_Q};

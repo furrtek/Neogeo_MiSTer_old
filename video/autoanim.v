@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -13,8 +13,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-`timescale 1ns/1ns
 
 module autoanim(
 	input CLK,
@@ -33,7 +31,7 @@ module autoanim(
 	C43 E117(E149_OUT, ~AA_SPEED[7:4], E95A_OUT, 1'b1, B91_CO, 1'b1, , E117_CO);
 	
 	// Auto-anim tile counter
-	C43 D151(E149_OUT, 4'b0000, 1'b1, 1'b1, E117_CO, RESETP, D151_Q, );
+	C43 D151(E149_OUT, 4'b0000, 1'b1, 1'b1, E117_CO, RESETP, D151_Q);
 	
 	assign AA_COUNT = D151_Q[2:0];
 

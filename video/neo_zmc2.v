@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,8 +15,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Graphics mux part (CT0) was written by Kyuusaku
-
-`timescale 1ns/1ns
 
 module neo_zmc2(
 	input CLK_12M,

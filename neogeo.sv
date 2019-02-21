@@ -18,27 +18,38 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-// Notes:
-// SDRAM is running at 96MHz. There are -sometimes- graphics glitches which
-// might be caused by the SDRAM controller latching the data when it isn't
-// stable. Why is that the case with gfx data and note code ?
-
-// P max: 2MBytes for now - some games have more than 1MiB in the PORT zone
-// C max: 16MBytes for now - the NeoGeo is limited to 128MBytes, does any game use bankswitching for more ?
+// P max: 4MBytes for now - some games have more than 1MiB in the PORT zone
+// C max: 16MBytes for now - the NeoGeo is limited to 128MBytes
 // S max: 1Mbytes (128kBytes is enough) - games using NEO-CMC are able to bankswitch S ROMs larger than 128kB
-// System rom: 128kBytes
-// SDRAM total: 0000000~1FFFFFF (32MiB)
-// 0000000~01FFFFF: P1 and P2
-// 0200000~021FFFF: System ROM
-// 0220000~023FFFF: S ROM
-// 1000000~1FFFFFF: C data
-// Could the C data be stored in the DDR3 memory ?
+// System rom: 128kB (cart) or 512kB (CD)
 
-// Todo: Put a memcard in block RAM and allow saving/loading from HPS
-// Todo: Let the HPS load the LO ROM data instead of having it in the core
-// Todo: "FPGAize" LSPC and NEO-B1: Group logic and clocked always() blocks
-// Todo: Have a dip-switch OSD menu
-// Todo: Add minimal upd4990 test pulse logic so that MVS system ROM passes checks
+// SDRAM total: 0000000~1FFFFFF (32MiB)
+// Cart systems:
+// 0000000~01FFFFF: P1 and P2+
+// 0800000~081FFFF: System ROM
+// 0820000~083FFFF: S ROM
+// 0880000~089FFFF: SFIX ROM
+// 1000000~1FFFFFF: C data
+// CD system:
+// 0000000~00FFFFF: PRG
+// 0100000~01FFFFF: Extended work RAM
+// 0200000~027FFFF: System ROM
+// 0400000~041FFFF: FIX
+// 0800000~0BFFFFF: SPR
+// 0C00000~0DFFFFF: PCM
+
+// Memory info:
+// 68k RAM is in Block RAM
+// Slow VRAM is in Block RAM
+// Fast VRAM is in Block RAM
+// Palette RAM is in Block RAM
+// Line buffers are in Block RAM
+// LO ROM data is in Block RAM
+// Memory card is in Block RAM
+// Backup RAM is in Block RAM
+// P ROM data is in SDRAM
+// C ROM data is in SDRAM
+// S ROM data is in SDRAM
 
 module emu
 (
@@ -111,6 +122,7 @@ module emu
 	output  [1:0] SDRAM_BA,
 	inout  [15:0] SDRAM_DQ,
 	output        SDRAM_DQML,
+
 	output        SDRAM_DQMH,
 	output        SDRAM_nCS,
 	output        SDRAM_nCAS,
@@ -122,9 +134,9 @@ assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DD
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 
 assign AUDIO_S   = 1;		// Signed
-assign AUDIO_MIX = status[4:3];
-assign AUDIO_L = 16'h0000;	// No audio for now
-assign AUDIO_R = 16'h0000;	// No audio for now
+assign AUDIO_MIX = status[5:4];
+assign AUDIO_L = snd;
+assign AUDIO_R = snd;
 
 assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
@@ -135,18 +147,35 @@ assign VIDEO_ARY = 8'd7;	// 224/32
 
 assign VGA_DE = ~CHBL & nBNKB;
 
+// status bit definition:
+// 31       23       15       7
+// xxxxxxxP xxxxxxxx xxxCxxDD DxSSMVTR
+// R: Reset, used by the HPS, keep it there
+// T: System type
+// V: Video mode
+// M: Memory card presence
+// SS: Stereo mix
+// DDD: DIP switches
+// C: Save memory card
+// P: Protection chip type, 0=None, 1=PRO-CT0
+
 `include "build_id.v"
 localparam CONF_STR1 = {
 	"NEOGEO;;",
 	"-;",
-	"F,EP1P1,Load romset;",
+	"FS,EP1P1,Load romset;",
 	"-;",
 	"O1,System type,Console,Arcade;",
 	"O2,Video mode,NTSC,PAL;",
+	"O3,Memory card,Plugged,Unplugged;",
+	"RC,Save memory card;",
+	"O7,DIP:Settings,OFF,ON;",
+	"O8,DIP:Freeplay,OFF,ON;",
+	"O9,DIP:Freeze,OFF,ON;",
 	"-;",
-	"O34,Stereo mix,none,25%,50%,100%;",
+	"O45,Stereo mix,none,25%,50%,100%;",
 	"R0,Reset & apply;",
-	"J1,A,B,C,D,Start,Select;",
+	"J1,A,B,C,D,Start,Select,Coin;",
 	"V,v",`BUILD_DATE
 };
 
@@ -169,9 +198,14 @@ pll pll
 
 assign CLK_VIDEO = clk_sys;
 assign CE_PIXEL = CLK_6MB;
-assign nRESET = ~(ioctl_download | status[0]);
+wire nRST = ~(ioctl_download | status[0]);
+
+// The watchdog should output nRESET but it makes the MiSTer OSD jump around
+// Provide an indication that a watchdog reset happened for devs ?
+wire nRESET = nRST;
 
 reg CLK_24M;
+reg [1:0] P_BANK;
 reg [2:0] counter = 0;
 reg SYSTEM_MODE;
 
@@ -188,17 +222,19 @@ begin
 	else
 		counter <= counter + 1'd1;
 	
-	if (~nRESET)
+	if (~nRST)
 		SYSTEM_MODE <= status[1];	// Latch the system mode (AES/MVS) on reset
 end
 
 //////////////////   HPS I/O   ///////////////////
 
-wire [15:0] joystick_0;	// xxxxxxLS DCBAUDLR
+wire [15:0] joystick_0;	// xxxxxNLS DCBAUDLR
 wire [15:0] joystick_1;
 wire  [1:0] buttons;
 wire        forced_scandoubler;
 wire [31:0] status;
+
+wire [64:0] rtc;
 
 wire        ioctl_wr;
 wire [24:0] ioctl_addr;
@@ -215,45 +251,91 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	.conf_str(CONF_STR1),
 
 	//.ps2_mouse(ps2_mouse),	// Could be used for The Irritating Maze ?
-
+	
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1),
 	.buttons(buttons),			// DE10 buttons ?
 	.status(status),				// status read (32 bits)
 	//.status_set(speed_set|arch_set|snap_hwset),	// status load on rising edge
 	//.status_in({status[31:25], speed_set ? speed_req : 3'b000, status[21:13], arch_set ? arch : snap_hwset ? snap_hw : status[12:8], status[7:0]}),	// status write
-
+	.RTC(rtc),
+	
 	// Loading signals
 	.ioctl_wr(ioctl_wr),
 	.ioctl_addr(ioctl_addr),
 	.ioctl_dout(ioctl_dout),
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_index),
-	.ioctl_wait(ioctl_wait)
+	.ioctl_wait(ioctl_wait),
+	
+	.sd_lba(sd_lba),
+	.sd_rd(sd_rd),
+	.sd_wr(sd_wr),
+	.sd_ack(sd_ack),
+	.sd_buff_addr(sd_buff_addr),
+	.sd_buff_dout(sd_buff_dout),
+	.sd_buff_din(sd_buff_din),
+	.sd_buff_wr(sd_buff_wr),
+	.img_mounted(img_mounted),
+	.img_readonly(img_readonly),
+	.img_size(img_size)
 );
+	
+//////////////////   Her Majesty   ///////////////////
 
-	// Memory info:
-	// 68k RAM is in Block RAM
-	// Slow VRAM is in Block RAM
-	// Fast VRAM is in Block RAM
-	// Palette RAM is in Block RAM
-	// Line buffers are in Block RAM
-	// LO ROM data is in Block RAM
-	// P ROM data is in SDRAM
-	// C ROM data is in SDRAM
-	// S ROM data is in SDRAM
+	wire [15:0] snd;
 	
 	reg  [24:0] sdram_addr;
 	
+	// Clocks
+	wire CLK_12M, CLK_68KCLK, CLK_68KCLKB, CLK_8M, CLK_6MB, CLK_4M, CLK_1HB;
+	
+	// 68k stuff
 	wire [15:0] M68K_DATA;
 	wire [23:1] M68K_ADDR;
-	wire M68K_RW, nAS, nLDS, nUDS;
+	wire A22Z, A23Z;
+	wire M68K_RW, nAS, nLDS, nUDS, nDTACK, nHALT;
 	wire [15:0] M68K_DATA_BYTE_MASK;
 	wire [15:0] TG68K_DATAIN;
 	wire [15:0] TG68K_DATAOUT;
+	wire IPL0, IPL1;
 	
+	// RTC stuff
+	wire RTC_DOUT, RTC_DIN, RTC_CLK, RTC_STROBE, RTC_TP;
+	
+	// OEs and WEs
+	wire nSROMOEL, nSROMOEU, nSROMOE;
+	wire nROMOEL, nROMOEU;
+	wire nPORTOEL, nPORTOEU, nPORTWEL, nPORTWEU, nPORTADRS;
+	wire nWRL, nWRU, nWWL, nWWU;
+	wire nLSPOE, nLSPWE;
+	wire nSYSTEM;
+	
+	// 68k work RAM outputs
+	wire [7:0] WRAML_OUT;
+	wire [7:0] WRAMU_OUT;
+	
+	// Backup RAM outputs
+	wire [7:0] SRAML_OUT;
+	wire [7:0] SRAMU_OUT;
+	
+	// Memory card stuff
+	wire [23:0] CDA;
+	wire [2:0] BNK;
+	wire [7:0] CDD;
+	wire nCD1, nCD2;
+	wire nCRDO, nCRDW, nCRDC;
+	wire nCARDWEN, CARDWENB;
+	
+	// Z80 stuff
 	wire [7:0] SDD;
-
+	wire [15:0] SDA;
+	wire nSDRD, nSDWR, nMREQ, nIORQ;
+	wire nZ80INT, nZ80NMI, nSDW, nSDZ80R, nSDZ80W, nSDZ80CLR;
+	wire nSDROM, nSDMRD, nSDMWR, SDRD0, SDRD1, nZRAMCS;
+	wire n2610CS, n2610RD, n2610WR;
+	
+	// Graphics stuff
 	wire [23:0] PBUS;
 	wire [7:0] LO_ROM_DATA;
 	
@@ -276,61 +358,127 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	wire [15:0] PAL_RAM_DATA;
 	reg [15:0] PAL_RAM_REG;
 	
+	wire PCK1, PCK2, EVEN1, EVEN2, LOAD, H;
+	wire DOTA, DOTB;
+	wire CA4, S1H1, S2H1;
+	wire CHBL, nBNKB, VCS;
+	wire CHG, LD1, LD2, SS1, SS2;
 	wire [3:0] GAD;
 	wire [3:0] GBD;
 	wire [3:0] WE;
 	wire [3:0] CK;
 	
-	wire [7:0] WRAML_OUT;
-	wire [7:0] WRAMU_OUT;
-	
-	assign SDD = 8'bzzzzzzzz;
-	
+	// SDRAM multiplexing stuff
 	reg [1:0] SDRAM_M68K_SIG_SR;
 	reg [1:0] SDRAM_CROM_SIG_SR;
 	reg [1:0] SDRAM_SROM_SIG_SR;
-	reg [15:0] SROM_DATA;
+	reg [15:0] SROM_DATA;	// [31:0]
 	reg [15:0] PROM_DATA;
-	reg M68K_RD_REQ, CROM_RD_REQ, SROM_RD_REQ;
-	reg M68K_RD_RUN, CROM_RD_RUN, SROM_RD_RUN;
+	//reg [63:0] PROM_DATA_QUAD;
+	reg M68K_RD_REQ, SROM_RD_REQ, CROM_RD_REQ;
+	reg M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN;
 	reg SDRAM_RD_PULSE;
 	reg [1:0] SDRAM_READY_SR;
-	reg [1:0] SDRAM_READY_QUAD_SR;
+	//reg [1:0] SDRAM_READY_SECOND_SR;
+	reg [1:0] SDRAM_READY_FOURTH_SR;
+	//reg [24:0] M68K_RD_ADDR_CACHED;
+	//wire [24:0] M68K_RD_ADDR_SDRAM;
+
+	parameter INDEX_SPROM = 0;
+	parameter INDEX_LOROM = 1;
+	parameter INDEX_SFIXROM = 2;
+	parameter INDEX_P1ROM_A = 4;
+	parameter INDEX_P1ROM_B = 5;
+	parameter INDEX_P2ROM = 6;
+	parameter INDEX_S1ROM = 8;
+	parameter INDEX_M1ROM = 9;
+	parameter INDEX_CROMS = 32;
 	
-	fast_vram UFV(
-		FAST_VRAM_ADDR,
-		~CLK_24M,		// Is just CLK ok ?
-		FAST_VRAM_DATA_OUT,
-		~CWE,
-		FAST_VRAM_DATA_IN);
+	// Memory card and backup ram image save/load
+	reg ioctl_download_prev;
+	reg memcard_load = 0;
+	reg memcard_ena = 0;
+	reg memcard_loading = 0;
+	reg memcard_state = 0;
+	reg memcard_load_prev = 0, memcard_save_prev = 0, sd_ack_prev;
+	reg  [31:0] sd_lba;
+	wire [7:0] sd_buff_addr;
+	wire [15:0] sd_buff_dout;
+	wire [15:0] sd_buff_din;
+	wire [63:0] img_size;
+	
+	wire memcard_save = status[12];	// | (sav_pending & OSD_STATUS & status[13]);
+	
+	always @(posedge clk_sys)
+	begin
+		ioctl_download_prev <= ioctl_download;
 		
-	slow_vram USV(
-		SLOW_VRAM_ADDR,
-		~CLK_24M,		// Is just CLK ok ?
-		SLOW_VRAM_DATA_OUT,
-		~BWE,
-		SLOW_VRAM_DATA_IN);
+		// Disable memcard operations on download start
+		if(~ioctl_download_prev & ioctl_download)
+			memcard_ena <= 0;
 
-	// Only clocks from NEO-D0 for now
-	clocks	U3(CLK_24M, nRESETP, CLK_12M, CLK_68KCLK, CLK_68KCLKB, CLK_6MB, CLK_1HB);
-	
-	cpu_68k	M68KCPU(CLK_68KCLK, nRESET, IPL1, IPL0, nDTACK, M68K_ADDR,
-		TG68K_DATAIN, TG68K_DATAOUT, nLDS, nUDS, nAS, M68K_RW);
-	
-	// TG68K doesn't like byte masking with Z's, replace with 0's:
-	assign M68K_DATA_BYTE_MASK = (~|{nLDS, nUDS}) ? M68K_DATA :
-											(~nLDS) ? {8'h00, M68K_DATA[7:0]} :
-											(~nUDS) ? {M68K_DATA[15:8], 8'h00} :
-											16'h0000;
+		// Enable memcard operations on download end
+		if(~ioctl_download && img_mounted && img_size && !img_readonly)
+			memcard_ena <= 1;
 
-	assign M68K_DATA = M68K_RW ? 16'bzzzzzzzzzzzzzzzz : TG68K_DATAOUT;
-	assign TG68K_DATAIN = M68K_RW ? M68K_DATA_BYTE_MASK : 16'h0000;
+		// Start memcard image load on download end
+		if (ioctl_download_prev & ~ioctl_download)
+			memcard_load <= 1;
+		else if (memcard_state)
+			memcard_load <= 0;
+		
+		/*if (cram_wr & ~OSD_STATUS & sav_supported)
+			sav_pending <= 1'b1;
+		else if (bk_state)
+			sav_pending <= 1'b0;*/
+
+		memcard_load_prev <= memcard_load;
+		memcard_save_prev <= memcard_save;
+		sd_ack_prev <= sd_ack;
+		
+		if (~sd_ack_prev & sd_ack)
+			{sd_rd, sd_wr} <= 2'b00;
+		
+		if (!memcard_state)
+		begin
+			// No current memcard operation
+			if (memcard_ena & ((~memcard_load_prev & memcard_load) | (~memcard_save_prev & memcard_save)))
+			begin
+				// Start operation on rising edge of memcard_load or memcard_save
+				memcard_state <= 1;
+				memcard_loading <= memcard_load;
+				sd_lba <= 32'd0;
+				sd_rd <= memcard_load;
+				sd_wr <= ~memcard_load;
+			end
+		end
+		else
+		begin
+			if (sd_ack_prev & ~sd_ack)
+			begin
+				// On ack rising edge, either increase lba and continue, or stop operation
+				if(sd_lba[7:0] >= 8'h83)	// (2kB + 64kB) / 256 words per sd buffer / 2 bytes per word
+				begin
+					memcard_loading <= 0;
+					memcard_state <= 0;
+				end
+				else
+				begin
+					sd_lba <= sd_lba + 1'd1;
+					sd_rd <= memcard_loading;
+					sd_wr <= ~memcard_loading;
+				end
+			end
+		end
+	end
 	
+	// SDRAM stuff
 	
-	// SDRAM multiplexing stuff
-	assign nROMOE = nROMOEL & nROMOEU;
-	assign nPORTOE = nPORTOEL & nPORTOEU;
-	assign SDRAM_M68K_SIG = ~&{nSROMOE, nROMOE, nPORTOE};
+	wire nROMOE = nROMOEL & nROMOEU;
+	wire nPORTOE = nPORTOEL & nPORTOEU;
+	wire SDRAM_M68K_SIG = ~&{nSROMOE, nROMOE, nPORTOE};
+	
+	//wire M68K_CACHE_MISS = (M68K_RD_ADDR_CACHED[24:3] != M68K_RD_ADDR_SDRAM[24:3]);
 	
 	always @(posedge clk_sys)
 	begin
@@ -339,14 +487,18 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			CROM_RD_REQ <= 0;
 			SROM_RD_REQ <= 0;
 			M68K_RD_REQ <= 0;
+			CROM_RD_RUN <= 0;
+			SROM_RD_RUN <= 0;
+			M68K_RD_RUN <= 0;
+			//M68K_RD_ADDR_CACHED[3:0] <= 4'b1111;	// Force cache miss on startup
 		end
 		else
 		begin
 			// Detect rising edge of SDRAM_M68K_SIG
 			SDRAM_M68K_SIG_SR <= {SDRAM_M68K_SIG_SR[0], SDRAM_M68K_SIG};
-			if ((SDRAM_M68K_SIG_SR == 2'b01) & nRESET)
+			if ((SDRAM_M68K_SIG_SR == 2'b01) & nRESET)	// & M68K_CACHE_MISS)
 			begin
-				if (!CROM_RD_REQ && !SROM_RD_REQ && !CROM_RD_RUN && !SROM_RD_RUN)
+				if (!SROM_RD_REQ && !SROM_RD_RUN && !CROM_RD_RUN && !CROM_RD_REQ)
 				begin
 					// Start M68K read cycle right now
 					if (sdram_ready)
@@ -385,7 +537,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			SDRAM_SROM_SIG_SR <= {SDRAM_SROM_SIG_SR[0], ~PCK2};
 			if ((SDRAM_SROM_SIG_SR == 2'b01) & nRESET)
 			begin
-				if (!M68K_RD_REQ && !CROM_RD_REQ && !M68K_RD_RUN && !CROM_RD_RUN)
+				if (!M68K_RD_REQ && !M68K_RD_RUN && !CROM_RD_RUN && !CROM_RD_REQ)
 				begin
 					// Start S ROM read cycle right now
 					if (sdram_ready)
@@ -399,7 +551,13 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			end
 			
 			if (SDRAM_RD_PULSE)
+			begin
 				SDRAM_RD_PULSE <= 0;
+				// Save start address of cached data 1 clock after M68K_RD_RUN is set
+				// to let sdram_addr stabilize (comb logic)
+				//if (M68K_RD_RUN)
+				//	M68K_RD_ADDR_CACHED <= M68K_RD_ADDR_SDRAM;
+			end
 			
 			if (sdram_ready && !SDRAM_RD_PULSE)
 			begin
@@ -425,24 +583,29 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			end
 			
 			// Terminate running reads, if needed
+			// Having two non-nested IF statements with the & in the condition
+			// prevents synthesis from chaining too many muxes and causing
+			// timing analysis to fail
 			SDRAM_READY_SR <= {SDRAM_READY_SR[0], sdram_ready};
-			if (SDRAM_READY_SR == 2'b01)
+			if ((SDRAM_READY_SR == 2'b01) & SROM_RD_RUN)
 			begin
-				if (SROM_RD_RUN)
-				begin
-					SROM_DATA <= sdram_dout[63:48];
-					SROM_RD_RUN <= 0;
-				end
-				else if (M68K_RD_RUN)
-				begin
-					PROM_DATA <= {sdram_dout[55:48], sdram_dout[63:56]};
-					M68K_RD_RUN <= 0;
-				end
+				SROM_DATA <= sdram_dout[63:48];
+				SROM_RD_RUN <= 0;
+			end
+			if ((SDRAM_READY_SR == 2'b01) & M68K_RD_RUN)
+			begin
+				PROM_DATA <= sdram_dout[63:48];
+				M68K_RD_RUN <= 0;
 			end
 			
-			SDRAM_READY_QUAD_SR <= {SDRAM_READY_QUAD_SR[0], ready_quad};
-			if (SDRAM_READY_QUAD_SR == 2'b01)
+			SDRAM_READY_FOURTH_SR <= {SDRAM_READY_FOURTH_SR[0], ready_fourth};
+			if (SDRAM_READY_FOURTH_SR == 2'b01)
 			begin
+				/*if (M68K_RD_RUN)
+				begin
+					PROM_DATA_QUAD <= sdram_dout;
+					M68K_RD_RUN <= 0;
+				end*/
 				if (CROM_RD_RUN)
 				begin
 					CR_DOUBLE <= sdram_dout;
@@ -455,17 +618,34 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	wire [63:0] sdram_dout;
 	wire [15:0] sdram_din = ioctl_download ? ioctl_dout : 16'h0000;
 	wire sdram_rd = ioctl_download ? 1'b0 : SDRAM_RD_PULSE;
-	wire sdram_we = ioctl_download ? ioctl_wr : 1'b0;
+	wire sdram_we = (ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM)) ? ioctl_wr : 1'b0;
 	
+	wire [22:0] P2ROM_ADDR = {P_BANK + 3'd1, M68K_ADDR[19:1], 1'b0};
 	wire [23:0] CROM_ADDR = {C_LATCH_EXT[0], C_LATCH, 3'b000};
 	
 	wire [24:0] ioctl_addr_offset =
-		(ioctl_index == 8'd0) ? ioctl_addr + 25'h0200000 :	// System ROM
-		(ioctl_index == 8'd1) ? ioctl_addr + 25'h0000000 :	// P1
-		(ioctl_index == 8'd2) ? ioctl_addr + 25'h0100000 :	// P2
-		(ioctl_index == 8'd3) ? ioctl_addr + 25'h0220000 :	// S1
-		(ioctl_index >= 8'd32) ? {ioctl_addr[23:0], 1'b0} + {1'b1, ioctl_index[4:1], 18'h00000, ioctl_index[0], 1'b0} : // C*
+		(ioctl_index == INDEX_SPROM) ? ioctl_addr + 25'h0800000 :	// System ROM
+		(ioctl_index == INDEX_SFIXROM) ? ioctl_addr + 25'h0880000 :	// SFIX
+		(ioctl_index == INDEX_P1ROM_A) ? ioctl_addr + 25'h0000000 :	// P1 first half
+		(ioctl_index == INDEX_P1ROM_B) ? ioctl_addr + 25'h0080000 :	// P1 second half
+		(ioctl_index == INDEX_P2ROM) ? ioctl_addr + 25'h0100000 :	// P2
+		(ioctl_index == INDEX_S1ROM) ? ioctl_addr + 25'h0820000 :	// S1
+		(ioctl_index >= INDEX_CROMS) ? {ioctl_addr[23:0], 1'b0} + {1'b1, ioctl_index[4:1], 18'h00000, ioctl_index[0], 1'b0} : // C*
 		25'h0000000;
+	
+	// This is redundant with following always_comb :(
+	/*always_comb begin
+		casez ({nROMOE, nPORTOE, nSROMOE})
+			// P1 ROM $0000000~$0100000
+			3'b0zz: M68K_RD_ADDR_SDRAM = {5'b0_0000, M68K_ADDR[19:3], 3'b000};
+			// P2 ROM $0100000~$04FFFFF bankswitched
+			3'b10z: M68K_RD_ADDR_SDRAM = {2'b0_0, P2ROM_ADDR[22:2], 2'b00};
+			// System ROM $0800000~$081FFFF
+			3'b110: M68K_RD_ADDR_SDRAM = {8'b0_1000_000, M68K_ADDR[16:3], 3'b000};
+			// Default
+			3'b111: M68K_RD_ADDR_SDRAM = 25'h0000000;
+		endcase
+	end*/
 	
 	// sdram_addr is 25 bits, LSB is = 0 in word mode
 	always_comb begin 
@@ -474,14 +654,16 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			6'b1zzzzz: sdram_addr = ioctl_addr_offset;
 			// C ROMs Bytes $1000000~$1FFFFFF
 			6'b01zzzz: sdram_addr = {1'b1, CROM_ADDR};
-			// S ROM Bytes $0220000~$023FFFF
-			6'b001zzz: sdram_addr = {8'b0_0010_001, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
+			// S ROM Bytes $0820000~$083FFFF or SFIX ROM Bytes $0880000~$089FFFF
+			6'b001zzz: sdram_addr = nSYSTEM_G ? {8'b0_1000_001, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
+														{8'b0_1000_100, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
 			// P1 ROM $0000000~$0100000
-			6'b0001zz: sdram_addr = {5'b0_0000, M68K_ADDR[19:1], 1'b0};
-			// P2 ROM $0100000~$01FFFFF
-			6'b00001z: sdram_addr = {5'b0_0001, M68K_ADDR[19:1], 1'b0};
-			// System ROM $0200000~$021FFFF
-			6'b000001: sdram_addr = {8'b0_0010_000, M68K_ADDR[16:1], 1'b0};
+			6'b0001zz: sdram_addr = {5'b0_0000, M68K_ADDR[19:1], 1'b0};		//{5'b0_0000, M68K_ADDR[19:3], 3'b000};
+			// P2 ROM $0100000~$04FFFFF bankswitched
+			6'b00001z: sdram_addr = {2'b0_0, P2ROM_ADDR};						//{2'b0_0, P2ROM_ADDR[22:2], 2'b00};
+			// System ROM $0800000~$081FFFF
+			6'b000001: sdram_addr = {8'b0_1000_000, M68K_ADDR[16:1], 1'b0};	//{8'b0_1000_000, M68K_ADDR[16:3], 3'b000};
+			// Default
 			6'b000000: sdram_addr = 25'h0000000;
 		endcase
 	end
@@ -497,37 +679,191 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 		.wtbt(2'b11),		// Always used in 16-bit mode
 		.we(sdram_we),
 		.rd(sdram_rd),
-		.ready_word(sdram_ready),
-		.ready_quad(ready_quad)
+		.ready_first(sdram_ready),
+		.ready_fourth(ready_fourth)
 	);
-
-	assign FIXD = S2H1 ? SROM_DATA[15:8] : SROM_DATA[7:0];
-	assign M68K_DATA = (nROMOE & nSROMOE & nPORTOE) ? 16'bzzzzzzzzzzzzzzzz : {PROM_DATA[7:0], PROM_DATA[15:8]};
 	
-	m68k_ram U8(M68K_ADDR[15:1], CLK_24M, M68K_DATA[7:0], ~nWWL, WRAML_OUT);
-	m68k_ram U9(M68K_ADDR[15:1], CLK_24M, M68K_DATA[15:8], ~nWWU, WRAMU_OUT);
+	neo_d0 D0(CLK_24M, nRESET, nRESETP, CLK_12M, CLK_68KCLK, CLK_68KCLKB, CLK_6MB, CLK_1HB, M68K_ADDR[4],
+				nBITWD0, M68K_DATA[5:0], SDA[15:11], SDA[4:2], nSDRD, nSDWR, nMREQ, nIORQ, nZ80NMI, nSDW, nSDZ80R,
+				nSDZ80W, nSDZ80CLR, nSDROM, nSDMRD, nSDMWR, SDRD0, SDRD1, n2610CS, n2610RD, n2610WR, nZRAMCS,
+				BNK);
+	
+	// Because of the SDRAM latency, nDTACK is handled differently for ROM zones
+	// If the address is in a ROM zone, nDTACK_ADJ is used instead of the normal nDTACK output by NEO-C1
+	//wire nDTACK_ADJ = SDRAM_M68K_SIG ? nDTACK | M68K_CACHE_MISS : nDTACK;
+	cpu_68k	M68KCPU(CLK_68KCLK, nRESET, IPL1, IPL0, nDTACK, M68K_ADDR,	// nDTACK_ADJ
+		TG68K_DATAIN, TG68K_DATAOUT, nLDS, nUDS, nAS, M68K_RW);
+	
+	// TG68K doesn't like byte masking with Z's, replace with 0's:
+	assign M68K_DATA_BYTE_MASK = (~|{nLDS, nUDS}) ? M68K_DATA :
+											(~nLDS) ? {8'h00, M68K_DATA[7:0]} :
+											(~nUDS) ? {M68K_DATA[15:8], 8'h00} :
+											16'h0000;
+
+	assign M68K_DATA = M68K_RW ? 16'bzzzzzzzzzzzzzzzz : TG68K_DATAOUT;
+	assign TG68K_DATAIN = M68K_RW ? M68K_DATA_BYTE_MASK : 16'h0000;
+	
+	// Bankswitching for the PORT zone, do all games use a 1MB window ?
+	always @(posedge nPORTWEL or negedge nRESET)
+	begin
+		if (!nRESET)
+			P_BANK <= 2'd0;
+		else
+			P_BANK <= M68K_DATA[1:0];
+	end
+	
+	// This is used to split burst-read fix gfx data in half at the right time
+	/*reg [2:0] PCK1_SR;
+	reg S1_A3_REG;
+	
+	always @(posedge clk_sys)
+	begin
+		PCK1_SR <= {PCK1_SR[1:0], PCK1};
+		if (PCK1_SR == 3'b011)
+			S1_A3_REG <= S_LATCH[3];
+	end*/
+	
+	//wire [15:0] FIX_DOUBLE = SROM_DATA;	//S1_A3_REG ? SROM_DATA[15:0] : SROM_DATA[31:16];
+	//assign FIXD = S2H1 ? FIX_DOUBLE[15:8] : FIX_DOUBLE[7:0];
+	
+	assign FIXD = S2H1 ? SROM_DATA[15:8] : SROM_DATA[7:0];
+	
+	// Disable ROM in PORT zone if game uses PRO-CT0 as security chip
+	assign M68K_DATA = (nROMOE & nSROMOE & (nPORTOE | status[24])) ? 16'bzzzzzzzzzzzzzzzz : PROM_DATA;
+	//assign M68K_DATA = (nROMOE & nSROMOE & nPORTOE) ? 16'bzzzzzzzzzzzzzzzz : PROM_DATA_QUAD[{~M68K_ADDR[2:1], 4'b0000} +:16];
+	
+	// 68k work RAM
+	m68k_ram WRAML(M68K_ADDR[15:1], CLK_24M, M68K_DATA[7:0], ~nWWL, WRAML_OUT);
+	m68k_ram WRAMU(M68K_ADDR[15:1], CLK_24M, M68K_DATA[15:8], ~nWWU, WRAMU_OUT);
 	assign M68K_DATA[7:0] = nWRL ? 8'bzzzzzzzz : WRAML_OUT;
 	assign M68K_DATA[15:8] = nWRU ? 8'bzzzzzzzz : WRAMU_OUT;
 	
-	//assign nBITWD0 = |{nBITW0, M68K_ADDR[6:5]};
+	// Backup RAM
+	wire nBWL = nSRAMWEL | nSRAMWEN_G;
+	wire nBWU = nSRAMWEU | nSRAMWEN_G;
+	//backup_ram SRAML(M68K_ADDR[15:1], CLK_24M, M68K_DATA[7:0], ~nBWL, SRAML_OUT);
+	//backup_ram SRAMU(M68K_ADDR[15:1], CLK_24M, M68K_DATA[15:8], ~nBWU, SRAMU_OUT);
 	
-	syslatch SL(M68K_ADDR[4:1], nBITW1, nRESET, SHADOW, nVEC, nCARDWEN, CARDWENB, nREGEN, nSYSTEM, nSRAMWEN, PALBNK);
-
-	neo_e0 E0(M68K_ADDR[23:1], 3'b000, nSROMOEU, nSROMOEL, nSROMOE, nVEC, A23Z, A22Z, );
+	// Image file:
+	//                   byte start/end  sd_lba(words)
+	// 64kB backup RAM	$000000 $00FFFF $00~$7F
+	// 2kB memory card	$010000 $0107FF $80~$83
+	
+	wire [15:0] sd_buff_din_sram;
+	wire [14:0] sram_addr = {sd_lba[6:0], sd_buff_addr};
+	wire sram_wr = ~sd_lba[7] & sd_buff_wr & sd_ack;
+	
+	dpram #(.ADDRWIDTH(15)) SRAML(
+		.clock_a(CLK_24M),
+		.address_a(M68K_ADDR[15:1]),
+		.wren_a(~nBWL),
+		.data_a(M68K_DATA[7:0]),
+		.q_a(SRAML_OUT),
+		
+		.clock_b(clk_sys),
+		.address_b(sram_addr),
+		.wren_b(sram_wr),
+		.data_b(sd_buff_dout[7:0]),
+		.q_b(sd_buff_din_sram[7:0])
+	);
+	
+	dpram #(.ADDRWIDTH(15)) SRAMU(
+		.clock_a(CLK_24M),
+		.address_a(M68K_ADDR[15:1]),
+		.wren_a(~nBWU),
+		.data_a(M68K_DATA[15:8]),
+		.q_a(SRAMU_OUT),
+		
+		.clock_b(clk_sys),
+		.address_b(sram_addr),
+		.wren_b(sram_wr),
+		.data_b(sd_buff_dout[15:8]),
+		.q_b(sd_buff_din_sram[15:8])
+	);
+	
+	// Backup RAM is only for MVS
+	assign M68K_DATA[7:0] = (nSRAMOEL | ~SYSTEM_MODE) ? 8'bzzzzzzzz : SRAML_OUT;
+	assign M68K_DATA[15:8] = (nSRAMOEU | ~SYSTEM_MODE) ? 8'bzzzzzzzz : SRAMU_OUT;
+	
+	
+	
+	// Memory card
+	assign {nCD1, nCD2} = {2{status[3]}};
+	assign CARD_WE = ~(nCARDWEN | ~CARDWENB | nCRDW);
+	
+	wire [7:0] CDD_L;
+	wire [7:0] CDD_U;
+	wire [15:0] sd_buff_din_memcard;
+	wire [9:0] memcard_addr = {sd_lba[1:0], sd_buff_addr};
+	wire memcard_wr = sd_lba[7] & sd_buff_wr & sd_ack;
+	
+	// Split the 2kB 8-bit memory card into two 1kB dual-port RAMs so the HPS
+	// can access it in 16-bits. The lower address bit (CDA[0]) selects which
+	// one is read or written from the NeoGeo side.
+	// The HPS side always reads and writes in words.
+	dpram #(.ADDRWIDTH(10)) MEMCARDL(
+		.clock_a(CLK_24M),
+		.address_a(CDA[10:1]),
+		.wren_a(CARD_WE & CDA[0]),
+		.data_a(M68K_DATA[7:0]),
+		.q_a(CDD_L),
+		
+		.clock_b(clk_sys),
+		.address_b(memcard_addr),
+		.wren_b(memcard_wr),
+		.data_b(sd_buff_dout[7:0]),
+		.q_b(sd_buff_din_memcard[7:0])
+	);
+	
+	dpram #(.ADDRWIDTH(10)) MEMCARDU(
+		.clock_a(CLK_24M),
+		.address_a(CDA[10:1]),
+		.wren_a(CARD_WE & ~CDA[0]),
+		.data_a(M68K_DATA[7:0]),
+		.q_a(CDD_U),
+		
+		.clock_b(clk_sys),
+		.address_b(memcard_addr),
+		.wren_b(memcard_wr),
+		.data_b(sd_buff_dout[15:8]),
+		.q_b(sd_buff_din_memcard[15:8])
+	);
+	
+	assign CDD = CDA[0] ? CDD_L : CDD_U;
+	
+	assign sd_buff_din = sd_lba[7] ? sd_buff_din_memcard : sd_buff_din_sram;
+	
+	
+	
+	syslatch SL(M68K_ADDR[4:1], nBITW1, nRESET,
+					SHADOW, nVEC, nCARDWEN, CARDWENB, nREGEN, nSYSTEM, nSRAMWEN, PALBNK,
+					CLK_68KCLK);
+	wire nSRAMWEN_G = SYSTEM_MODE ? nSRAMWEN : 1'b1;	// nSRAMWEN is only for MVS
+	wire nSYSTEM_G = SYSTEM_MODE ? nSYSTEM : 1'b1;		// nSYSTEM is only for MVS
+	
+	neo_e0 E0(M68K_ADDR[23:1], BNK, nSROMOEU, nSROMOEL, nSROMOE, nVEC, A23Z, A22Z, CDA);
+	
+	wire [7:0] DIPSW = {~status[9:8], 5'b11111, ~status[7]};
+	neo_f0 F0(nRESET, nDIPRD0, nDIPRD1, nBITW0, nBITWD0, DIPSW, ~joystick_0[10], ~joystick_1[10], M68K_ADDR[7:4],
+				M68K_DATA[7:0], ~nSYSTEM_G, , , , , , , RTC_DOUT, RTC_TP, RTC_DIN, RTC_CLK, RTC_STROBE);
+	
+	uPD4990 RTC(nRESET, CLK_12M, rtc, 1'b1, 1'b1, RTC_CLK, RTC_DIN, RTC_STROBE, RTC_TP, RTC_DOUT);
+	
+	neo_g0 G0(M68K_DATA, nCRDC, nPAL, M68K_RW, {8'hFF, CDD}, PAL_RAM_DATA, nPAL_WE);
 	
 	neo_c1 C1(M68K_ADDR[21:17], M68K_DATA[15:8], A22Z, A23Z, nLDS, nUDS, M68K_RW, nAS, nROMOEL, nROMOEU,
 				nPORTOEL, nPORTOEU, nPORTWEL, nPORTWEU, nPORTADRS, nWRL, nWRU, nWWL, nWWU, nSROMOEL, nSROMOEU, 
 				nSRAMOEL, nSRAMOEU, nSRAMWEL, nSRAMWEU, nLSPOE, nLSPWE, nCRDO, nCRDW, nCRDC, nSDW,
 				~{joystick_0[9:4], joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]},
 				~{joystick_1[9:4], joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]},
-				1'b1, 1'b1, 1'b1,	// nCD1, nCD2, nWP,
+				nCD1, nCD2, 1'b0,			// Memory card is never write-protected
 				1'b1, 1'b1, 1'b1, 1'b1,	// nROMWAIT, nPWAIT0, nPWAIT1, PDTACK,
-				SDD, 1'b1, 1'b1, 1'b1, CLK_68KCLK,
+				SDD, nSDZ80R, nSDZ80W, nSDZ80CLR, CLK_68KCLK,
 				nDTACK, nBITW0, nBITW1, nDIPRD0, nDIPRD1, nPAL, SYSTEM_MODE);
 	
-	neo_273	U4(PBUS[19:0], ~PCK1, ~PCK2, C_LATCH, S_LATCH);
+	neo_273	NEO273(PBUS[19:0], ~PCK1, ~PCK2, C_LATCH, S_LATCH);
 	// 4 MSBs not handled by NEO-273
-	always @(posedge ~PCK1)
+	always @(negedge PCK1)
 		C_LATCH_EXT <= PBUS[23:20];
 
 	// This is used to split burst-read sprite gfx data in half at the right time
@@ -541,18 +877,78 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			CA4_REG <= CA4;
 	end
 	
-	wire [31:0] CR = CA4_REG ? CR_DOUBLE[31:0] : CR_DOUBLE[63:32];
+	wire [31:0] CR = CA4_REG ? CR_DOUBLE[63:32] : CR_DOUBLE[31:0];
 	
 	neo_zmc2 ZMC2(CLK_12M, EVEN1, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
 	
+	// PRO-CT0 used as security chip
+	wire [3:0] GAD_SEC;
+	wire [3:0] GBD_SEC;
+	zmc2_dot ZMC2DOT(nPORTWEL, M68K_ADDR[2], M68K_ADDR[1], M68K_ADDR[3],
+					{
+					M68K_ADDR[19], M68K_ADDR[15], M68K_ADDR[18], M68K_ADDR[14],
+					M68K_ADDR[17], M68K_ADDR[13], M68K_ADDR[16], M68K_ADDR[12],
+					M68K_ADDR[11], M68K_ADDR[7], M68K_ADDR[10], M68K_ADDR[6],
+					M68K_ADDR[9], M68K_ADDR[5], M68K_ADDR[8], M68K_ADDR[4],
+					M68K_DATA[15], M68K_DATA[11], M68K_DATA[14], M68K_DATA[10],
+					M68K_DATA[13], M68K_DATA[9], M68K_DATA[12], M68K_DATA[8],
+					M68K_DATA[7], M68K_DATA[3], M68K_DATA[6], M68K_DATA[2],
+					M68K_DATA[5], M68K_DATA[1], M68K_DATA[4], M68K_DATA[0]
+					}, GAD_SEC, GBD_SEC);
+	assign M68K_DATA[7:0] = (status[24] & ~nPORTOEL) ?
+									{GBD_SEC[1], GBD_SEC[0], GBD_SEC[3], GBD_SEC[2],
+									GAD_SEC[1], GAD_SEC[0], GAD_SEC[3], GAD_SEC[2]} : 8'bzzzzzzzz;
+	
 	// VCS is normally used as the LO ROM's nOE but the NeoGeo relies on the fact that the LO ROM
-	// will have its output still active for a short moment (~50ns) after nOE goes high
+	// will still have its output active for a short moment (~50ns) after nOE goes high
 	// nPBUS_OUT_EN is used internally by LSPC2 but it's broken out here to use the additional
 	// half mclk cycle it provides compared to VCS. This makes sure LO_ROM_DATA is valid when latched.
-	lo_rom LO(PBUS[15:0], CLK_24M, LO_ROM_DATA);
+	wire lo_loading = ioctl_download & (ioctl_index == INDEX_LOROM);
+	wire [15:0] LO_ADDR = lo_loading ? ioctl_addr[16:1] : PBUS[15:0];
+	wire lo_we = lo_loading ? ioctl_wr : 1'b0;
+	lo_rom LO(LO_ADDR, ~clk_sys, ioctl_dout[7:0], lo_we, LO_ROM_DATA);
 	assign PBUS[23:16] = nPBUS_OUT_EN ? LO_ROM_DATA : 8'bzzzzzzzz;
 	
-	lspc2_a2	U5(CLK_24M, nRESET,
+	fast_vram UFV(
+		FAST_VRAM_ADDR,
+		~CLK_24M,		// Is just CLK ok ?
+		FAST_VRAM_DATA_OUT,
+		~CWE,
+		FAST_VRAM_DATA_IN);
+		
+	slow_vram USV(
+		SLOW_VRAM_ADDR,
+		~CLK_24M,		// Is just CLK ok ?
+		SLOW_VRAM_DATA_OUT,
+		~BWE,
+		SLOW_VRAM_DATA_IN);
+	
+	wire [21:11] MA;
+	wire [7:0] M1_ROM_DATA;
+	wire [7:0] Z80_RAM_DATA;
+	
+	zmc ZMC(SDRD0, SDA[1:0], SDA[15:8], MA);
+	
+	wire m1_loading = ioctl_download & (ioctl_index == INDEX_M1ROM);
+	wire [16:0] M1_ADDR = m1_loading ? ioctl_addr[17:1] : {MA[16:11], SDA[10:0]};
+	wire m1_we = m1_loading ? ioctl_wr : 1'b0;
+	z80_rom M1(M1_ADDR, clk_sys, ioctl_dout[7:0], m1_we, M1_ROM_DATA);
+	
+	z80_ram Z80RAM(SDA[10:0], CLK_4M, SDD, ~(nZRAMCS | nSDMWR), Z80_RAM_DATA);		
+	
+	assign SDD = (~SDRD0 | ~SDRD1) ? 8'b00000000 :	// Fix to prevent TV80 from going nuts because the data bus is open on port reads for NEO-ZMC
+						(~nSDROM & ~nSDMRD) ? M1_ROM_DATA : 
+						(~nZRAMCS & ~nSDMRD) ? Z80_RAM_DATA :
+						(~n2610CS & ~n2610RD) ? YM2610_DOUT :
+						8'bzzzzzzzz;
+	
+	cpu_z80 Z80CPU(CLK_4M, nRESET, SDD, SDA, nIORQ, nMREQ, nSDRD, nSDWR, nZ80INT, nZ80NMI);
+	
+	wire [7:0] YM2610_DOUT;
+	jt03 YM2610(nRESET, CLK_8M, 1'b1, SDD, SDA[0], n2610CS, n2610WR, YM2610_DOUT, nZ80INT,
+						, , , , , snd);
+
+	lspc2_a2	LSPC(CLK_24M, nRESET,
 					PBUS[15:0],
 					PBUS[23:16],
 					M68K_ADDR[3:1],
@@ -570,32 +966,25 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 					VGA_HS, VGA_VS,
 					CHBL, nBNKB,
 					VCS,
-					LSPC_8M,	LSPC_4M,
+					CLK_8M, CLK_4M,
 					SLOW_VRAM_ADDR, SLOW_VRAM_DATA_IN, SLOW_VRAM_DATA_OUT, BOE, BWE,
 					FAST_VRAM_ADDR, FAST_VRAM_DATA_IN, FAST_VRAM_DATA_OUT, CWE,
 					nPBUS_OUT_EN,
 					status[2]
 					);
 	
-	neo_b1	U6(CLK_24M, CLK_6MB, CLK_1HB,
+	neo_b1	B1(CLK_24M, CLK_6MB, CLK_1HB,
 					PBUS,
 					FIXD,
 					PCK1, PCK2,
 					CHBL, nBNKB,
 					GAD, GBD,
-					//WE[0], WE[1], WE[2], WE[3],
-					WE,
-					//CK[0], CK[1], CK[2], CK[3],
-					CK,
+					WE, CK,
 					CHG, LD1, LD2, SS1, SS2, S1H1, A23Z, A22Z,
-					PAL_RAM_ADDR, nLDS, M68K_RW, nAS, M68K_ADDR[21:17], M68K_ADDR[12:1],
-					, , 1'b1);
+					PAL_RAM_ADDR,
+					nLDS, M68K_RW, nAS, M68K_ADDR[21:17], M68K_ADDR[12:1]);	// nHALT, nRESET, nRST
 
-	// Cartridge PCB
-	//assign SPR_ROM_ADDR = {C_LATCH[19:4], CA4, C_LATCH[3:0]};
-	//assign FIX_ROM_ADDR = {S_LATCH[15:3], S2H1, S_LATCH[2:0]};
-
-	pal_ram U7(PAL_RAM_ADDR, CLK_12M, M68K_DATA, (~nPAL & ~M68K_RW), PAL_RAM_DATA);
+	pal_ram PALRAM({PALBNK, PAL_RAM_ADDR}, CLK_24M, M68K_DATA, ~nPAL_WE, PAL_RAM_DATA);	// Was CLK_12M
 	
 	// DAC latches
 	always @(posedge CLK_6MB, negedge nBNKB)
@@ -610,22 +999,5 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	assign VGA_R = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], PAL_RAM_REG[15], 2'b00};
 	assign VGA_G = {PAL_RAM_REG[7:4], PAL_RAM_REG[13], PAL_RAM_REG[15], 2'b00};
 	assign VGA_B = {PAL_RAM_REG[3:0], PAL_RAM_REG[12], PAL_RAM_REG[15], 2'b00};
-	
-	// VGA DAC tester
-	/*reg [23:0] TEMP;
-	reg [1:0] TEST_COLOR;
-	always @(posedge CLK_24M)
-	begin
-		TEMP <= TEMP + 1'b1;
-		if (TEMP >= 24'd12000000)
-		begin
-			TEMP <= 24'd0;
-			TEST_COLOR <= TEST_COLOR + 1'b1;
-		end
-	end
-	
-	assign VGA_R = (TEST_COLOR == 2'd0) ? 8'hFF : 8'h00;
-	assign VGA_G = (TEST_COLOR == 2'd1) ? 8'hFF : 8'h00;
-	assign VGA_B = (TEST_COLOR == 2'd2) ? 8'hFF : 8'h00;*/
 
 endmodule

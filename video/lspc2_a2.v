@@ -37,7 +37,7 @@ module lspc2_a2(
 	output [3:0] WE,
 	output [3:0] CK,
 	output SS1, SS2,					// Buffer pair selection for B1
-	output RESETP,
+	output nRESETP,
 	output HSYNC,
 	output VSYNC,
 	output CHBL,
@@ -126,9 +126,9 @@ module lspc2_a2(
 	
 	// PCK1, PCK2, H
 	FD2 T168A(CLK_24M, T160A_OUT, PCK1, nPCK1);
-	FD2 T162A(CLK_24M, T160B_OUT, PCK2, );
-	FD2 U167(~PCK2, T172_Q, H, );
-	FDM T172(nPCK1, SPR_TILE_HFLIP, T172_Q, );
+	FD2 T162A(CLK_24M, T160B_OUT, PCK2);
+	FD2 U167(~PCK2, T172_Q, H);
+	FDM T172(nPCK1, SPR_TILE_HFLIP, T172_Q);
 	assign CA4 = T172_Q ^ LSPC_1_5M;
 	
 	// EVEN1, EVEN2
@@ -138,7 +138,7 @@ module lspc2_a2(
 	assign U112_OUT = ~&{U105A_OUT, U107_OUT, U109_OUT};
 	//assign #13 EVEN1 = U112_OUT;	// BD5 U162
 	assign EVEN1 = U112_OUT;
-	FD2 U144A(CLK_24M, U112_OUT, EVEN2, );
+	FD2 U144A(CLK_24M, U112_OUT, EVEN2);
 	
 	// Pixel parity select
 	assign nPARITY_INIT = ~&{nCHAINED, S53A_OUT};	// R42A
@@ -157,7 +157,7 @@ module lspc2_a2(
 	// $3C0000 REG_VRAMADDR	0 (update with written value)
 	// $3C0002 REG_VRAMRW   1 (update with REG_VRAMMOD)
 	assign C22A_OUT = ~&{WR_VRAM_RW, WR_VRAM_ADDR};
-	FDM B18(C22A_OUT, M68K_ADDR[1], VRAM_ADDR_UPD_TYPE, );
+	FDM B18(C22A_OUT, M68K_ADDR[1], VRAM_ADDR_UPD_TYPE);
 	
 	// VRAM_ADDR with REG_VRAMMOD applied
 	// G18 G81 F91 F127
@@ -215,12 +215,12 @@ module lspc2_a2(
 	// This doesn't mean anything special, it just outputs periodic signals to get everything moving
 	assign T56A_OUT = ~&{LSPC_6M, LSPC_3M};
 	assign T58A_OUT = ~&{LSPC_6M, LSPC_3M};
-	FDM T53(LSPC_12M, T56A_OUT, T53_Q, );
-	FDM U53(CLK_24M, T53_Q, U53_Q, );
+	FDM T53(LSPC_12M, T56A_OUT, T53_Q);
+	FDM U53(CLK_24M, T53_Q, U53_Q);
 	assign nPBUS_OUT_EN = U53_Q & T53_Q;
-	FDPCell T69(LSPC_12M, LSPC_3M, RESETP, 1'b1, , T69_nQ);
+	FDPCell T69(LSPC_12M, LSPC_3M, nRESETP, 1'b1, , T69_nQ);
 	assign T73A_OUT = LSPC_3M | T69_nQ;
-	FJD T140(CLK_24M, T134_nQ, 1'b1, T73A_OUT, T140_Q, );
+	FJD T140(CLK_24M, T134_nQ, 1'b1, T73A_OUT, T140_Q);
 	FJD T134(CLK_24M, T140_Q, 1'b1, T73A_OUT, , T134_nQ);
 	FD2 U129A(CLK_24M, T134_nQ, U129A_Q, U129A_nQ);
 	assign T125A_OUT = U129A_nQ | T140_Q;
@@ -236,9 +236,9 @@ module lspc2_a2(
 	// NEO-B1 control signals
 	
 	// Latch for CK1/2 and WE1/2
-	LT4 T31(LSPC_12M, {T38A_OUT, T28_OUT, T29A_OUT, T20B_OUT}, T31_P, );
+	LT4 T31(LSPC_12M, {T38A_OUT, T28_OUT, T29A_OUT, T20B_OUT}, T31_P);
 	// Latch for CK3/4 and WE3/4
-	LT4 U24(LSPC_12M, {U37B_OUT, U21B_OUT, U35A_OUT, U31A_OUT}, U24_P, );
+	LT4 U24(LSPC_12M, {U37B_OUT, U21B_OUT, U35A_OUT, U31A_OUT}, U24_P);
 	
 	// CKs and WEs can only be low when LSPC_12M is high
 	assign WE1 = ~&{T31_P[0], LSPC_12M};
@@ -306,8 +306,8 @@ module lspc2_a2(
 	assign U85_OUT = &{U89A_OUT, U92A_OUT, U88B_OUT};
 	assign U86A_OUT = &{U88B_OUT, U94_OUT, U91_OUT};
 	// Final FFs
-	FD2 T82A(CLK_24M, U85_OUT, WRITEPX_A, );
-	FD2 T86(CLK_24M, U86A_OUT, WRITEPX_B, );
+	FD2 T82A(CLK_24M, U85_OUT, WRITEPX_A);
+	FD2 T86(CLK_24M, U86A_OUT, WRITEPX_B);
 	
 	
 	// LD1/2 signal generation. Those are used to tell NEO-B1 to reload the write address (X position)
@@ -316,10 +316,10 @@ module lspc2_a2(
 	
 	// Periodic signals
 	FDM R69(LSPC_3M, LSPC_1_5M, R69_Q, R69_nQ);
-	FDM S55(LSPC_12M, LSPC_3M, S55_Q, );
+	FDM S55(LSPC_12M, LSPC_3M, S55_Q);
 	assign S53A_OUT = S55_Q & LSPC_6M;
 	// LOAD output
-	FD2 R35A(CLK_24MB, S53A_OUT, LOAD, );
+	FD2 R35A(CLK_24MB, S53A_OUT, LOAD);
 	
 	// For LD1:
 	// Gate with chain bit (prevents address reload)
@@ -332,7 +332,7 @@ module lspc2_a2(
 	assign R42B_OUT = ~&{R44B_OUT, R48B_OUT};
 	// Sync
 	assign LD1_D = ~&{R42B_OUT, S53A_OUT};
-	FD2 R32(CLK_24MB, LD1_D, LD1, );
+	FD2 R32(CLK_24MB, LD1_D, LD1);
 	
 	// For LD2:
 	// Gate reset LD pulse (once at start of line being shifted out)
@@ -343,31 +343,31 @@ module lspc2_a2(
 	assign R46B_OUT = ~&{R44A_OUT, R46A_OUT};
 	// Sync
 	assign LD2_D = ~&{R46B_OUT, S53A_OUT};
-	FD2 R28A(CLK_24MB, LD2_D, LD2, );
+	FD2 R28A(CLK_24MB, LD2_D, LD2);
 	
 	// Reset LD pulse generation. This tells NEO-B1 to reload the address before shifting out a buffer
 	// At this very moment, the address should be 000 on the P bus
 	// Triggers at pixel #264
-	FDPCell O62(PIXELC[3], PIXELC[8], 1'b1, RESETP, O62_Q, );
+	FDPCell O62(PIXELC[3], PIXELC[8], 1'b1, nRESETP, O62_Q);
 	// Triggers at pixel #268
-	FDPCell P74(PIXELC[2], O62_Q, 1'b1, RESETP, P74_Q, );
+	FDPCell P74(PIXELC[2], O62_Q, 1'b1, nRESETP, P74_Q);
 	// Make unique pulse
-	FDM R53(LSPC_3M, R67A_OUT, R53_Q, );
+	FDM R53(LSPC_3M, R67A_OUT, R53_Q);
 	assign R67A_OUT = R74_nQ & P74_Q;
-	FDPCell R74(LSPC_1_5M, P74_Q, 1'b1, RESETP, , R74_nQ);
+	FDPCell R74(LSPC_1_5M, P74_Q, 1'b1, nRESETP, , R74_nQ);
 	
 	// Reload pulse for the h-shrink shift registers
 	// Perdiodic as all sprites take the same time to render regardless of h-shrink value
 	assign R48A_OUT = ~&{S53A_OUT, R69_Q};
-	FD2 R56A(CLK_24MB, R48A_OUT, LD_HSHRINK_REG, );
+	FD2 R56A(CLK_24MB, R48A_OUT, LD_HSHRINK_REG);
 	
 	
 	// CHG output
-	FDPCell S137(LSPC_1_5M, CHG_D, 1'b1, RESETP, CHG, );
+	FDPCell S137(LSPC_1_5M, CHG_D, 1'b1, nRESETP, CHG);
 	
 	// SS1/2 outputs, periodic
-	FDPCell O69(CLK_24MB, nFLIP, RESETP, 1'b1, , FLIP_nQ);
-	FDPCell R63(PIXELC[2], FLIP_nQ, 1'b1, RESETP, CHG_D, nCHG_D);
+	FDPCell O69(CLK_24MB, nFLIP, nRESETP, 1'b1, , FLIP_nQ);
+	FDPCell R63(PIXELC[2], FLIP_nQ, 1'b1, nRESETP, CHG_D, nCHG_D);
 	FDM S48(LSPC_3M, R15_QD, , S48_nQ);
 	// S40A
 	assign SS1 = ~|{S48_nQ, CHG_D};
@@ -382,7 +382,7 @@ module lspc2_a2(
 	
 	
 	// V-shrink mirroring and pipeline
-	FDM R179(VCS, SPR_CONTINUOUS, R179_Q, );
+	FDM R179(VCS, SPR_CONTINUOUS, R179_Q);
 	// Mirror V-shrink values for second half of sprite if needed
 	assign S186_OUT = ~(~P235_OUT ^ R179_Q);
 	assign SPRITEMAP_ADDR_MSB = ~S186_OUT;
@@ -414,7 +414,7 @@ module lspc2_a2(
 	
 	assign T185B_OUT = PCK1 | PCK2;
 	// Data select lines
-	FDM S183(T185B_OUT, S171_Q, S183_Q, );
+	FDM S183(T185B_OUT, S171_Q, S183_Q);
 	BD3 P196(S183_Q, S183_Q_DELAYED);
 	FDM S171(U53_Q, LSPC_1_5M, S171_Q, S171_nQ);
 	
@@ -490,25 +490,25 @@ module lspc2_a2(
 	// R222A
 	assign SPR_CONTINUOUS = &{SPR_SIZE0, SPR_SIZE5, SPR_Y_SHRINK[8]};
 	
-	lspc_regs REGS(RESET, RESETP, M68K_ADDR, M68K_DATA, LSPOE, LSPWE, VMODE, RASTERC, AA_COUNT, VRAM_LOW_READ,
+	lspc_regs REGS(RESET, nRESETP, M68K_ADDR, M68K_DATA, LSPOE, LSPWE, VMODE, RASTERC, AA_COUNT, VRAM_LOW_READ,
 					VRAM_HIGH_READ, WR_VRAM_ADDR, WR_VRAM_RW, WR_TIMER_HIGH, WR_TIMER_LOW, WR_IRQ_ACK, REG_VRAMADDR,
 					REG_VRAMMOD, REG_VRAMRW, REG_LSPCMODE, CPU_DATA_OUT, AA_SPEED,	TIMER_MODE,	TIMER_IRQ_EN,
 					AA_DISABLE, TIMER_STOP, nVRAM_WRITE_REQ, D112B_OUT);
 	
-	lspc_timer TIMER(LSPC_6M, ~RESETP, M68K_DATA, WR_TIMER_HIGH, WR_TIMER_LOW, VMODE, TIMER_MODE, TIMER_STOP,
+	lspc_timer TIMER(LSPC_6M, nRESETP, M68K_DATA, WR_TIMER_HIGH, WR_TIMER_LOW, VMODE, TIMER_MODE, TIMER_STOP,
 						RASTERC, TIMER_IRQ_EN, R74_nQ, BNKB, D46A_OUT);
 	
-	resetp RSTP(CLK_24MB, RESET, RESETP);
+	resetp RSTP(CLK_24MB, RESET, nRESETP);
 	
 	irq IRQ(WR_IRQ_ACK, M68K_DATA[2:0], RESET, D46A_OUT, BNK, LSPC_6M, IPL0, IPL1);
 	
-	videosync VS(CLK_24MB, LSPC_3M, LSPC_1_5M, Q53_CO, RESETP, VMODE, PIXELC, RASTERC, HSYNC, VSYNC, BNK,
+	videosync VS(CLK_24MB, LSPC_3M, LSPC_1_5M, Q53_CO, nRESETP, VMODE, PIXELC, RASTERC, HSYNC, VSYNC, BNK,
 						BNKB, CHBL, R15_QD, FLIP, nFLIP, P50_CO);
 
-	lspc2_clk LSPCCLK(CLK_24M, RESETP, CLK_24MB, LSPC_12M, LSPC_8M, LSPC_6M, LSPC_4M, LSPC_3M, LSPC_1_5M,
+	lspc2_clk LSPCCLK(CLK_24M, nRESETP, CLK_24MB, LSPC_12M, LSPC_8M, LSPC_6M, LSPC_4M, LSPC_3M, LSPC_1_5M,
 							Q53_CO);
 	
-	slow_cycle SCY(CLK_24M, CLK_24MB, LSPC_12M, LSPC_6M, LSPC_3M, LSPC_1_5M, RESETP, VRAM_ADDR[14:0], VRAM_WRITE,
+	slow_cycle SCY(CLK_24M, CLK_24MB, LSPC_12M, LSPC_6M, LSPC_3M, LSPC_1_5M, nRESETP, VRAM_ADDR[14:0], VRAM_WRITE,
 							REG_VRAMADDR[15], PIXELC[3], PIXELC[8], RASTERC[7:3], PIXEL_HPLUS, ACTIVE_RD,
 							nVRAM_WRITE_REQ, SPR_TILEMAP, SPR_TILE_VFLIP, SPR_TILE_HFLIP, SPR_AA_3, SPR_AA_2,
 							FIX_TILE, FIX_PAL, SPR_TILE, SPR_PAL, VRAM_LOW_READ, nCPU_WR_LOW, R91_nQ,
@@ -516,17 +516,17 @@ module lspc2_a2(
 							D208B_OUT, SPRITEMAP_ADDR_MSB, CLK_SPR_TILE, P222A_OUT, ~P201_Q[1],
 							SVRAM_ADDR, SVRAM_DATA_IN, SVRAM_DATA_OUT, BOE, BWE);
 	
-	fast_cycle FCY(CLK_24M, LSPC_12M, LSPC_6M, LSPC_3M, LSPC_1_5M, RESETP, nVRAM_WRITE_REQ,
+	fast_cycle FCY(CLK_24M, LSPC_12M, LSPC_6M, LSPC_3M, LSPC_1_5M, nRESETP, nVRAM_WRITE_REQ,
 							VRAM_ADDR, VRAM_WRITE, REG_VRAMADDR[15], FLIP, nFLIP,
 							PIXELC, RASTERC, P50_CO, nCPU_WR_HIGH, HSHRINK, PIPE_C, VRAM_HIGH_READ,
 							ACTIVE_RD, R91_Q, R91_nQ, T140_Q, T58A_OUT, T73A_OUT, U129A_Q, T125A_OUT,
 							CLK_ACTIVE_RD, ACTIVE_RD_PRE8, SPR_Y, YSHRINK, SPR_SIZE0, SPR_SIZE5, O159_QB,
 							FVRAM_ADDR, FVRAM_DATA_IN, FVRAM_DATA_OUT, CWE);
 	
-	autoanim AA(RASTERC[8], RESETP, AA_SPEED, AA_COUNT);
+	autoanim AA(RASTERC[8], nRESETP, AA_SPEED, AA_COUNT);
 	
 	hshrink HSH(HSHRINK, CK_HSHRINK_REG, LD_HSHRINK_REG, HSHRINK_OUT_A, HSHRINK_OUT_B);
-	assign nHSHRINK_OUT_A = ~HSHRINK_OUT_A;
-	assign nHSHRINK_OUT_B = ~HSHRINK_OUT_B;
+	wire nHSHRINK_OUT_A = ~HSHRINK_OUT_A;
+	wire nHSHRINK_OUT_B = ~HSHRINK_OUT_B;
 	
 endmodule

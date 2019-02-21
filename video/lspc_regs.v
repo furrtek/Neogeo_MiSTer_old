@@ -1,4 +1,18 @@
-`timescale 1ns/1ns
+// NeoGeo logic definition
+// Copyright (C) 2018 Sean Gonsalves
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module lspc_regs(
 	input RESET,
@@ -61,28 +75,14 @@ module lspc_regs(
 			WR_DECODED <= 8'b11111111;
 	end
 	
-	always @(negedge LSPWE)
-	begin
-		case (M68K_ADDR)
-			//3'h0 : Address set
-			//3'h1 : Data write
-			3'h2 : $display("VRAM set modulo to 0x%H", M68K_DATA);
-			3'h3 : $display("LSPC set timer mode to %b, timer irq to %b, AA disable to %b, AA speed to 0x%H", M68K_DATA[7:5], M68K_DATA[4], M68K_DATA[3], M68K_DATA[15:8]);
-			3'h4 : $display("LSPC set timer reload MSB to 0x%H", M68K_DATA);
-			3'h5 : $display("LSPC set timer reload LSB to 0x%H", M68K_DATA);
-			3'h6 : $display("LSPC ack interrupt %d", M68K_DATA[2:0]);
-			3'h7 : $display("LSPC set timer stop for PAL mode to %B", M68K_DATA[0]);
-		endcase
-	end
-	
 	assign WR_VRAM_ADDR = WR_DECODED[0];
 	assign WR_VRAM_RW = WR_DECODED[1];
-	assign WR_VRAM_MOD = WR_DECODED[2];
-	assign WR_LSPC_MODE = WR_DECODED[3];
+	wire WR_VRAM_MOD = WR_DECODED[2];
+	wire WR_LSPC_MODE = WR_DECODED[3];
 	assign WR_TIMER_HIGH = WR_DECODED[4];
 	assign WR_TIMER_LOW = WR_DECODED[5];
 	assign WR_IRQ_ACK = WR_DECODED[6];
-	assign WR_TIMER_STOP = WR_DECODED[7];
+	wire WR_TIMER_STOP = WR_DECODED[7];
 	
 	
 	// CPU reads
@@ -94,7 +94,7 @@ module lspc_regs(
 	// $3C0004 REG_VRAMMOD  0
 	// $3C0006 REG_LSPCMODE 1
 	// C20A C22B C20B
-	assign CPU_READ_SW = ~|{~|{M68K_ADDR[1], ~M68K_ADDR[2]}, ~|{REG_VRAMADDR[15], M68K_ADDR[2]}};
+	wire CPU_READ_SW = ~|{~|{M68K_ADDR[1], ~M68K_ADDR[2]}, ~|{REG_VRAMADDR[15], M68K_ADDR[2]}};
 	
 	// CPU read data select
 	// F218A F221A F230 G252A
@@ -132,7 +132,7 @@ module lspc_regs(
 	// CPU write to REG_LSPCMODE
 	FDSCell E105(WR_LSPC_MODE, M68K_DATA[15:12], AA_SPEED[7:4]);
 	FDSCell C87(WR_LSPC_MODE, M68K_DATA[11:8], AA_SPEED[3:0]);
-	FDPCell E74(WR_LSPC_MODE, M68K_DATA[7], 1'b1, RESET, TIMER_MODE[2], );
+	FDPCell E74(WR_LSPC_MODE, M68K_DATA[7], 1'b1, RESET, TIMER_MODE[2]);
 	FDRCell E61(WR_LSPC_MODE, M68K_DATA[6:3], RESET, {TIMER_MODE[1:0], TIMER_IRQ_EN, AA_DISABLE});
 	
 	// CPU write to REG_TIMERSTOP

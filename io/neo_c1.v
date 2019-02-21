@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -148,8 +148,8 @@ module neo_c1(
 	assign nLSPWE = RW | nUDS | nLSPC_ZONE;
 	assign nLSPOE = ~RW | nUDS | nLSPC_ZONE;
 	
-	assign nCRDO = ~RW | nCARD_ZONE | nUDS;
-	assign nCRDW = RW | nCARD_ZONE | nUDS;
+	assign nCRDO = ~RW | nCARD_ZONE | nLDS;
+	assign nCRDW = RW | nCARD_ZONE | nLDS;
 	assign nCRDC = nCARD_ZONE | nAS;
 
 endmodule

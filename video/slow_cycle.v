@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -118,17 +118,17 @@ module slow_cycle(
 	assign FIXMAP_ADDR = {4'b1110, O62_nQ, PIXEL_HPLUS, ~PIXEL_H8, RASTERC[7:3]};
 	assign SPRMAP_ADDR = {H57_Q, ACTIVE_RD, O185_Q, SPR_TILEMAP, K166_Q};
 	
-	FDM O185(P222A_OUT, SPRITEMAP_ADDR_MSB, O185_Q, );
-	FDM H57(CLK_ACTIVE_RD, ACTIVE_RD_PRE8, H57_Q, );
-	FDM K166(CLK_24M, P210A_OUT, K166_Q, );
+	FDM O185(P222A_OUT, SPRITEMAP_ADDR_MSB, O185_Q);
+	FDM H57(CLK_ACTIVE_RD, ACTIVE_RD_PRE8, H57_Q);
+	FDM K166(CLK_24M, P210A_OUT, K166_Q);
 	FDM N165(CLK_24M, Q174B_OUT, , N165_nQ);
-	FDM N160(CLK_24M, N169A_OUT, N160_Q, );
+	FDM N160(CLK_24M, N169A_OUT, N160_Q);
 	
 	FS1 Q162(LSPC_12M, R91_nQ, Q162_Q);
 	assign Q174B_OUT = ~Q162_Q[3];
 	assign N169A_OUT = ~|{Q174B_OUT, ~CLK_CPU_READ_LOW};
 	
-	FDM T75(CLK_24M, T64A_OUT, T75_Q, );
+	FDM T75(CLK_24M, T64A_OUT, T75_Q);
 	assign CLK_CPU_READ_LOW = Q162_Q[1];
 	assign T160B_OUT = ~|{T75_Q, ~Q162_Q[0]};
 	assign T160A_OUT = ~|{Q162_Q[0], T75_Q};
@@ -137,7 +137,7 @@ module slow_cycle(
 	FDPCell O62(PIXEL_H8, PIXEL_H256, 1'b1, RESETP, O62_Q, O62_nQ);
 	
 	assign F58B_OUT = REG_VRAMADDR_MSB | nVRAM_WRITE_REQ;
-	FDPCell Q106(~LSPC_1_5M, F58B_OUT, CLK_CPU_READ_LOW, 1'b1, nCPU_WR_LOW, );
+	FDPCell Q106(~LSPC_1_5M, F58B_OUT, CLK_CPU_READ_LOW, 1'b1, nCPU_WR_LOW);
 	
 	
 	//vram_slow_u VRAMLU(B, E[15:8], 1'b0, BOE, BWE);

@@ -1,79 +1,960 @@
 <romsets>
-    <romset name="eightman">
-		<file name="025-p1.p1" type="0" index="1" start="0" size="0x80000"/>
-		<file name="025-s1.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="025-c1.c1" type="2" index="33" start="0" size="0x100000"/>
-		<file name="025-c2.c2" type="2" index="32" start="0" size="0x100000"/>
-		<file name="025-c3.c3" type="2" index="37" start="0" size="0x80000"/>
-		<file name="025-c4.c4" type="2" index="36" start="0" size="0x80000"/>
-    </romset>
-    <romset name="lbowling">
-		<file name="019-p1.p1" type="0" index="1" start="0" size="0x80000"/>
-		<file name="019-s1.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="019-c1.c1" type="2" index="33" start="0" size="0x80000"/>
-		<file name="019-c2.c2" type="2" index="32" start="0" size="0x80000"/>
-    </romset>
-    <romset name="lresort">
-		<file name="024-p1.p1" type="0" index="1" start="0" size="0x80000"/>
-		<file name="024-s1.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="024-c1.c1" type="2" index="33" start="0" size="0x100000"/>
-		<file name="024-c2.c2" type="2" index="32" start="0" size="0x100000"/>
-		<file name="024-c3.c3" type="2" index="37" start="0" size="0x80000"/>
-		<file name="024-c4.c4" type="2" index="36" start="0" size="0x80000"/>
-    </romset>
-    <romset name="mslug">
-		<file name="201-p1.p1" type="0" index="1" start="0x100000" size="0x100000"/>
-		<file name="201-p1.p1" type="0" index="2" start="0" size="0x100000"/>
-		<file name="201-s1.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="201-c1.c1" type="2" index="33" start="0" size="0x400000"/>
-		<file name="201-c2.c2" type="2" index="32" start="0" size="0x400000"/>
-		<file name="201-c3.c3" type="2" index="49" start="0" size="0x400000"/>
-		<file name="201-c4.c4" type="2" index="48" start="0" size="0x400000"/>
-    </romset>
+    <!-- See https://github.com/mamedev/mame/blob/master/src/mame/drivers/neogeo.cpp -->
     <romset name="nam1975">
-		<file name="001-p1.p1" type="0" index="1" start="0" size="0x80000"/>
-		<file name="001-s1.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="001-c1.c1" type="2" index="33" start="0" size="0x80000"/>
-		<file name="001-c2.c2" type="2" index="32" start="0" size="0x80000"/>
-		<file name="001-c3.c3" type="2" index="35" start="0" size="0x80000"/>
-		<file name="001-c4.c4" type="2" index="34" start="0" size="0x80000"/>
-		<file name="001-c5.c5" type="2" index="37" start="0" size="0x80000"/>
-		<file name="001-c6.c6" type="2" index="36" start="0" size="0x80000"/>
+		<file name="001-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="001-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="001-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="001-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="001-c3.c3" type="C" index="34" offset="0" size="0x80000"/>
+		<file name="001-c4.c4" type="C" index="35" offset="0" size="0x80000"/>
+		<file name="001-c5.c5" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="001-c6.c6" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="001-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
+    </romset>
+    <romset name="bstars">
+		<file name="002-pg.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="002-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="002-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="002-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="002-c3.c3" type="C" index="34" offset="0" size="0x80000"/>
+		<file name="002-c4.c4" type="C" index="35" offset="0" size="0x80000"/>
+		<file name="002-c5.c5" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="002-c6.c6" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="002-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
+    </romset>
+    <romset name="tpgolf">
+		<file name="003-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="003-p2.p2" type="P" index="5" offset="0" size="0x80000"/>
+		<file name="003-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="003-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="003-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="003-c3.c3" type="C" index="34" offset="0" size="0x80000"/>
+		<file name="003-c4.c4" type="C" index="35" offset="0" size="0x80000"/>
+		<file name="003-c5.c5" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="003-c6.c6" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="003-c7.c7" type="C" index="39" offset="0" size="0x80000"/>
+		<file name="003-c8.c8" type="C" index="38" offset="0" size="0x80000"/>
+		<file name="003-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="mahretsu">
+		<file name="004-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="004-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="004-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="004-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="004-c3.c3" type="C" index="34" offset="0" size="0x80000"/>
+		<file name="004-c4.c4" type="C" index="35" offset="0" size="0x80000"/>
+		<file name="004-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="maglord">
+		<file name="005-pg1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="005-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="005-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="005-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="005-c3.c3" type="C" index="34" offset="0" size="0x80000"/>
+		<file name="005-c4.c4" type="C" index="35" offset="0" size="0x80000"/>
+		<file name="005-c5.c5" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="005-c6.c6" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="005-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
+    </romset>
+    <romset name="ridhero">
+		<file name="006-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="006-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="006-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="006-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="006-c3.c3" type="C" index="34" offset="0" size="0x80000"/>
+		<file name="006-c4.c4" type="C" index="35" offset="0" size="0x80000"/>
+		<file name="006-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
+    </romset>
+    <romset name="alpham2">
+		<file name="007-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="007-p2.p2" type="P" index="5" offset="0" size="0x80000"/>
+		<file name="007-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="007-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="007-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="007-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="007-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="007-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
     </romset>
     <romset name="ncombat">
-		<file name="009-p1.p1" type="0" index="1" start="0" size="0x80000"/>
-		<file name="009-s1.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="009-c1.c1" type="2" index="33" start="0" size="0x80000"/>
-		<file name="009-c2.c2" type="2" index="32" start="0" size="0x80000"/>
-		<file name="009-c3.c3" type="2" index="35" start="0" size="0x80000"/>
-		<file name="009-c4.c4" type="2" index="34" start="0" size="0x80000"/>
-		<file name="009-c5.c5" type="2" index="37" start="0" size="0x80000"/>
-		<file name="009-c6.c6" type="2" index="36" start="0" size="0x80000"/>
+		<file name="009-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="009-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="009-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="009-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="009-c3.c3" type="C" index="34" offset="0" size="0x80000"/>
+		<file name="009-c4.c4" type="C" index="35" offset="0" size="0x80000"/>
+		<file name="009-c5.c5" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="009-c6.c6" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="009-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
     </romset>
-    <romset name="neobombe">
-		<file name="093-p1.p1" type="0" index="1" start="0" size="0x100000"/>
-		<file name="093-s1.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="093-c1.c1" type="2" index="33" start="0" size="0x400000"/>
-		<file name="093-c2.c2" type="2" index="32" start="0" size="0x400000"/>
-		<file name="093-c3.c3" type="2" index="49" start="0" size="0x80000"/>
-		<file name="093-c4.c4" type="2" index="48" start="0" size="0x80000"/>
+    <romset name="cyberlip">
+		<file name="010-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="010-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="010-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="010-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="010-c3.c3" type="C" index="34" offset="0" size="0x80000"/>
+		<file name="010-c4.c4" type="C" index="35" offset="0" size="0x80000"/>
+		<file name="010-c5.c5" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="010-c6.c6" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="010-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
     </romset>
+    <romset name="superspy">
+		<file name="011-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="sp2.p2" type="P" index="5" offset="0" size="0x20000"/>
+		<file name="011-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="011-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="011-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="011-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="011-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="011-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
+    </romset>
+    <romset name="mutnat">
+		<file name="014-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="014-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="014-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="014-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="014-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="014-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="014-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="kotm">
+		<file name="016-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="016-p2.p2" type="P" index="5" offset="0" size="0x20000"/>
+		<file name="016-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="016-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="016-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="016-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="016-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="016-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="sengoku">
+		<file name="017-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="017-p2.p2" type="P" index="5" offset="0" size="0x20000"/>
+		<file name="017-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="017-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="017-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="017-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="017-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="017-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="burningf">
+		<file name="018-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="018-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="018-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="018-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="018-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="018-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="018-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="lbowling">
+		<file name="019-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="019-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="019-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="019-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="019-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="gpilots">
+		<file name="020-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="020-p2.p2" type="P" index="5" offset="0" size="0x20000"/>
+		<file name="020-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="020-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="020-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="020-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="020-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="020-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="joyjoy">
+		<file name="021-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="021-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="021-c1.c1" type="C" index="32" offset="0" size="0x80000"/>
+		<file name="021-c2.c2" type="C" index="33" offset="0" size="0x80000"/>
+		<file name="021-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
+    </romset>
+    <romset name="bjourney">
+		<file name="022-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="022-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="022-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="022-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="022-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="022-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="022-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="quizdais">
+		<file name="023-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="023-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="023-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="023-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="023-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="lresort">
+		<file name="024-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="024-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="024-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="024-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="024-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="024-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="024-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="eightman">
+		<file name="025-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="025-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="025-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="025-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="025-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="025-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="025-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="minasan">
+		<file name="027-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="027-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="027-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="027-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="027-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="027-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="027-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="legendos">
+		<file name="029-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="029-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="029-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="029-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="029-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="029-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="029-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="2020bb">
+		<file name="030-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="030-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="030-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="030-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="030-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="030-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="030-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="socbrawl">
+		<file name="031-pg1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="031-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="031-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="031-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="031-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="031-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="031-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="roboarmy">
+		<file name="032-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="032-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="032-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="032-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="032-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="032-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="032-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="fatfury1">
+		<file name="033-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="033-p2.p2" type="P" index="5" offset="0" size="0x20000"/>
+		<file name="033-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="033-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="033-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="033-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="033-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="033-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="fbfrenzy">
+		<file name="034-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="034-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="034-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="034-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="034-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="034-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="034-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="bakatono">
+		<file name="036-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="036-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="036-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="036-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="036-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="036-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="036-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="crsword">
+		<file name="037-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="037-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="037-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="037-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="037-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="037-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="037-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="trally">
+		<file name="038-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="038-p2.p2" type="P" index="5" offset="0" size="0x80000"/>
+		<file name="038-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="038-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="038-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="038-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="038-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="038-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="kotm2">
+		<file name="039-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="039-p2.p2" type="P" index="5" offset="0" size="0x80000"/>
+		<file name="039-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="039-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="039-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="039-c1.c1" type="C" index="40" offset="0x100000" size="0x100000"/>
+		<file name="039-c2.c2" type="C" index="41" offset="0x100000" size="0x100000"/>
+		<file name="039-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="039-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="039-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="sengoku2">
+		<file name="040-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="040-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="040-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="040-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="040-c1.c1" type="C" index="40" offset="0x100000" size="0x100000"/>
+		<file name="040-c2.c2" type="C" index="41" offset="0x100000" size="0x100000"/>
+		<file name="040-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="040-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="040-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="bstars2">
+		<file name="041-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="041-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="041-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="041-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="041-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="041-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="041-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="quizdai2">
+		<file name="042-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="042-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="042-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="042-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="042-c3.c3" type="C" index="36" offset="0" size="0x80000"/>
+		<file name="042-c4.c4" type="C" index="37" offset="0" size="0x80000"/>
+		<file name="042-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="3countb">
+		<file name="043-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="043-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="043-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="043-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="043-c1.c1" type="C" index="40" offset="0x100000" size="0x100000"/>
+		<file name="043-c2.c2" type="C" index="41" offset="0x100000" size="0x100000"/>
+		<file name="043-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="043-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="043-c3.c3" type="C" index="44" offset="0x100000" size="0x100000"/>
+		<file name="043-c4.c4" type="C" index="45" offset="0x100000" size="0x100000"/>
+		<file name="043-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="aof">
+		<file name="044-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="044-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="044-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="044-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="044-c1.c1" type="C" index="40" offset="0x100000" size="0x100000"/>
+		<file name="044-c2.c2" type="C" index="41" offset="0x100000" size="0x100000"/>
+		<file name="044-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="044-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="044-c3.c3" type="C" index="44" offset="0x100000" size="0x100000"/>
+		<file name="044-c4.c4" type="C" index="45" offset="0x100000" size="0x100000"/>
+		<file name="044-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="tophuntr">
+		<file name="046-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="046-p2.sp2" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="046-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="046-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="046-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="046-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="046-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="046-c5.c5" type="C" index="40" offset="0" size="0x100000"/>
+		<file name="046-c6.c6" type="C" index="41" offset="0" size="0x100000"/>
+		<file name="046-c7.c7" type="C" index="44" offset="0" size="0x100000"/>
+		<file name="046-c8.c8" type="C" index="45" offset="0" size="0x100000"/>
+		<file name="046-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="fatfury2">
+		<file name="047-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="047-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="047-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="047-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="047-c1.c1" type="C" index="40" offset="0x100000" size="0x100000"/>
+		<file name="047-c2.c2" type="C" index="41" offset="0x100000" size="0x100000"/>
+		<file name="047-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="047-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="047-c3.c3" type="C" index="44" offset="0x100000" size="0x100000"/>
+		<file name="047-c4.c4" type="C" index="45" offset="0x100000" size="0x100000"/>
+		<file name="047-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="janshin">
+		<file name="048-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="048-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="048-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="048-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="048-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="androdun">
+		<file name="049-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="049-p2.p2" type="P" index="5" offset="0" size="0x80000"/>
+		<file name="049-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="049-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="049-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="049-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="ncommand">
+		<file name="050-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="050-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="050-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="050-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="050-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="050-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="050-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="viewpoin">
+		<file name="051-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="051-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="051-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="051-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="051-c1.c1" type="C" index="40" offset="0x100000" size="0x100000"/>
+		<file name="051-c2.c2" type="C" index="41" offset="0x100000" size="0x100000"/>
+		<file name="051-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="ssideki">
+		<file name="052-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="052-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="052-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="052-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="052-c1.c1" type="C" index="40" offset="0x100000" size="0x100000"/>
+		<file name="052-c2.c2" type="C" index="41" offset="0x100000" size="0x100000"/>
+		<file name="052-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="wh1">
+		<file name="053-epr.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="053-epr.p2" type="P" index="5" offset="0" size="0x80000"/>
+		<file name="053-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="055-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="055-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="055-c1.c1" type="C" index="40" offset="0x100000" size="0x100000"/>
+		<file name="055-c2.c2" type="C" index="41" offset="0x100000" size="0x100000"/>
+		<file name="055-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="055-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="053-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="kof94">
+		<file name="055-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="055-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="055-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="055-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="055-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="055-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="055-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="055-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="055-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="055-c7.c7" type="C" index="56" offset="0" size="0x200000"/>
+		<file name="055-c8.c8" type="C" index="57" offset="0" size="0x200000"/>
+		<file name="055-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="aof2">
+		<file name="056-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="056-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="056-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="056-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="056-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="056-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="056-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="056-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="056-c7.c7" type="C" index="56" offset="0" size="0x200000"/>
+		<file name="056-c8.c8" type="C" index="57" offset="0" size="0x200000"/>
+		<file name="056-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="wh2">
+		<file name="057-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="057-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="057-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="057-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="057-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="057-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="057-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="057-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="057-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="057-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="fatfursp">
+		<file name="058-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="058-p2.sp2" type="P" index="6" offset="0" size="0x80000"/>
+		<file name="058-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="058-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="058-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="058-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="058-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="058-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="058-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="058-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="savagere">
+		<file name="059-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="059-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="059-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="059-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="059-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="059-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="059-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="059-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="059-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="059-c7.c7" type="C" index="56" offset="0" size="0x200000"/>
+		<file name="059-c8.c8" type="C" index="57" offset="0" size="0x200000"/>
+		<file name="059-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="fightfev">
+		<file name="060-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="060-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="060-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="060-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="060-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="060-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="060-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="ssideki2">
+		<file name="061-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="061-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="061-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="061-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="061-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="061-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="061-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="spinmast">
+		<file name="062-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="062-p2.sp2" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="062-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="062-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="062-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="062-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="062-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="062-c5.c1" type="C" index="40" offset="0" size="0x100000"/>
+		<file name="062-c6.c2" type="C" index="41" offset="0" size="0x100000"/>
+		<file name="062-c7.c3" type="C" index="44" offset="0" size="0x100000"/>
+		<file name="062-c8.c4" type="C" index="45" offset="0" size="0x100000"/>
+		<file name="062-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="samsho2">
+		<file name="063-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="063-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="063-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="063-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="063-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="063-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="063-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="063-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="063-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="063-c7.c7" type="C" index="56" offset="0" size="0x200000"/>
+		<file name="063-c8.c8" type="C" index="57" offset="0" size="0x200000"/>
+		<file name="063-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="wjammers">
+		<file name="065-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="065-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="065-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="065-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="065-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="065-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="065-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="gururin">
+		<file name="067-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="067-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="067-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="067-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="067-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="pspikes2">
+		<file name="068-pg1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="068-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="068-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="068-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="068-c3.c3" type="C" index="36" offset="0" size="0x100000"/>
+		<file name="068-c4.c4" type="C" index="37" offset="0" size="0x100000"/>
+		<file name="068-c5.c5" type="C" index="40" offset="0" size="0x100000"/>
+		<file name="068-c6.c6" type="C" index="41" offset="0" size="0x100000"/>
+		<file name="068-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- fatfury3 too big -->
+    <!-- zupapa encrypted -->
     <romset name="panicbom">
-		<file name="073-p1.p1" type="0" index="1" start="0" size="0x80000"/>
-		<file name="073-s1.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="073-c1.c1" type="2" index="33" start="0" size="0x100000"/>
-		<file name="073-c2.c2" type="2" index="32" start="0" size="0x100000"/>
+		<file name="073-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="073-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="073-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="073-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="073-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="aodk">
+		<file name="074-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="074-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="074-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="074-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="074-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="074-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="074-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="074-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="074-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="074-c7.c7" type="C" index="56" offset="0" size="0x200000"/>
+		<file name="074-c8.c8" type="C" index="57" offset="0" size="0x200000"/>
+		<file name="074-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="sonicwi2">
+		<file name="075-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="075-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="075-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="075-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="075-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="075-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="075-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="075-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="zedblade">
+		<file name="076-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="076-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="076-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="076-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="076-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="076-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="076-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="galaxyfg">
+		<file name="078-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="078-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="078-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="078-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="078-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="078-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="078-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="078-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="078-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="078-c7.c7" type="C" index="56" offset="0" size="0x100000"/>
+		<file name="078-c8.c8" type="C" index="57" offset="0" size="0x100000"/>
+		<file name="078-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="strhoop">
+		<file name="079-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="079-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="079-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="079-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="079-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="079-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="079-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="quizkof">
+		<file name="080-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="080-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="080-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="080-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="080-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="080-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="080-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="ssideki3">
+		<file name="081-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="081-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="081-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="081-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="081-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="081-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="081-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="081-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="081-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="081-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="doubledr">
+		<file name="082-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="082-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="082-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="082-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="082-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="082-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="082-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="082-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="082-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="082-c7.c7" type="C" index="56" offset="0" size="0x100000"/>
+		<file name="082-c8.c8" type="C" index="57" offset="0" size="0x100000"/>
+		<file name="082-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
     </romset>
     <romset name="pbobblen">
-		<file name="d96-07.ep1" type="0" index="1" start="0" size="0x80000"/>
-		<file name="d96-04.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="d96-02.c5" type="2" index="33" start="0" size="0x80000"/>
-		<file name="d96-03.c6" type="2" index="32" start="0" size="0x80000"/>
+		<file name="d96-07.ep1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="d96-04.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="d96-02.c5" type="C" index="40" offset="0" size="0x80000"/>
+		<file name="d96-03.c6" type="C" index="41" offset="0" size="0x80000"/>
+		<file name="d96-06.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- kof95 too big -->
+    <romset name="tws96">
+		<file name="086-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="086-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="086-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="086-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="086-c3.c3" type="C" index="48" offset="0" size="0x100000"/>
+		<file name="086-c4.c4" type="C" index="49" offset="0" size="0x100000"/>
+		<file name="086-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- samsho3 too big -->
+    <!-- fswords too big -->
+    <romset name="stakwin">
+		<file name="088-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="088-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="088-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="088-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="088-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="088-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="088-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="088-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- pulstar too big -->
+    <romset name="kabukikl">
+		<file name="092-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="092-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="092-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="092-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="092-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="092-c3.c3" type="C" index="48" offset="0" size="0x400000"/>
+		<file name="092-c4.c4" type="C" index="49" offset="0" size="0x400000"/>
+		<file name="092-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="neobombe">
+		<file name="093-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="093-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="093-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="093-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="093-c3.c3" type="C" index="48" offset="0" size="0x80000"/>
+		<file name="093-c4.c4" type="C" index="49" offset="0" size="0x80000"/>
+		<file name="093-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="gowcaizr">
+		<file name="094-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="094-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="094-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="094-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="094-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="094-c3.c3" type="C" index="40" offset="0" size="0x200000"/>
+		<file name="094-c4.c4" type="C" index="41" offset="0" size="0x200000"/>
+		<file name="094-c5.c5" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="094-c6.c6" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="094-c7.c7" type="C" index="56" offset="0" size="0x200000"/>
+		<file name="094-c8.c8" type="C" index="57" offset="0" size="0x200000"/>
+		<file name="094-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+        <!-- jigglyboobs -->
+    </romset>
+    <!-- aof3 too big -->
+    <romset name="sonicwi3">
+		<file name="097-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="097-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="097-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="097-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="097-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="097-c3.c3" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="097-c4.c4" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="097-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="turfmast">
+		<file name="200-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="200-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="200-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="200-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="200-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="200-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="mslug">
+		<file name="201-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="201-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="201-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="201-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="201-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="201-c3.c3" type="C" index="48" offset="0" size="0x400000"/>
+		<file name="201-c4.c4" type="C" index="49" offset="0" size="0x400000"/>
+		<file name="201-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
     </romset>
     <romset name="puzzledp">
-		<file name="202-p1.p1" type="0" index="1" start="0" size="0x80000"/>
-		<file name="202-s1.s1" type="1" index="3" start="0" size="0x20000"/>
-		<file name="202-c1.c1" type="2" index="33" start="0" size="0x100000"/>
-		<file name="202-c2.c2" type="2" index="32" start="0" size="0x100000"/>
+		<file name="202-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="202-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="202-c1.c1" type="C" index="32" offset="0" size="0x100000"/>
+		<file name="202-c2.c2" type="C" index="33" offset="0" size="0x100000"/>
+		<file name="202-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
     </romset>
+    <romset name="neomrdo">
+		<file name="207-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="207-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="207-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="207-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="207-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="sdodgeb">
+		<file name="208-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="208-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="208-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="208-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="208-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="208-c3.c3" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="208-c4.c4" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="208-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="goalx3">
+		<file name="209-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="209-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="209-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="209-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="209-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="209-c3.c3" type="C" index="48" offset="0" size="0x100000"/>
+		<file name="209-c4.c4" type="C" index="49" offset="0" size="0x100000"/>
+		<file name="209-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- overtop too big -->
+    <romset name="neodrift">
+		<file name="213-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="213-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="213-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="213-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="213-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="213-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- kof96 too big -->
+    <!-- ssideki4 too big -->
+    <!-- kizuna too big -->
+    <!-- ninjamas too big -->
+    <!-- ragnagrd too big -->
+    <romset name="pgoal">
+		<file name="219-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="219-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="219-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="219-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="219-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="219-c3.c3" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="219-c4.c4" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="219-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="magdrop2">
+		<file name="221-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="221-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="221-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="221-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="221-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- samsho4 too big -->
+    <romset name="twinspri">
+		<file name="224-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="224-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="224-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="224-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="224-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="224-c3.c3" type="C" index="48" offset="0" size="0x100000"/>
+		<file name="224-c4.c4" type="C" index="49" offset="0" size="0x100000"/>
+		<file name="224-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- wakuwak7 too big -->
+    <romset name="stakwin2">
+		<file name="227-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="227-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="227-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="227-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="227-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="227-c3.c3" type="C" index="48" offset="0" size="0x200000"/>
+		<file name="227-c4.c4" type="C" index="49" offset="0" size="0x200000"/>
+		<file name="227-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="breakers">
+		<file name="230-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="230-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="230-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="230-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="230-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="230-c3.c3" type="C" index="48" offset="0" size="0x400000"/>
+		<file name="230-c4.c4" type="C" index="49" offset="0" size="0x400000"/>
+		<file name="230-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="miexchng">
+		<file name="231-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
+		<file name="231-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="231-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="231-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="231-c3.c3" type="C" index="40" offset="0" size="0x100000"/>
+		<file name="231-c4.c4" type="C" index="41" offset="0" size="0x100000"/>
+		<file name="231-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- kof97 too big -->
+    <romset name="magdrop3">
+		<file name="233-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="233-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="233-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="233-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="233-c3.c3" type="C" index="48" offset="0" size="0x400000"/>
+		<file name="233-c4.c4" type="C" index="49" offset="0" size="0x400000"/>
+		<file name="233-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- lastblad too big -->
+    <romset name="irrmaze">
+		<file name="236-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="236-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="236-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="236-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="236-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="236-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="popbounc">
+		<file name="237-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="237-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="237-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="237-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="237-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- shocktro too big -->
+    <!-- blazstar too big -->
+    <!-- mslug2 too big -->
+    <!-- kof98 too big -->
+    <!-- lastbld2 too big -->
+    <romset name="neocup98">
+		<file name="244-p1.p1" type="P" index="4" offset="0x100000" size="0x100000"/>
+		<file name="244-p1.p1" type="P" index="6" offset="0" size="0x100000"/>
+		<file name="244-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="244-c1.c1" type="C" index="32" offset="0" size="0x800000"/>
+		<file name="244-c2.c2" type="C" index="33" offset="0" size="0x800000"/>
+		<file name="244-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- breakrev too big -->
+    <romset name="flipshot">
+		<file name="247-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="247-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="247-c1.c1" type="C" index="32" offset="0" size="0x200000"/>
+		<file name="247-c2.c2" type="C" index="33" offset="0" size="0x200000"/>
+		<file name="247-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <romset name="pbobbl2n">
+		<file name="248-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
+		<file name="248-s1.s1" type="S" index="8" offset="0" size="0x20000"/>
+		<file name="248-c1.c1" type="C" index="32" offset="0" size="0x400000"/>
+		<file name="248-c2.c2" type="C" index="33" offset="0" size="0x400000"/>
+		<file name="248-c3.c3" type="C" index="48" offset="0" size="0x100000"/>
+		<file name="248-c4.c4" type="C" index="49" offset="0" size="0x100000"/>
+		<file name="248-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
+    <!-- mslugx too big -->
+    <!-- kof99 too big -->
+    <!-- garou too big -->
+    <!-- s1945p too big -->
+    <!-- preisle2 too big -->
+    <!-- mslug3 too big -->
+    <!-- kof2000 too big -->
+    <!-- bangbead encrypted -->
+    <!-- nitd encrypted -->
+    <!-- sengoku3 too big -->
+    <!-- kof2001 too big -->
+    <!-- mslug4 too big -->
+    <!-- rotd too big -->
+    <!-- kof2002 too big -->
+    <!-- matrim too big -->
+    <!-- pnyaa encrypted -->
+    <!-- mslug5 too big -->
+    <!-- svc too big -->
+    <!-- samsho5 too big -->
+    <!-- kof2003 too big -->
+    <!-- jockeygp -->
 </romsets>

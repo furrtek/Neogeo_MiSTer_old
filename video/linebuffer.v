@@ -1,4 +1,4 @@
-// NeoGeo logic definition (simulation only)
+// NeoGeo logic definition
 // Copyright (C) 2018 Sean Gonsalves
 //
 // This program is free software: you can redistribute it and/or modify
@@ -13,8 +13,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-`timescale 1ns/1ns
 
 module linebuffer(
 	//input TEST_MODE,
@@ -38,9 +36,6 @@ module linebuffer(
 	wire [7:0] ADDR_MUX;
 	wire [11:0] DATA_IN;
 	wire [3:0] COLOR_GATED;
-	
-	assign RAM_WE = ~WE;
-	assign RAM_RE = ~RAM_WE;
 	
 	// Switch between color index or backdrop clear
 	// BL: NUDE NOSY...
@@ -94,18 +89,11 @@ module linebuffer(
 	always @(*)
 		ADDR_LATCH <= WE ? ADDR_COUNTER : ADDR_LATCH;
 
-	// RAM read
-	//assign #10 DATA_OUT = RAM_RE ? LB_RAM[ADDR_LATCH] : 12'bzzzzzzzzzzzz;
-
-	// RAM write
-	//always @(posedge RAM_WE)
-	//		LB_RAM[ADDR_LATCH] <= DATA_IN;	// #10
-
 	b1_ram UR(
 		ADDR_LATCH,
 		CLK,
 		DATA_IN,
-		RAM_WE,
+		~WE,
 		DATA_OUT);
 		
 endmodule

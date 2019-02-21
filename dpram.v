@@ -1,23 +1,23 @@
-
 module dpram #(parameter DATAWIDTH=8, ADDRWIDTH=8, NUMWORDS=1<<ADDRWIDTH, MEM_INIT_FILE="")
 (
-	input	                 clock,
-
+	input	                 clock_a,
 	input	 [ADDRWIDTH-1:0] address_a,
 	input	 [DATAWIDTH-1:0] data_a,
 	input	                 wren_a,
 	output [DATAWIDTH-1:0] q_a,
 
+	input	                 clock_b,
 	input	 [ADDRWIDTH-1:0] address_b,
 	input	 [DATAWIDTH-1:0] data_b,
 	input	                 wren_b,
 	output [DATAWIDTH-1:0] q_b
 );
 
-altsyncram	altsyncram_component (
+altsyncram altsyncram_component (
 			.address_a (address_a),
 			.address_b (address_b),
-			.clock0 (clock),
+			.clock0 (clock_a),
+			.clock1 (clock_b),
 			.data_a (data_a),
 			.data_b (data_b),
 			.wren_a (wren_a),
@@ -30,7 +30,6 @@ altsyncram	altsyncram_component (
 			.addressstall_b (1'b0),
 			.byteena_a (1'b1),
 			.byteena_b (1'b1),
-			.clock1 (1'b1),
 			.clocken0 (1'b1),
 			.clocken1 (1'b1),
 			.clocken2 (1'b1),
@@ -39,9 +38,9 @@ altsyncram	altsyncram_component (
 			.rden_a (1'b1),
 			.rden_b (1'b1));
 defparam
-	altsyncram_component.wrcontrol_wraddress_reg_b = "CLOCK0",
-	altsyncram_component.address_reg_b = "CLOCK0",
-	altsyncram_component.indata_reg_b = "CLOCK0",
+	altsyncram_component.wrcontrol_wraddress_reg_b = "CLOCK1",
+	altsyncram_component.address_reg_b = "CLOCK1",
+	altsyncram_component.indata_reg_b = "CLOCK1",
 	altsyncram_component.numwords_a = NUMWORDS,
 	altsyncram_component.numwords_b = NUMWORDS,
 	altsyncram_component.widthad_a = ADDRWIDTH,
@@ -52,8 +51,8 @@ defparam
 	altsyncram_component.width_byteena_b = 1,
 
 	altsyncram_component.init_file = MEM_INIT_FILE, 
-	altsyncram_component.clock_enable_input_a = "BYPASS",
-	altsyncram_component.clock_enable_input_b = "BYPASS",
+	altsyncram_component.clock_enable_input_a = "NORMAL",
+	altsyncram_component.clock_enable_input_b = "NORMAL",
 	altsyncram_component.clock_enable_output_a = "BYPASS",
 	altsyncram_component.clock_enable_output_b = "BYPASS",
 	altsyncram_component.intended_device_family = "Cyclone V",
@@ -67,6 +66,5 @@ defparam
 	altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
 	altsyncram_component.read_during_write_mode_port_a = "NEW_DATA_NO_NBE_READ",
 	altsyncram_component.read_during_write_mode_port_b = "NEW_DATA_NO_NBE_READ";
-
 
 endmodule

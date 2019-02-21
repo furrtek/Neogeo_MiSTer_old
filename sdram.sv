@@ -48,16 +48,15 @@ module sdram
                                   // Ignored while reading.
                                   //
    input      [24:0] addr,        // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
-   output     [63:0] dout,  		 // data output to cpu
+   output     [63:0] dout, 		 // data output to cpu
    input      [15:0] din,         // data input from cpu
    input             we,          // cpu requests write
    input             rd,          // cpu requests read
-   output reg        ready_word,  // dout is valid. Ready to accept new read/write.
-   output reg        ready_quad
+   output reg        ready_first, // dout_a is valid. Ready to accept new read/write.
+   output reg        ready_fourth
 );
 
 wire [15:0] dout_first;
-
 assign SDRAM_nCS  = command[3];
 assign SDRAM_nRAS = command[2];
 assign SDRAM_nCAS = command[1];
@@ -65,6 +64,7 @@ assign SDRAM_nWE  = command[0];
 assign SDRAM_CKE  = cke;
 
 assign dout = {dout_first, data_second, data_third, data_fourth};
+//assign dout = {data_first, data_second, data_third, data_fourth};
 assign dout_first = latched_first ? data_first : SDRAM_DQ;
 
 // Burst length = 4
@@ -130,11 +130,11 @@ always @(posedge clk) begin
 	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY+3:1]};
 
 	// make it ready 1T in advance
-	if(data_ready_delay[4]) {latched_first, ready_word} <= {1'b0, 1'b1};
+	if(data_ready_delay[4]) {latched_first, ready_first} <= {1'b0, 1'b1};
 	if(data_ready_delay[3])	{latched_first, data_first}  <= {1'b1, SDRAM_DQ};
-	if(data_ready_delay[2]) data_second  <= SDRAM_DQ;
-	if(data_ready_delay[1]) data_third  <= SDRAM_DQ;
-	if(data_ready_delay[0]) {ready_quad, data_fourth}  <= {1'b1, SDRAM_DQ};
+	if(data_ready_delay[2]) data_second <= SDRAM_DQ;
+	if(data_ready_delay[1]) data_third <= SDRAM_DQ;
+	if(data_ready_delay[0]) {ready_fourth, data_fourth}  <= {1'b1, SDRAM_DQ};
 
 	case(state)
 		STATE_STARTUP: begin
@@ -187,8 +187,8 @@ always @(posedge clk) begin
 			//------------------------------------------------------
 			if(!refresh_count) begin
 				state   <= STATE_IDLE;
-				ready_word   <= 1;
-				ready_quad   <= 1;
+				ready_first   <= 1;
+				ready_fourth   <= 1;
 				refresh_count <= 0;
 			end
 		end
@@ -252,7 +252,7 @@ always @(posedge clk) begin
 			state       <= STATE_IDLE_5;
 			command     <= CMD_WRITE;
 			SDRAM_DQ    <= new_wtbt ? new_data : {new_data[7:0], new_data[7:0]};
-			ready_word <= 1;
+			ready_first <= 1;
 		end
 	endcase
 
@@ -262,12 +262,12 @@ always @(posedge clk) begin
 	end
 
 	old_we <= we;
-	if(we & ~old_we) {ready_word, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
+	if(we & ~old_we) {ready_first, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
 
 	old_rd <= rd;
 	if(rd & ~old_rd) begin
-		if(ready_word & ~save_we & (save_addr[24:1] == addr[24:1])) save_addr <= addr;
-			else {ready_word, ready_quad, new_rd} <= {1'b0, 1'b0, 1'b1};
+		if(ready_first & ~save_we & (save_addr[24:1] == addr[24:1])) save_addr <= addr;
+			else {ready_first, ready_fourth, new_rd} <= {1'b0, 1'b0, 1'b1};
 	end
 end
 
