@@ -85,11 +85,11 @@ ioctl_index is used to tell the core where to store the data being loaded. The c
 * 6: P2 ROM
 * 8: S1 ROM
 * 9: M1 ROM
-* 32+: C ROMs, the lower 5 bits are used as a bitfield like this:
- xx1BBBBS
- B: 1MB bank number
+* 64+: C ROMs, the lower 6 bits are used as a bitfield like this:
+ x1BBBBBS
+ B: 512kB bank number
  S: word shift (used to interleave odd/even ROMs)
- So SDRAM address = 1 BBBB0000 00000000 000000S0 + ioctl_addr
+ So SDRAM address = 0x0800000 + 0b1_BBBBB000_00000000_000000S0 + ioctl_addr
 
 ## BRAM map
 
