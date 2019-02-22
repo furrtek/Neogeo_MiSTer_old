@@ -117,8 +117,34 @@ Sprite gfx bytes are loaded in SDRAM like this:
 C2 C2 C1 C1 C2 C2 C1 C1...
 So bitplanes look like this:
 0  1  2  3  0  1  2  3
-
 Burst reads for sprites gfx were not working because row and columns were inverted in
 the SDRAM controller :/
-
 To load a complete 16-pixel line, 4*16 = 64 bits = 4 16-bit SDRAM words must be loaded
+
+ioctl_index is used to tell the core where to store the data being loaded. The
+currently used values are:
+0: System ROM (BIOS)
+1: LO ROM
+2~3: -
+4: P1 first half (or full)
+5: P1 second half
+6: P2
+7: -
+8: S1
+9: M1
+10~31: -
+32+: C ROMs, lower 5 bits are a bitfield used like this:
+ xx1BBBBS
+ B: 1MB bank
+ S: word shift (used to interleave odd/even ROMs)
+ In the end, SDRAM address = 1 BBBB0000 00000000 000000S0 + ioctl_addr
+
+
+// Todo: "FPGAize" LSPC and NEO-B1: Group logic and clocked always() blocks
+// Todo: Check if FD2 and FD4 are really clocked on negedge
+// Todo: Find a way to prioritize 68k ROM reads to get rid of the wait states, use burst reads for prefetch and
+//       run SDRAM back at 144MHz ?
+//       SDRAM is now working at 144MHz again, burst reads for M68K were tested but caused random freezes ?
+// Todo: See if it's possible to read a whole 8-pixel fix line with a n=2 burst read instead of 2x 4pixels
+//       It's possible but it's better to do plenty of short reads than longer reads less often
+//       Has less chances of blocking SDRAM access when the M68K reads
