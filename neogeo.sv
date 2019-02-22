@@ -18,39 +18,6 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-// P max: 4MBytes for now - some games have more than 1MiB in the PORT zone
-// C max: 16MBytes for now - the NeoGeo is limited to 128MBytes
-// S max: 1Mbytes (128kBytes is enough) - games using NEO-CMC are able to bankswitch S ROMs larger than 128kB
-// System rom: 128kB (cart) or 512kB (CD)
-
-// SDRAM total: 0000000~1FFFFFF (32MiB)
-// Cart systems:
-// 0000000~01FFFFF: P1 and P2+
-// 0800000~081FFFF: System ROM
-// 0820000~083FFFF: S ROM
-// 0880000~089FFFF: SFIX ROM
-// 1000000~1FFFFFF: C data
-// CD system:
-// 0000000~00FFFFF: PRG
-// 0100000~01FFFFF: Extended work RAM
-// 0200000~027FFFF: System ROM
-// 0400000~041FFFF: FIX
-// 0800000~0BFFFFF: SPR
-// 0C00000~0DFFFFF: PCM
-
-// Memory info:
-// 68k RAM is in Block RAM
-// Slow VRAM is in Block RAM
-// Fast VRAM is in Block RAM
-// Palette RAM is in Block RAM
-// Line buffers are in Block RAM
-// LO ROM data is in Block RAM
-// Memory card is in Block RAM
-// Backup RAM is in Block RAM
-// P ROM data is in SDRAM
-// C ROM data is in SDRAM
-// S ROM data is in SDRAM
-
 module emu
 (
 	//Master input clock
@@ -149,15 +116,16 @@ assign VGA_DE = ~CHBL & nBNKB;
 
 // status bit definition:
 // 31       23       15       7
-// xxxxxxxP xxxxxxxx xxxCxxDD DxSSMVTR
+// xxAAxxxP xxxxxxxx xxxCxxDD DxSSMVTR
 // R: Reset, used by the HPS, keep it there
 // T: System type
 // V: Video mode
 // M: Memory card presence
 // SS: Stereo mix
 // DDD: DIP switches
-// C: Save memory card
+// C: Save memory card & backup RAM
 // P: Protection chip type, 0=None, 1=PRO-CT0
+// AA: sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
 
 `include "build_id.v"
 localparam CONF_STR1 = {
@@ -168,10 +136,19 @@ localparam CONF_STR1 = {
 	"O1,System type,Console,Arcade;",
 	"O2,Video mode,NTSC,PAL;",
 	"O3,Memory card,Plugged,Unplugged;",
-	"RC,Save memory card;",
-	"O7,DIP:Settings,OFF,ON;",
-	"O8,DIP:Freeplay,OFF,ON;",
-	"O9,DIP:Freeze,OFF,ON;",
+	"RC,Save memory card;"
+};
+
+localparam CONF_STR2 = {
+	"7,DIP:Settings,OFF,ON;"
+};
+
+localparam CONF_STR3 = {
+	"8,DIP:Freeplay,OFF,ON;"
+};
+
+localparam CONF_STR4 = {
+	"9,DIP:Freeze,OFF,ON;",
 	"-;",
 	"O45,Stereo mix,none,25%,50%,100%;",
 	"R0,Reset & apply;",
@@ -243,12 +220,14 @@ wire        ioctl_download;
 wire  [7:0] ioctl_index;
 wire        ioctl_wait;
 
-hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
+wire [7:0] mvs_char = SYSTEM_MODE ? "O" : "+";
+
+hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR3)>>3) + ($size(CONF_STR4)>>3) + 3), .WIDE(1)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
 
-	.conf_str(CONF_STR1),
+	.conf_str({CONF_STR1, mvs_char, CONF_STR2, mvs_char, CONF_STR3, mvs_char, CONF_STR4}),
 
 	//.ps2_mouse(ps2_mouse),	// Could be used for The Irritating Maze ?
 	
@@ -392,7 +371,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	parameter INDEX_P2ROM = 6;
 	parameter INDEX_S1ROM = 8;
 	parameter INDEX_M1ROM = 9;
-	parameter INDEX_CROMS = 32;
+	parameter INDEX_CROMS = 64;
 	
 	// Memory card and backup ram image save/load
 	reg ioctl_download_prev;
@@ -620,10 +599,71 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	wire sdram_rd = ioctl_download ? 1'b0 : SDRAM_RD_PULSE;
 	wire sdram_we = (ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM)) ? ioctl_wr : 1'b0;
 	
-	wire [22:0] P2ROM_ADDR = {P_BANK + 3'd1, M68K_ADDR[19:1], 1'b0};
-	wire [23:0] CROM_ADDR = {C_LATCH_EXT[0], C_LATCH, 3'b000};
+	// Sprite graphics gap removal hack
+	wire [19:0] tile = {C_LATCH_EXT, C_LATCH[19:4]};
+
+	wire [19:0] tile_remapped = (status[29:28] == 2'd1) ? tile_kof95 :
+											(status[29:28] == 2'd2) ? tile_whp :
+											(status[29:28] == 2'd3) ? tile_kizuna :
+											tile;
+
+	wire [19:0] tile_kof95 = (tile[17:16] == 2'd3) ? tile - 20'h08000 : tile;
+
+	// kof95:
+	// 1400000-17fffff empty
+	// So tiles 28000-2FFFF are normally empty
+	// Requested range	Mapped range
+	// 00000-27FFF			00000-27FFF (-0)
+	// 28000-2FFFF			Empty
+	// 30000-33FFF			28000-2BFFF (-8000)
+
+	wire [19:0] tile_whp = (tile[17:16] == 2'd2) ? tile - 20'h08000 :
+									(tile[17:16] == 2'd3) ? tile - 20'h10000 :
+									tile;
+
+	// whp:
+	// 0c00000-0ffffff empty
+	// So tiles 18000-1FFFF are normally empty
+	// 1400000-17fffff empty
+	// So tiles 28000-2FFFF are normally empty
+	// Requested range	Mapped range
+	// 00000-17FFF			00000-17FFF (-0)
+	// 18000-1FFFF			Empty
+	// 20000-27FFF			18000-1FFFF (-8000)
+	// 28000-2FFFF			Empty
+	// 30000-37FFF			20000-27FFF (-8000-8000)
+
+	wire [19:0] tile_kizuna = (tile[17:16] == 2'd1) ? tile - 20'h08000 :
+										(tile[17:16] == 2'd3) ? tile - 20'h10000 :
+										tile;
+
+	// kizuna:
+	// 0400000-07fffff empty
+	// So tiles 08000-0FFFF are normally empty
+	// 1400000-17fffff empty
+	// So tiles 28000-2FFFF are normally empty
+	// Requested range	Mapped range
+	// 00000-07FFF			00000-07FFF (-0)
+	// 08000-0FFFF			Empty
+	// 10000-27FFF			08000-1FFFF (-8000)
+	// 28000-2FFFF			Empty
+	// 30000-37FFF			20000-27FFF (-8000-8000)
+	
+	wire [22:0] P2ROM_ADDR = {P_BANK + 3'd3, M68K_ADDR[19:1], 1'b0};
+	wire [24:0] CROM_ADDR = {tile_remapped[17:16] + 1'd1, tile_remapped[15:0], C_LATCH[3:0], 3'b000};
+	//wire [24:0] CROM_ADDR = {C_LATCH_EXT[1:0] + 1'd1, C_LATCH, 3'b000};
 	
 	wire [24:0] ioctl_addr_offset =
+		(ioctl_index == INDEX_SPROM) ?	{8'b0_0000_000, ioctl_addr[16:0]} :	// System ROM
+		(ioctl_index == INDEX_S1ROM) ?	{6'b0_0000_1, ioctl_addr[18:0]} :	// S1
+		(ioctl_index == INDEX_SFIXROM) ? {8'b0_0001_000, ioctl_addr[16:0]} :	// SFIX
+		(ioctl_index == INDEX_P1ROM_A) ? {5'b0_0010, ioctl_addr[19:0]} :		// P1 first half or full
+		(ioctl_index == INDEX_P1ROM_B) ? {6'b0_0010_1, ioctl_addr[18:0]} :	// P1 second half
+		(ioctl_index == INDEX_P2ROM) ? ioctl_addr + 25'h0300000 :				// P2+
+		(ioctl_index >= INDEX_CROMS) ? {ioctl_addr[23:0], 1'b0} + {ioctl_index[5:1], 18'h00000, ioctl_index[0], 1'b0} + 25'h0800000 : // C*
+		25'h0000000;
+	
+	/*wire [24:0] ioctl_addr_offset =
 		(ioctl_index == INDEX_SPROM) ? ioctl_addr + 25'h0800000 :	// System ROM
 		(ioctl_index == INDEX_SFIXROM) ? ioctl_addr + 25'h0880000 :	// SFIX
 		(ioctl_index == INDEX_P1ROM_A) ? ioctl_addr + 25'h0000000 :	// P1 first half
@@ -631,7 +671,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 		(ioctl_index == INDEX_P2ROM) ? ioctl_addr + 25'h0100000 :	// P2
 		(ioctl_index == INDEX_S1ROM) ? ioctl_addr + 25'h0820000 :	// S1
 		(ioctl_index >= INDEX_CROMS) ? {ioctl_addr[23:0], 1'b0} + {1'b1, ioctl_index[4:1], 18'h00000, ioctl_index[0], 1'b0} : // C*
-		25'h0000000;
+		25'h0000000;*/
 	
 	// This is redundant with following always_comb :(
 	/*always_comb begin
@@ -652,6 +692,27 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 		casez ({ioctl_download, CROM_RD_RUN, SROM_RD_RUN, ~nROMOE & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN})
 			// Loading pass-through
 			6'b1zzzzz: sdram_addr = ioctl_addr_offset;
+			// C ROMs Bytes $0800000~$1FFFFFF
+			6'b01zzzz: sdram_addr = CROM_ADDR;
+			// S ROM Bytes $0080000~$009FFFF or SFIX ROM Bytes $0100000~$011FFFF
+			6'b001zzz: sdram_addr = nSYSTEM_G ? {8'b0_0000_100, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
+														{8'b0_0001_000, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
+			// P1 ROM $0200000~$02FFFFF
+			6'b0001zz: sdram_addr = {5'b0_0010, M68K_ADDR[19:1], 1'b0};
+			// P2 ROM $0300000~$07FFFFF bankswitched
+			6'b00001z: sdram_addr = {2'b0_0, P2ROM_ADDR};
+			// System ROM $0000000~$001FFFF
+			6'b000001: sdram_addr = {8'b0_0000_000, M68K_ADDR[16:1], 1'b0};
+			// Default
+			6'b000000: sdram_addr = 25'h0000000;
+		endcase
+	end
+	
+	// sdram_addr is 25 bits, LSB is = 0 in word mode
+	/*always_comb begin 
+		casez ({ioctl_download, CROM_RD_RUN, SROM_RD_RUN, ~nROMOE & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN})
+			// Loading pass-through
+			6'b1zzzzz: sdram_addr = ioctl_addr_offset;
 			// C ROMs Bytes $1000000~$1FFFFFF
 			6'b01zzzz: sdram_addr = {1'b1, CROM_ADDR};
 			// S ROM Bytes $0820000~$083FFFF or SFIX ROM Bytes $0880000~$089FFFF
@@ -666,7 +727,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 			// Default
 			6'b000000: sdram_addr = 25'h0000000;
 		endcase
-	end
+	end*/
 	
 	sdram ram
 	(
@@ -743,11 +804,6 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3)), .WIDE(1)) hps_io
 	wire nBWU = nSRAMWEU | nSRAMWEN_G;
 	//backup_ram SRAML(M68K_ADDR[15:1], CLK_24M, M68K_DATA[7:0], ~nBWL, SRAML_OUT);
 	//backup_ram SRAMU(M68K_ADDR[15:1], CLK_24M, M68K_DATA[15:8], ~nBWU, SRAMU_OUT);
-	
-	// Image file:
-	//                   byte start/end  sd_lba(words)
-	// 64kB backup RAM	$000000 $00FFFF $00~$7F
-	// 2kB memory card	$010000 $0107FF $80~$83
 	
 	wire [15:0] sd_buff_din_sram;
 	wire [14:0] sram_addr = {sd_lba[6:0], sd_buff_addr};
