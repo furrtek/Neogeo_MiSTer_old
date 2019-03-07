@@ -1,18 +1,22 @@
-// NeoGeo logic definition
-// Copyright (C) 2018 Sean Gonsalves
+//============================================================================
+//  SNK NeoGeo for MiSTer
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+//  Copyright (C) 2018 Sean 'Furrtek' Gonsalves
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+//  This program is free software; you can redistribute it and/or modify it
+//  under the terms of the GNU General Public License as published by the Free
+//  Software Foundation; either version 2 of the License, or (at your option)
+//  any later version.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//  This program is distributed in the hope that it will be useful, but WITHOUT
+//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+//  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+//  more details.
+//
+//  You should have received a copy of the GNU General Public License along
+//  with this program; if not, write to the Free Software Foundation, Inc.,
+//  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//============================================================================
 
 // All pins listed ok. REF, DIVI and DIVO only used on AES for video PLL hack
 
@@ -29,11 +33,13 @@ module lspc2_a2(
 	output S2H1,
 	output S1H1,
 	output LOAD,
-	output H, EVEN1, EVEN2,			// For ZMC2
+	output reg H,
+	output EVEN1,						// For ZMC2
+	output reg EVEN2,
 	output IPL0, IPL1,
 	output CHG,							// Also called TMS0
 	output LD1, LD2,					// Buffer address load
-	output PCK1, PCK2,
+	output reg PCK1, PCK2,
 	output [3:0] WE,
 	output [3:0] CK,
 	output SS1, SS2,					// Buffer pair selection for B1
@@ -112,7 +118,7 @@ module lspc2_a2(
 	wire [3:0] FIX_PAL;
 	wire [11:0] FIX_TILE;
 	wire [3:0] HSHRINK;
-	wire [15:0] PIPE_C;
+	wire [13:0] PIPE_C;
 	wire [3:0] SPR_TILEMAP;
 	wire [7:0] ACTIVE_RD;
 	wire [3:0] P201_Q;
@@ -124,11 +130,29 @@ module lspc2_a2(
 	assign S1H1 = LSPC_3M;
 	assign S2H1 = LSPC_1_5M;
 	
+	//FD2 T168A(CLK_24M, T160A_OUT, PCK1, nPCK1);
+	//FD2 T162A(CLK_24M, T160B_OUT, PCK2);
+	//FDM T172(nPCK1, SPR_TILE_HFLIP, T172_Q);
+	//FD2 U167(~PCK2, T172_Q, H);
+	
 	// PCK1, PCK2, H
-	FD2 T168A(CLK_24M, T160A_OUT, PCK1, nPCK1);
-	FD2 T162A(CLK_24M, T160B_OUT, PCK2);
-	FD2 U167(~PCK2, T172_Q, H);
-	FDM T172(nPCK1, SPR_TILE_HFLIP, T172_Q);
+	reg T172_Q;
+	//reg nPCK1;
+	always @(negedge CLK_24M)
+	begin
+		// FD2 T168A(CLK_24M, T160A_OUT, PCK1, nPCK1);
+		PCK1 <= T160A_OUT;
+		//nPCK1 <= ~T160A_OUT;
+		// FD2 T162A(CLK_24M, T160B_OUT, PCK2);
+		PCK2 <= T160B_OUT;
+		// FDM T172(nPCK1, SPR_TILE_HFLIP, T172_Q);
+		if (PCK1 & ~T160A_OUT)
+			T172_Q <= SPR_TILE_HFLIP;
+		// FD2 U167(~PCK2, T172_Q, H);
+		if (~PCK2 & T160B_OUT)
+			H <= T172_Q;
+	end
+	
 	assign CA4 = T172_Q ^ LSPC_1_5M;
 	
 	// EVEN1, EVEN2
@@ -138,7 +162,6 @@ module lspc2_a2(
 	assign U112_OUT = ~&{U105A_OUT, U107_OUT, U109_OUT};
 	//assign #13 EVEN1 = U112_OUT;	// BD5 U162
 	assign EVEN1 = U112_OUT;
-	FD2 U144A(CLK_24M, U112_OUT, EVEN2);
 	
 	// Pixel parity select
 	assign nPARITY_INIT = ~&{nCHAINED, S53A_OUT};	// R42A
@@ -218,12 +241,52 @@ module lspc2_a2(
 	FDM T53(LSPC_12M, T56A_OUT, T53_Q);
 	FDM U53(CLK_24M, T53_Q, U53_Q);
 	assign nPBUS_OUT_EN = U53_Q & T53_Q;
-	FDPCell T69(LSPC_12M, LSPC_3M, nRESETP, 1'b1, , T69_nQ);
+	
+	reg T69_nQ;
+	
+	always @(posedge CLK_24MB or negedge nRESETP)
+	begin
+		//FDPCell T69(LSPC_12M, LSPC_3M, nRESETP, 1'b1, , T69_nQ);
+		if (!nRESETP)
+		begin
+			T69_nQ <= 1'b0;
+		end
+		else
+		begin
+			if (!LSPC_12M)
+				T69_nQ <= ~LSPC_3M;
+		end
+	end
+	
 	assign T73A_OUT = LSPC_3M | T69_nQ;
-	FJD T140(CLK_24M, T134_nQ, 1'b1, T73A_OUT, T140_Q);
-	FJD T134(CLK_24M, T140_Q, 1'b1, T73A_OUT, , T134_nQ);
-	FD2 U129A(CLK_24M, T134_nQ, U129A_Q, U129A_nQ);
-	assign T125A_OUT = U129A_nQ | T140_Q;
+	
+	reg T140_Q, T134_Q;
+	always @(posedge CLK_24M or negedge T73A_OUT)
+	begin
+		if (!T73A_OUT)
+		begin
+			T140_Q <= 1'b0;
+			T134_Q <= 1'b0;
+		end
+		else
+		begin
+			//FJD T140(CLK_24M, T134_nQ, 1'b1, T73A_OUT, T140_Q);
+			T140_Q <= (~T134_Q) ? ~T140_Q : 1'b0;
+			//FJD T134(CLK_24M, T140_Q, 1'b1, T73A_OUT, , T134_nQ);
+			T134_Q <= (T140_Q) ? ~T134_Q : 1'b0;
+		end
+	end
+	
+	reg U129A_Q;
+	always @(negedge CLK_24M)
+	begin
+		//FD2 U129A(CLK_24M, ~T134_Q, U129A_Q, U129A_nQ);
+		U129A_Q <= ~T134_Q;
+		//FD2 U144A(CLK_24M, U112_OUT, EVEN2);
+		EVEN2 <= U112_OUT;
+	end
+	
+	assign T125A_OUT = ~U129A_Q | T140_Q;
 	BD3 P198A(Q174B_OUT, P198A_OUT);
 	FS1 P201(LSPC_12M, P198A_OUT, P201_Q);
 	assign P219A_OUT = ~|{O159_QB, ~P201_Q[0]};
@@ -482,7 +545,7 @@ module lspc2_a2(
 	assign LO_LINE_A = SPR_Y_ADD[7:0] ^ {8{~P235_OUT}};
 	assign P235_OUT = ~(SPR_Y[8] ^ SPR_Y_ADD[8]);
 	// Q237 R189
-	assign SPR_Y_SHRINK = LO_LINE_A + ~YSHRINK;
+	assign SPR_Y_SHRINK = LO_LINE_A + {1'b0, ~YSHRINK};
 	// Q265 R151
 	assign LO_LINE_B = LO_LINE_A + {~YSHRINK[6:0], 1'b0};
 	

@@ -1,18 +1,22 @@
-// NeoGeo logic definition
-// Copyright (C) 2018 Sean Gonsalves
+//============================================================================
+//  SNK NeoGeo for MiSTer
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+//  Copyright (C) 2018 Sean 'Furrtek' Gonsalves
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+//  This program is free software; you can redistribute it and/or modify it
+//  under the terms of the GNU General Public License as published by the Free
+//  Software Foundation; either version 2 of the License, or (at your option)
+//  any later version.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//  This program is distributed in the hope that it will be useful, but WITHOUT
+//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+//  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+//  more details.
+//
+//  You should have received a copy of the GNU General Public License along
+//  with this program; if not, write to the Free Software Foundation, Inc.,
+//  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//============================================================================
 
 module neo_f0(
 	input nRESET,
@@ -33,7 +37,9 @@ module neo_f0(
 	input RTC_DOUT, RTC_TP,
 	output RTC_DIN, RTC_CLK, RTC_STROBE,
 	
-	output nCOUNTOUT
+	output nCOUNTOUT,
+	
+	input SYSTEM_TYPE
 	
 	//output [3:0] EL_OUT,
 	//output [8:0] LED_OUT1,
@@ -62,9 +68,9 @@ module neo_f0(
 								DIPSW;
 	
 	// REG_STATUS_A $320001~?, odd bytes
-	// nDIPRD1: Output IN300~IN304 to D0~D4, D5 ?, and CALTP/CALDOUT to D6/D7 (Neutral for now)
+	// In console mode, reading REG_STATUS_A returns 00. This is used by the Unibios to detect the system type.
 	assign M68K_DATA = nDIPRD1 ? 8'bzzzzzzzz :
-									{RTC_DOUT, RTC_TP, 4'b1111, COIN2, COIN1};
+								SYSTEM_TYPE ? {RTC_DOUT, RTC_TP, 4'b1111, COIN2, COIN1} : 8'h00;
 	
 	always @(negedge nRESET or negedge nBITW0)
 	begin

@@ -1,18 +1,22 @@
-// NeoGeo logic definition
-// Copyright (C) 2018 Sean Gonsalves
+//============================================================================
+//  SNK NeoGeo for MiSTer
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+//  Copyright (C) 2018 Sean 'Furrtek' Gonsalves
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+//  This program is free software; you can redistribute it and/or modify it
+//  under the terms of the GNU General Public License as published by the Free
+//  Software Foundation; either version 2 of the License, or (at your option)
+//  any later version.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//  This program is distributed in the hope that it will be useful, but WITHOUT
+//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+//  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+//  more details.
+//
+//  You should have received a copy of the GNU General Public License along
+//  with this program; if not, write to the Free Software Foundation, Inc.,
+//  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//============================================================================
 
 module c1_regs(
 	input nICOM_ZONE,
@@ -41,11 +45,6 @@ module c1_regs(
 	
 	// REG_SOUND write
 	assign nSDW = (RW | nICOM_ZONE);		// Tells Z80 that 68k sent a command
-	
-	// DEBUG begin
-	always @(negedge nSDW)
-		$display("68K -> Z80: %H", M68K_DATA);
-	// DEBUG end
 	
 	// REG_SOUND write
 	always @(negedge nICOM_ZONE or negedge nSDZ80CLR)		// Which one has priority ?

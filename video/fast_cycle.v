@@ -1,18 +1,22 @@
-// NeoGeo logic definition
-// Copyright (C) 2018 Sean Gonsalves
+//============================================================================
+//  SNK NeoGeo for MiSTer
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+//  Copyright (C) 2018 Sean 'Furrtek' Gonsalves
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+//  This program is free software; you can redistribute it and/or modify it
+//  under the terms of the GNU General Public License as published by the Free
+//  Software Foundation; either version 2 of the License, or (at your option)
+//  any later version.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//  This program is distributed in the hope that it will be useful, but WITHOUT
+//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+//  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+//  more details.
+//
+//  You should have received a copy of the GNU General Public License along
+//  with this program; if not, write to the Free Software Foundation, Inc.,
+//  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//============================================================================
 
 module fast_cycle(
 	input CLK_24M,
@@ -31,7 +35,7 @@ module fast_cycle(
 	input P50_CO,
 	output nCPU_WR_HIGH,
 	output [3:0] HSHRINK,
-	output [15:0] PIPE_C,
+	output [13:0] PIPE_C,
 	output [15:0] VRAM_HIGH_READ,
 	output [7:0] ACTIVE_RD,
 	output R91_Q,
@@ -60,23 +64,14 @@ module fast_cycle(
 	wire [8:0] PARSE_Y;
 	wire [5:0] PARSE_SIZE;
 	wire [15:0] F_OUT_MUX;
-	wire [3:0] J102_Q;
-	wire [3:0] E175_Q;
 	wire [7:0] ACTIVE_RD_PRE;
 	wire [3:0] J127_Q;
-	wire [8:0] PARSE_INDEX;
 	wire [3:0] T102_Q;
 	wire [7:0] PARSE_LOOKAHEAD;
 	wire [8:0] PARSE_ADD_Y;
 	wire [5:0] PARSE_ADD_SIZE;
-	wire [7:0] ACTIVE_RD_ADDR;	// Bit 7 unused
-	//wire [15:0] PIPE_A;
-	//wire [15:0] PIPE_B;
 	wire [3:0] O141_Q;
-	wire [3:0] G152_Q;
-	reg [3:0] G152_Q_DELAYED;
-	wire [3:0] J87_Q;
-	reg [3:0] J87_Q_DELAYED;
+	wire [7:0] ACTIVE_RD_ADDR;	// Bit 7 unused
 	wire [7:0] ACTIVE_WR_ADDR;	// Bit 7 unused
 	wire [10:0] A_TOP;
 	wire [10:0] B_TOP;
@@ -87,10 +82,15 @@ module fast_cycle(
 	wire [10:0] C_BOT;
 	wire [10:0] D_BOT;
 	wire PARSE_CHAIN /* synthesis keep */;		// DEBUG
-	wire T90A_OUT /* synthesis keep */;		// DEBUG
+	wire T90A_OUT /* synthesis keep */;			// DEBUG
+	reg [8:0] PARSE_INDEX;
 	reg P39A_OUT;
-	reg [47:0] SR_SPR_PARAMS;
+	reg [47:0] SR_SPR_PARAMS;	// 3*14
 	reg S105_OUT;
+	reg [7:0] J87_G152_Q;
+	reg J231_Q;
+	reg [7:0] J102_E175_Q;
+	reg J194_Q;
 	
 	assign FVRAM_ADDR = C;
 	assign F = FVRAM_DATA_IN;
@@ -121,19 +121,30 @@ module fast_cycle(
 	FDSCell O123(N98_QB, F[7:4], YSHRINK[7:4]);
 	FDSCell K178(N98_QB, F[3:0], YSHRINK[3:0]);
 	
-	// Data output
+	// Data output selectors
 	// O171B O171A O173B O173A
 	// B178B B173B B171B C180B
 	// C146B C144B C142B C149B
 	// E207B E207A E209B E209A
-	assign F_OUT_MUX = CLK_CPU_READ_HIGH ? VRAM_WRITE : {7'b0000000, J194_Q, J102_Q, E175_Q};
+	
+	assign F_OUT_MUX = CLK_CPU_READ_HIGH ? VRAM_WRITE : {7'b0000000, J194_Q, J102_E175_Q};
 	
 	//assign F = CWE ? 16'bzzzzzzzzzzzzzzzz : F_OUT_MUX;
 	
+	// OK
+	always @(posedge PARSE_INDEX_INC_CLK)
+		{J231_Q, J87_G152_Q} <= PARSE_INDEX;
 	
+	// OK
+	always @(posedge O109A_OUT or negedge nPARSING_DONE)
+	begin
+		if (!nPARSING_DONE)
+			{J194_Q, J102_E175_Q} <= 9'd0;
+		else
+			{J194_Q, J102_E175_Q} <= {J231_Q, J87_G152_Q};
+	end
 	assign O112B_OUT = O109A_OUT;		// 2x inverter
-	
-	FDSCell G152(PARSE_INDEX_INC_CLK, PARSE_INDEX[3:0], G152_Q);
+	/*FDSCell G152(PARSE_INDEX_INC_CLK, PARSE_INDEX[3:0], G152_Q);
 	//assign #5 G152_Q_DELAYED = G152_Q;	// 4x BD3
 	always @(posedge CLK_24M)	// TESTING - ok, solves issue
 		G152_Q_DELAYED <= G152_Q;
@@ -146,7 +157,9 @@ module fast_cycle(
 	FDRCell J102(O109A_OUT, J87_Q_DELAYED, nPARSING_DONE, J102_Q);
 	FDM J231(PARSE_INDEX_INC_CLK, PARSE_INDEX[8], J231_Q);
 	BD3 J235A(J231_Q, J231_Q_DELAYED);
-	FDPCell J194(O112B_OUT, J231_Q_DELAYED, 1'b1, nPARSING_DONE, J194_Q);
+	//always @(posedge CLK_24M)	// TESTED: don't do this
+	//	J231_Q_DELAYED <= J231_Q;
+	FDPCell J194(O112B_OUT, J231_Q_DELAYED, 1'b1, nPARSING_DONE, J194_Q);*/
 	
 	
 	// CWE output
@@ -165,11 +178,35 @@ module fast_cycle(
 	
 	
 	// Parsing end detection
+	// TESTING THIS:
+	/*reg nPARSING_DONE;
+	always @(posedge O109A_OUT or negedge nNEW_LINE)
+	begin
+		if (!nNEW_LINE)
+			nPARSING_DONE <= 1'b1;
+		else
+		begin
+			if (&{PARSE_INDEX[8], PARSE_INDEX[6:1]})
+				nPARSING_DONE <= 1'b0;
+		end
+	end*/
 	assign I145_OUT = ~&{PARSE_INDEX[6:1], PARSE_INDEX[8]};
 	assign R113A_OUT = I145_OUT & nPARSING_DONE;
 	FDPCell R109(O109A_OUT, R113A_OUT, nNEW_LINE, 1'b1, nPARSING_DONE);
 	
 	// Active list full detection
+	/*reg S111_Q;
+	wire S111_nQ = ~S111_Q;
+	always @(posedge O109A_OUT or negedge nNEW_LINE)
+	begin
+		if (!nNEW_LINE)
+			S111_Q <= 1'b1;
+		else
+		begin
+			if (&{ACTIVE_WR_ADDR[6:5]})
+				S111_Q <= 1'b0;
+		end
+	end*/
 	assign S109B_OUT = S111_Q & nACTIVE_FULL;
 	FDPCell S111(O109A_OUT, S109B_OUT, nNEW_LINE, 1'b1, S111_Q, S111_nQ);
 	assign S109A_OUT = S111_Q & nNEW_LINE;
@@ -207,13 +244,21 @@ module fast_cycle(
 	assign T92_OUT = ~&{~T102_Q[2], ~T102_Q[1], T102_Q[0], VRAM_HIGH_ADDR_SB};
 	assign T90A_OUT = ~&{T94_OUT, T92_OUT};
 	
-	
+	/*reg [6:0] ACTIVE_WR_ADDR;
+	always @(posedge O110B_OUT or negedge nNEW_LINE)
+	begin
+		if (!nNEW_LINE)
+			ACTIVE_WR_ADDR <= 7'd0;
+		else
+			ACTIVE_WR_ADDR <= ACTIVE_WR_ADDR + 1'd1;
+	end*/
 	C43 H198(O110B_OUT, 4'b0000, 1'b1, 1'b1, 1'b1, nNEW_LINE, ACTIVE_WR_ADDR[3:0], H198_CO);
 	// Used for test mode
 	assign H222A_OUT = H198_CO | 1'b0;
 	C43 I189(O110B_OUT, 4'b0000, 1'b1, 1'b1, H222A_OUT, nNEW_LINE, ACTIVE_WR_ADDR[7:4]);
-	assign nACTIVE_FULL = ~&{ACTIVE_WR_ADDR[6:5]};	// J100B
+	
 	assign O110B_OUT = O109A_OUT | VRAM_HIGH_ADDR_SB;
+	assign nACTIVE_FULL = ~&{ACTIVE_WR_ADDR[6:5]};	// J100B
 	
 	
 	FS3 N98(T125A_OUT, 4'b0000, R91_nQ, RESETP, {N98_QD, N98_QC, N98_QB, N98_QA});
@@ -272,6 +317,15 @@ module fast_cycle(
 	
 	
 	// Active list read counter
+	/*reg [6:0] ACTIVE_RD_ADDR;
+	always @(posedge CLK_ACTIVE_RD or negedge nRELOAD_RD_ACTIVE)
+	begin
+		if (!nRELOAD_RD_ACTIVE)
+			ACTIVE_RD_ADDR <= 7'd0;
+		else
+			ACTIVE_RD_ADDR <= ACTIVE_RD_ADDR + 1'd1;
+	end*/
+	
 	//assign #1 P39A_OUT = ~PIXELC[8];
 	always @(posedge CLK_24M)	// TESTING
 		P39A_OUT <= ~PIXELC[8];
@@ -281,13 +335,21 @@ module fast_cycle(
 	C43 J151(CLK_ACTIVE_RD, 4'b0000, nRELOAD_RD_ACTIVE, 1'b1, J176A_OUT, 1'b1, ACTIVE_RD_ADDR[7:4]);
 	
 	
+	// OK
 	// Parsing counter
+	always @(posedge PARSE_INDEX_INC_CLK or negedge nNEW_LINE)
+	begin
+		if (!nNEW_LINE)
+			PARSE_INDEX <= 9'd0;
+		else
+			PARSE_INDEX <= PARSE_INDEX + 1'd1;
+	end
 	assign PARSE_INDEX_INC_CLK = O102B_OUT | O109A_OUT;	// O105B
-	C43 H127(PARSE_INDEX_INC_CLK, 4'b0000, 1'b1, 1'b1, 1'b1, nNEW_LINE, PARSE_INDEX[3:0], H127_CO);
+	/*C43 H127(PARSE_INDEX_INC_CLK, 4'b0000, 1'b1, 1'b1, 1'b1, nNEW_LINE, PARSE_INDEX[3:0], H127_CO);
 	assign H125B_OUT = H127_CO | 1'b0;	// Used for test mode
 	C43 I121(PARSE_INDEX_INC_CLK, 4'b0000, 1'b1, H125B_OUT, 1'b1, nNEW_LINE, PARSE_INDEX[7:4], I121_CO);
 	C43 J127(PARSE_INDEX_INC_CLK, 4'b0000, 1'b1, H125B_OUT, I121_CO, nNEW_LINE, J127_Q);
-	assign PARSE_INDEX[8] = J127_Q[0];
+	assign PARSE_INDEX[8] = J127_Q[0];*/
 	
 	assign O109A_OUT = T125A_OUT | CLK_CPU_READ_HIGH;
 	assign O102B_OUT = WR_ACTIVE & O98_Q;
@@ -304,14 +366,14 @@ module fast_cycle(
 	assign PARSE_MATCH = PARSE_ADD_SIZE[5];
 	
 	
-	// Pipe for x position and h-shrink
-	// TESTING: Implemented as shift register, as delay gates are used in LSPC2
-	// Seems to work OK, no change
+	// OK
+	// Pipeline for x position and h-shrink
+	// Implemented as 14-bit 3-stage shift register
 	always @(posedge N98_QD)
-		SR_SPR_PARAMS <= {SR_SPR_PARAMS[31:0], {2'b00, SPR_CHAIN, O141_Q, F[15:7]}};
+		SR_SPR_PARAMS <= {SR_SPR_PARAMS[27:0], {SPR_CHAIN, O141_Q, F[15:7]}};
 	assign O159_QB = SR_SPR_PARAMS[13];
-	assign HSHRINK = SR_SPR_PARAMS[44:41];
-	assign PIPE_C = SR_SPR_PARAMS[47:32];
+	assign HSHRINK = SR_SPR_PARAMS[40:37];
+	assign PIPE_C = SR_SPR_PARAMS[41:28];
 	/*
 	// O159 P131 O87 N131
 	FDS16bit O159(N98_QD, {2'b00, SPR_CHAIN, O141_Q, F[15:7]}, PIPE_A);
@@ -322,8 +384,5 @@ module fast_cycle(
 	FDS16bit P155(N98_QD, PIPE_B, PIPE_C);
 	assign HSHRINK = PIPE_C[12:9];
 	*/
-	
-	//vram_fast_u VRAMUU(C, F[15:8], 1'b0, 1'b0, CWE);
-	//vram_fast_l VRAMUL(C, F[7:0], 1'b0, 1'b0, CWE);
 
 endmodule

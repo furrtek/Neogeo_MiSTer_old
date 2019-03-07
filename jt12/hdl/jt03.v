@@ -20,7 +20,7 @@
 */
 
 // Wrapper to output only combined channels. Defaults to YM2203 mode.
-
+// Modified by furrtek 02/03/19
 
 
 module jt03(
@@ -28,7 +28,7 @@ module jt03(
     input           clk,        // CPU clock
     input           cen,        // optional clock enable, it not needed leave as 1'b1
     input   [7:0]   din,
-    input           addr,
+    input   [1:0]   addr,       // YM2610 uses 2 address bits
     input           cs_n,
     input           wr_n,
     
@@ -45,13 +45,13 @@ module jt03(
     output          snd_sample
 );
 
-jt12_top #(.use_lfo(0),.use_ssg(1), .num_ch(3), .use_pcm(0), .use_lr(0)) 
+jt12_top #(.use_lfo(1), .use_ssg(1), .num_ch(6), .use_pcm(0), .use_lr(0)) 
 u_jt12(
     .rst            ( rst          ),        // rst should be at least 6 clk&cen cycles long
     .clk            ( clk          ),        // CPU clock
     .cen            ( cen          ),        // optional clock enable, it not needed leave as 1'b1
     .din            ( din          ),
-    .addr           ( {1'b0, addr} ),
+    .addr           ( addr         ),
     .cs_n           ( cs_n         ),
     .wr_n           ( wr_n         ),
     

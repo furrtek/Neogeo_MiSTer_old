@@ -41,7 +41,7 @@ set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
 set_global_assignment -name SAVE_DISK_SPACE OFF
 set_global_assignment -name SMART_RECOMPILE ON
-set_global_assignment -name PARTITION_NETLIST_TYPE POST_FIT -section_id Top
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
@@ -431,199 +431,357 @@ set_global_assignment -name VERILOG_FILE io/neo_g0.v
 set_global_assignment -name VERILOG_FILE io/upd4990.v
 set_global_assignment -name VERILOG_FILE dac_test.v
 set_global_assignment -name VERILOG_FILE dpram.v
-set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id RTC
-set_global_assignment -name SLD_NODE_ENTITY_NAME sld_signaltap -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "emu:emu|neo_f0:F0|M68K_ADDR[4]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[1] -to "emu:emu|neo_f0:F0|M68K_ADDR[5]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[2] -to "emu:emu|neo_f0:F0|M68K_ADDR[6]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[3] -to "emu:emu|neo_f0:F0|M68K_ADDR[7]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[4] -to "emu:emu|neo_f0:F0|nBITW0" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[5] -to "emu:emu|uPD4990:RTC|CLK" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[6] -to "emu:emu|uPD4990:RTC|CMD_REG[0]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[7] -to "emu:emu|uPD4990:RTC|CMD_REG[1]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[8] -to "emu:emu|uPD4990:RTC|CMD_REG[2]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[9] -to "emu:emu|uPD4990:RTC|CMD_REG[3]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[10] -to "emu:emu|uPD4990:RTC|DATA_CLK" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[11] -to "emu:emu|uPD4990:RTC|DATA_IN" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[12] -to "emu:emu|uPD4990:RTC|DATA_OUT" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[13] -to "emu:emu|uPD4990:RTC|OE" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[14] -to "emu:emu|uPD4990:RTC|OUT_HOLD" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[15] -to "emu:emu|uPD4990:RTC|SHIFT_REG[0]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[16] -to "emu:emu|uPD4990:RTC|SHIFT_REG[10]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[17] -to "emu:emu|uPD4990:RTC|SHIFT_REG[11]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[18] -to "emu:emu|uPD4990:RTC|SHIFT_REG[12]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[19] -to "emu:emu|uPD4990:RTC|SHIFT_REG[13]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[20] -to "emu:emu|uPD4990:RTC|SHIFT_REG[14]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[21] -to "emu:emu|uPD4990:RTC|SHIFT_REG[15]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[22] -to "emu:emu|uPD4990:RTC|SHIFT_REG[16]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[23] -to "emu:emu|uPD4990:RTC|SHIFT_REG[17]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[24] -to "emu:emu|uPD4990:RTC|SHIFT_REG[18]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[25] -to "emu:emu|uPD4990:RTC|SHIFT_REG[19]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[26] -to "emu:emu|uPD4990:RTC|SHIFT_REG[1]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[27] -to "emu:emu|uPD4990:RTC|SHIFT_REG[20]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[28] -to "emu:emu|uPD4990:RTC|SHIFT_REG[21]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[29] -to "emu:emu|uPD4990:RTC|SHIFT_REG[22]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[30] -to "emu:emu|uPD4990:RTC|SHIFT_REG[23]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[31] -to "emu:emu|uPD4990:RTC|SHIFT_REG[24]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[32] -to "emu:emu|uPD4990:RTC|SHIFT_REG[25]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[33] -to "emu:emu|uPD4990:RTC|SHIFT_REG[26]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[34] -to "emu:emu|uPD4990:RTC|SHIFT_REG[27]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[35] -to "emu:emu|uPD4990:RTC|SHIFT_REG[28]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[36] -to "emu:emu|uPD4990:RTC|SHIFT_REG[29]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[37] -to "emu:emu|uPD4990:RTC|SHIFT_REG[2]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[38] -to "emu:emu|uPD4990:RTC|SHIFT_REG[30]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[39] -to "emu:emu|uPD4990:RTC|SHIFT_REG[31]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[40] -to "emu:emu|uPD4990:RTC|SHIFT_REG[32]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[41] -to "emu:emu|uPD4990:RTC|SHIFT_REG[33]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[42] -to "emu:emu|uPD4990:RTC|SHIFT_REG[34]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[43] -to "emu:emu|uPD4990:RTC|SHIFT_REG[35]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[44] -to "emu:emu|uPD4990:RTC|SHIFT_REG[36]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[45] -to "emu:emu|uPD4990:RTC|SHIFT_REG[37]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[46] -to "emu:emu|uPD4990:RTC|SHIFT_REG[38]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[47] -to "emu:emu|uPD4990:RTC|SHIFT_REG[39]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[48] -to "emu:emu|uPD4990:RTC|SHIFT_REG[3]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[49] -to "emu:emu|uPD4990:RTC|SHIFT_REG[40]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[50] -to "emu:emu|uPD4990:RTC|SHIFT_REG[41]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[51] -to "emu:emu|uPD4990:RTC|SHIFT_REG[42]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[52] -to "emu:emu|uPD4990:RTC|SHIFT_REG[43]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[53] -to "emu:emu|uPD4990:RTC|SHIFT_REG[44]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[54] -to "emu:emu|uPD4990:RTC|SHIFT_REG[45]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[55] -to "emu:emu|uPD4990:RTC|SHIFT_REG[46]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[56] -to "emu:emu|uPD4990:RTC|SHIFT_REG[47]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[57] -to "emu:emu|uPD4990:RTC|SHIFT_REG[4]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[58] -to "emu:emu|uPD4990:RTC|SHIFT_REG[5]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[59] -to "emu:emu|uPD4990:RTC|SHIFT_REG[6]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[60] -to "emu:emu|uPD4990:RTC|SHIFT_REG[7]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[61] -to "emu:emu|uPD4990:RTC|SHIFT_REG[8]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[62] -to "emu:emu|uPD4990:RTC|SHIFT_REG[9]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[63] -to "emu:emu|uPD4990:RTC|STROBE" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[64] -to "emu:emu|uPD4990:RTC|TP" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[65] -to "emu:emu|uPD4990:RTC|nRESET" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[0] -to "emu:emu|neo_f0:F0|M68K_ADDR[4]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[1] -to "emu:emu|neo_f0:F0|M68K_ADDR[5]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[2] -to "emu:emu|neo_f0:F0|M68K_ADDR[6]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[3] -to "emu:emu|neo_f0:F0|M68K_ADDR[7]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[4] -to "emu:emu|neo_f0:F0|nBITW0" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[5] -to "emu:emu|uPD4990:RTC|CLK" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[6] -to "emu:emu|uPD4990:RTC|CMD_REG[0]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[7] -to "emu:emu|uPD4990:RTC|CMD_REG[1]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[8] -to "emu:emu|uPD4990:RTC|CMD_REG[2]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[9] -to "emu:emu|uPD4990:RTC|CMD_REG[3]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[10] -to "emu:emu|uPD4990:RTC|DATA_CLK" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[11] -to "emu:emu|uPD4990:RTC|DATA_IN" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[12] -to "emu:emu|uPD4990:RTC|DATA_OUT" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[13] -to "emu:emu|uPD4990:RTC|OE" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[14] -to "emu:emu|uPD4990:RTC|OUT_HOLD" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[15] -to "emu:emu|uPD4990:RTC|SHIFT_REG[0]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[16] -to "emu:emu|uPD4990:RTC|SHIFT_REG[10]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[17] -to "emu:emu|uPD4990:RTC|SHIFT_REG[11]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[18] -to "emu:emu|uPD4990:RTC|SHIFT_REG[12]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[19] -to "emu:emu|uPD4990:RTC|SHIFT_REG[13]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[20] -to "emu:emu|uPD4990:RTC|SHIFT_REG[14]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[21] -to "emu:emu|uPD4990:RTC|SHIFT_REG[15]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[22] -to "emu:emu|uPD4990:RTC|SHIFT_REG[16]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[23] -to "emu:emu|uPD4990:RTC|SHIFT_REG[17]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[24] -to "emu:emu|uPD4990:RTC|SHIFT_REG[18]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[25] -to "emu:emu|uPD4990:RTC|SHIFT_REG[19]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[26] -to "emu:emu|uPD4990:RTC|SHIFT_REG[1]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[27] -to "emu:emu|uPD4990:RTC|SHIFT_REG[20]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[28] -to "emu:emu|uPD4990:RTC|SHIFT_REG[21]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[29] -to "emu:emu|uPD4990:RTC|SHIFT_REG[22]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[30] -to "emu:emu|uPD4990:RTC|SHIFT_REG[23]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[31] -to "emu:emu|uPD4990:RTC|SHIFT_REG[24]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[32] -to "emu:emu|uPD4990:RTC|SHIFT_REG[25]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[33] -to "emu:emu|uPD4990:RTC|SHIFT_REG[26]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[34] -to "emu:emu|uPD4990:RTC|SHIFT_REG[27]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[35] -to "emu:emu|uPD4990:RTC|SHIFT_REG[28]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[36] -to "emu:emu|uPD4990:RTC|SHIFT_REG[29]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[37] -to "emu:emu|uPD4990:RTC|SHIFT_REG[2]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[38] -to "emu:emu|uPD4990:RTC|SHIFT_REG[30]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[39] -to "emu:emu|uPD4990:RTC|SHIFT_REG[31]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[40] -to "emu:emu|uPD4990:RTC|SHIFT_REG[32]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[41] -to "emu:emu|uPD4990:RTC|SHIFT_REG[33]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[42] -to "emu:emu|uPD4990:RTC|SHIFT_REG[34]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[43] -to "emu:emu|uPD4990:RTC|SHIFT_REG[35]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[44] -to "emu:emu|uPD4990:RTC|SHIFT_REG[36]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[45] -to "emu:emu|uPD4990:RTC|SHIFT_REG[37]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[46] -to "emu:emu|uPD4990:RTC|SHIFT_REG[38]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[47] -to "emu:emu|uPD4990:RTC|SHIFT_REG[39]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[48] -to "emu:emu|uPD4990:RTC|SHIFT_REG[3]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[49] -to "emu:emu|uPD4990:RTC|SHIFT_REG[40]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[50] -to "emu:emu|uPD4990:RTC|SHIFT_REG[41]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[51] -to "emu:emu|uPD4990:RTC|SHIFT_REG[42]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[52] -to "emu:emu|uPD4990:RTC|SHIFT_REG[43]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[53] -to "emu:emu|uPD4990:RTC|SHIFT_REG[44]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[54] -to "emu:emu|uPD4990:RTC|SHIFT_REG[45]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[55] -to "emu:emu|uPD4990:RTC|SHIFT_REG[46]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[56] -to "emu:emu|uPD4990:RTC|SHIFT_REG[47]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[57] -to "emu:emu|uPD4990:RTC|SHIFT_REG[4]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[58] -to "emu:emu|uPD4990:RTC|SHIFT_REG[5]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[59] -to "emu:emu|uPD4990:RTC|SHIFT_REG[6]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[60] -to "emu:emu|uPD4990:RTC|SHIFT_REG[7]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[61] -to "emu:emu|uPD4990:RTC|SHIFT_REG[8]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[62] -to "emu:emu|uPD4990:RTC|SHIFT_REG[9]" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[63] -to "emu:emu|uPD4990:RTC|STROBE" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[64] -to "emu:emu|uPD4990:RTC|TP" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[65] -to "emu:emu|uPD4990:RTC|nRESET" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_BLOCK_TYPE=AUTO" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_DATA_BITS=66" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_BITS=66" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_BITS=66" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_NODE_INFO=805334532" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_POWER_UP_TRIGGER=0" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LENGTH=221" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_INVERSION_MASK_LENGTH=0" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SEGMENT_SIZE=512" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ATTRIBUTE_MEM_MODE=OFF" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_FLOW_USE_GENERATED=0" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_BITS=11" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_BUFFER_FULL_STOP=1" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_CURRENT_RESOURCE_WIDTH=1" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INCREMENTAL_ROUTING=1" -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[1] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[7] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[9] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[14] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[15] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[16] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[17] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[18] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[19] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[20] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[21] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[23] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[24] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[25] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[26] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[28] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to RTC|vcc -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL=1" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SAMPLE_DEPTH=512" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_IN_ENABLED=0" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_PIPELINE=0" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_PIPELINE=0" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_COUNTER_PIPELINE=0" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ADVANCED_TRIGGER_ENTITY=basic,1," -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL_PIPELINE=1" -section_id RTC
-set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ENABLE_ADVANCED_TRIGGER=0" -section_id RTC
-set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_clk -to "emu:emu|pll:pll|outclk_0" -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[0] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[2] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[3] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[4] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[5] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[6] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[8] -to RTC|gnd -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[10] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[12] -to RTC|vcc -section_id RTC
-set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[13] -to RTC|gnd -section_id RTC
 set_global_assignment -name IO_PLACEMENT_OPTIMIZATION OFF
-set_global_assignment -name SYSTEMVERILOG_FILE neogeo_burst.sv
+set_global_assignment -name VERILOG_FILE io/com.v
+set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_ENTITY_NAME sld_signaltap -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_clk -to "emu:emu|pll:pll|outclk_0" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "emu:emu|CROM_RD_REQ" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[1] -to "emu:emu|CROM_RD_RUN" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[2] -to "emu:emu|M68K_RD_REQ" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[3] -to "emu:emu|M68K_RD_RUN" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[4] -to "emu:emu|SDRAM_RD_PULSE" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[5] -to "emu:emu|SROM_RD_REQ" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[6] -to "emu:emu|SROM_RD_RUN" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[0] -to "emu:emu|CROM_RD_REQ" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[1] -to "emu:emu|CROM_RD_RUN" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[2] -to "emu:emu|M68K_RD_REQ" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[3] -to "emu:emu|M68K_RD_RUN" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[4] -to "emu:emu|SDRAM_RD_PULSE" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[5] -to "emu:emu|SROM_RD_REQ" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[6] -to "emu:emu|SROM_RD_RUN" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_BLOCK_TYPE=AUTO" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_NODE_INFO=805334528" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_POWER_UP_TRIGGER=0" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_INVERSION_MASK_LENGTH=0" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SEGMENT_SIZE=512" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ATTRIBUTE_MEM_MODE=OFF" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_FLOW_USE_GENERATED=0" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_BITS=11" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_BUFFER_FULL_STOP=1" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_CURRENT_RESOURCE_WIDTH=1" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INCREMENTAL_ROUTING=1" -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[3] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[4] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[5] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[7] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[8] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[9] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[10] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[14] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[17] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[19] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[20] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[21] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[23] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[24] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[26] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL=1" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SAMPLE_DEPTH=512" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_IN_ENABLED=0" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_PIPELINE=0" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_PIPELINE=0" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_COUNTER_PIPELINE=0" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ADVANCED_TRIGGER_ENTITY=basic,1," -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL_PIPELINE=1" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ENABLE_ADVANCED_TRIGGER=0" -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[1] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[2] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[6] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[13] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[15] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[16] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[18] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[0] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -to SDRAM_20stuff|gnd -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[28] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[7] -to "emu:emu|SYSTEM_TYPE" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[7] -to "emu:emu|SYSTEM_TYPE" -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[12] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[8] -to "emu:emu|com:COM|TOGGLE_BIT" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[9] -to "emu:emu|com:COM|nPORTOEL" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[10] -to "emu:emu|com:COM|nPORTOEU" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[11] -to "emu:emu|com:COM|nPORTWEL" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[12] -to "emu:emu|com:COM|nPORTWEL_PREV" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[13] -to "emu:emu|cpu_68k:M68KCPU|CLK_68KCLK" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[14] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[10]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[15] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[11]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[16] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[12]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[17] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[13]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[18] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[14]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[19] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[15]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[20] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[16]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[21] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[17]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[22] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[18]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[23] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[19]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[24] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[1]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[25] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[20]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[26] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[21]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[27] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[22]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[28] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[23]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[29] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[2]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[30] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[3]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[31] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[4]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[32] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[5]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[33] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[6]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[34] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[7]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[35] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[8]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[36] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[9]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[37] -to "emu:emu|cpu_68k:M68KCPU|M68K_RW" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[38] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[0]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[39] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[10]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[40] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[11]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[41] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[12]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[42] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[13]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[43] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[14]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[44] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[15]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[45] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[1]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[46] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[2]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[47] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[3]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[48] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[4]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[49] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[5]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[50] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[6]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[51] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[7]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[52] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[8]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[53] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[9]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[54] -to "emu:emu|cpu_68k:M68KCPU|nAS" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[55] -to "emu:emu|cpu_68k:M68KCPU|nDTACK" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[56] -to "emu:emu|cpu_68k:M68KCPU|nRESET" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[57] -to "emu:emu|hps_io:hps_io|ioctl_download" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[58] -to "emu:emu|hps_io:hps_io|status[24]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[59] -to "emu:emu|hps_io:hps_io|status[25]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[60] -to "emu:emu|nROMOE" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[61] -to "emu:emu|sdram:ram|addr[0]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[62] -to "emu:emu|sdram:ram|addr[10]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[63] -to "emu:emu|sdram:ram|addr[11]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[64] -to "emu:emu|sdram:ram|addr[12]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[65] -to "emu:emu|sdram:ram|addr[13]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[66] -to "emu:emu|sdram:ram|addr[14]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[67] -to "emu:emu|sdram:ram|addr[15]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[68] -to "emu:emu|sdram:ram|addr[16]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[69] -to "emu:emu|sdram:ram|addr[17]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[70] -to "emu:emu|sdram:ram|addr[18]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[71] -to "emu:emu|sdram:ram|addr[19]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[72] -to "emu:emu|sdram:ram|addr[1]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[73] -to "emu:emu|sdram:ram|addr[20]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[74] -to "emu:emu|sdram:ram|addr[21]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[75] -to "emu:emu|sdram:ram|addr[22]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[76] -to "emu:emu|sdram:ram|addr[23]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[77] -to "emu:emu|sdram:ram|addr[24]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[78] -to "emu:emu|sdram:ram|addr[2]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[79] -to "emu:emu|sdram:ram|addr[3]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[80] -to "emu:emu|sdram:ram|addr[4]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[81] -to "emu:emu|sdram:ram|addr[5]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[82] -to "emu:emu|sdram:ram|addr[6]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[83] -to "emu:emu|sdram:ram|addr[7]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[84] -to "emu:emu|sdram:ram|addr[8]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[85] -to "emu:emu|sdram:ram|addr[9]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[86] -to "emu:emu|sdram_we" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[8] -to "emu:emu|com:COM|TOGGLE_BIT" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[9] -to "emu:emu|com:COM|nPORTOEL" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[10] -to "emu:emu|com:COM|nPORTOEU" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[11] -to "emu:emu|com:COM|nPORTWEL" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[12] -to "emu:emu|com:COM|nPORTWEL_PREV" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[13] -to "emu:emu|cpu_68k:M68KCPU|CLK_68KCLK" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[14] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[10]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[15] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[11]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[16] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[12]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[17] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[13]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[18] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[14]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[19] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[15]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[20] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[16]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[21] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[17]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[22] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[18]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[23] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[19]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[24] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[1]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[25] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[20]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[26] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[21]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[27] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[22]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[28] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[23]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[29] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[2]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[30] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[3]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[31] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[4]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[32] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[5]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[33] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[6]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[34] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[7]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[35] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[8]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[36] -to "emu:emu|cpu_68k:M68KCPU|M68K_ADDR[9]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[37] -to "emu:emu|cpu_68k:M68KCPU|M68K_RW" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[38] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[0]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[39] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[10]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[40] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[11]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[41] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[12]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[42] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[13]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[43] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[14]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[44] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[15]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[45] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[1]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[46] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[2]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[47] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[3]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[48] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[4]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[49] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[5]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[50] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[6]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[51] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[7]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[52] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[8]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[53] -to "emu:emu|cpu_68k:M68KCPU|TG68K_DATAIN[9]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[54] -to "emu:emu|cpu_68k:M68KCPU|nAS" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[55] -to "emu:emu|cpu_68k:M68KCPU|nDTACK" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[56] -to "emu:emu|cpu_68k:M68KCPU|nRESET" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[57] -to "emu:emu|hps_io:hps_io|ioctl_download" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[58] -to "emu:emu|hps_io:hps_io|status[24]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[59] -to "emu:emu|hps_io:hps_io|status[25]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[60] -to "emu:emu|nROMOE" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[61] -to "emu:emu|sdram:ram|addr[0]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[62] -to "emu:emu|sdram:ram|addr[10]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[63] -to "emu:emu|sdram:ram|addr[11]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[64] -to "emu:emu|sdram:ram|addr[12]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[65] -to "emu:emu|sdram:ram|addr[13]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[66] -to "emu:emu|sdram:ram|addr[14]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[67] -to "emu:emu|sdram:ram|addr[15]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[68] -to "emu:emu|sdram:ram|addr[16]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[69] -to "emu:emu|sdram:ram|addr[17]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[70] -to "emu:emu|sdram:ram|addr[18]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[71] -to "emu:emu|sdram:ram|addr[19]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[72] -to "emu:emu|sdram:ram|addr[1]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[73] -to "emu:emu|sdram:ram|addr[20]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[74] -to "emu:emu|sdram:ram|addr[21]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[75] -to "emu:emu|sdram:ram|addr[22]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[76] -to "emu:emu|sdram:ram|addr[23]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[77] -to "emu:emu|sdram:ram|addr[24]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[78] -to "emu:emu|sdram:ram|addr[2]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[79] -to "emu:emu|sdram:ram|addr[3]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[80] -to "emu:emu|sdram:ram|addr[4]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[81] -to "emu:emu|sdram:ram|addr[5]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[82] -to "emu:emu|sdram:ram|addr[6]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[83] -to "emu:emu|sdram:ram|addr[7]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[84] -to "emu:emu|sdram:ram|addr[8]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[85] -to "emu:emu|sdram:ram|addr[9]" -section_id SDRAM_20stuff
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[86] -to "emu:emu|sdram_we" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_DATA_BITS=87" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_BITS=87" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_BITS=87" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LENGTH=284" -section_id SDRAM_20stuff
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[25] -to SDRAM_20stuff|vcc -section_id SDRAM_20stuff
+set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_ENTITY_NAME sld_signaltap -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_clk -to "emu:emu|pll:pll|outclk_0" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_BLOCK_TYPE=AUTO" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_NODE_INFO=805334531" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_POWER_UP_TRIGGER=0" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_INVERSION_MASK_LENGTH=0" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SEGMENT_SIZE=1024" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ATTRIBUTE_MEM_MODE=OFF" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_FLOW_USE_GENERATED=0" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STATE_BITS=11" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_BUFFER_FULL_STOP=1" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_CURRENT_RESOURCE_WIDTH=1" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INCREMENTAL_ROUTING=1" -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[0] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[1] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[2] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[4] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[7] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[8] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[9] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[12] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[14] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[17] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[18] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[23] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[25] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[26] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[28] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[31] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL=1" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_SAMPLE_DEPTH=1024" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_IN_ENABLED=0" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_PIPELINE=0" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_PIPELINE=0" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_COUNTER_PIPELINE=0" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ADVANCED_TRIGGER_ENTITY=basic,1," -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_LEVEL_PIPELINE=1" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_ENABLE_ADVANCED_TRIGGER=0" -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[5] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[6] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[20] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[21] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[24] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[29] -to auto_signaltap_3|gnd -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "emu:emu|lspc2_a2:LSPC|CLK_24M" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[0] -to "emu:emu|lspc2_a2:LSPC|CLK_24M" -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[10] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[13] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[15] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[16] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[3] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[1] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[0]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[2] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[1]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[3] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[2]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[4] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[3]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[5] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[4]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[6] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[5]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[7] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[6]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[8] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[0]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[9] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[1]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[10] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[2]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[11] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[3]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[12] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[4]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[13] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[5]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[14] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[6]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[15] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|CLK_ACTIVE_RD" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[16] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|O109A_OUT" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[17] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|O110B_OUT" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[18] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[0]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[19] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[1]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[20] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[2]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[21] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[3]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[22] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[4]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[23] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[5]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[24] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[6]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[25] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[7]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[26] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[8]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[27] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX_INC_CLK" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[1] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[0]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[2] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[1]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[3] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[2]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[4] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[3]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[5] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[4]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[6] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[5]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[7] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_RD_ADDR[6]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[8] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[0]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[9] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[1]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[10] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[2]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[11] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[3]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[12] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[4]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[13] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[5]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[14] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|ACTIVE_WR_ADDR[6]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[15] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|CLK_ACTIVE_RD" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[16] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|O109A_OUT" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[17] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|O110B_OUT" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[18] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[0]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[19] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[1]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[20] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[2]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[21] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[3]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[22] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[4]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[23] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[5]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[24] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[6]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[25] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[7]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[26] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX[8]" -section_id auto_signaltap_3
+set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[27] -to "emu:emu|lspc2_a2:LSPC|fast_cycle:FCY|PARSE_INDEX_INC_CLK" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_DATA_BITS=28" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_TRIGGER_BITS=28" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_STORAGE_QUALIFIER_BITS=28" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK=000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" -section_id auto_signaltap_3
+set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LENGTH=108" -section_id auto_signaltap_3
+set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[19] -to auto_signaltap_3|vcc -section_id auto_signaltap_3
 set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

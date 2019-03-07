@@ -124,8 +124,9 @@ jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm))
     .rst        ( rst       ),
     .clk        ( clk       ),
     .cen        ( cen       ),  // external clock enable
-    .clk_en     ( clk_en    ),  // internal clock enable    
-    .clk_en_ssg ( clk_en_ssg),  // internal clock enable    
+    .clk_en     ( clk_en    ),  // internal clock enable
+    .clk_en_timers     ( clk_en_timers    ),  // internal clock enable
+    .clk_en_ssg ( clk_en_ssg),  // internal clock enable
     .din        ( din       ),
     .write      ( write     ),
     .addr       ( addr      ),
@@ -200,7 +201,7 @@ jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm))
 
 jt12_timers u_timers( 
     .clk        ( clk           ),
-    .clk_en     ( clk_en | fast_timers  ),
+    .clk_en     ( clk_en_timers | fast_timers  ),
     .rst        ( rst           ),
     .value_A    ( value_A       ),
     .value_B    ( value_B       ),

@@ -1,25 +1,29 @@
-// NeoGeo logic definition
-// Copyright (C) 2018 Sean Gonsalves
+//============================================================================
+//  SNK NeoGeo for MiSTer
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+//  Copyright (C) 2018 Sean 'Furrtek' Gonsalves
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+//  This program is free software; you can redistribute it and/or modify it
+//  under the terms of the GNU General Public License as published by the Free
+//  Software Foundation; either version 2 of the License, or (at your option)
+//  any later version.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//  This program is distributed in the hope that it will be useful, but WITHOUT
+//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+//  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+//  more details.
+//
+//  You should have received a copy of the GNU General Public License along
+//  with this program; if not, write to the Free Software Foundation, Inc.,
+//  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//============================================================================
 
 // Missing pin: VPA
 // All address decoding was checked except BITW1, nCTRL1_ZONE, and nCTRL2_ZONE
 
 module neo_c1(
 	input [21:17] M68K_ADDR,
-	output [15:8] M68K_DATA,
+	inout [15:8] M68K_DATA,
 	input A22Z, A23Z,
 	input nLDS, nUDS,
 	input RW, nAS,
@@ -45,7 +49,7 @@ module neo_c1(
 	output nDTACK,
 	output nBITW0, nBITW1, nDIPRD0, nDIPRD1,
 	output nPAL_ZONE,
-	input SYSTEM_MODE
+	input SYSTEM_TYPE
 );
 
 	wire nIO_ZONE;			// Internal
@@ -67,7 +71,7 @@ module neo_c1(
 					nROMWAIT, nPWAIT0, nPWAIT1, PDTACK, nDTACK);
 	
 	c1_inputs C1INPUTS(nCTRL1_ZONE, nCTRL2_ZONE, nSTATUSB_ZONE, M68K_DATA, P1_IN, P2_IN,
-						nWP, nCD2, nCD1, SYSTEM_MODE);
+						nWP, nCD2, nCD1, SYSTEM_TYPE);
 	
 	// 000000~0FFFFF read/write
 	assign nROM_ZONE = |{A23Z, A22Z, M68K_ADDR[21], M68K_ADDR[20]};

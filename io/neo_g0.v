@@ -19,7 +19,7 @@
 //============================================================================
 
 module neo_g0(
-	inout [15:0] M68K_DATA,
+	output [15:0] M68K_DATA,
 	input G0, G1,
 	input DIR,
 	input [15:0] CDD,
@@ -43,9 +43,9 @@ module neo_g0(
 	assign WE = G1 | DIR;
 	
 	// CDD output is done in the higher-level module
-	//assign CDD = G0 | DIR ? 16'bzzzzzzzz_zzzzzzzz : M68K_DATA;
+	//assign CDD = G0 | DIR ? 16'bzzzzzzzz_zzzzzzzz : M68K_DOUT;
 	
 	// PC output is done in the higher-level module
-	//assign PC = WE ? 16'bzzzzzzzz_zzzzzzzz : M68K_DATA;
+	//assign PC = WE ? 16'bzzzzzzzz_zzzzzzzz : M68K_DOUT;
 	
 endmodule

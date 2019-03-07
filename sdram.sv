@@ -70,7 +70,7 @@ assign dout_first = latched_first ? data_first : SDRAM_DQ;
 // Burst length = 4
 localparam BURST_LENGTH        = 3'b010;   // 000=1, 001=2, 010=4, 011=8
 localparam ACCESS_TYPE         = 1'b0;     // 0=sequential, 1=interleaved
-localparam CAS_LATENCY         = 3'd2;     // 2 for < 100MHz, 3 for >100MHz
+localparam CAS_LATENCY         = 3'd3;     // 2 for < 100MHz, 3 for >100MHz
 localparam OP_MODE             = 2'b00;    // only 00 (standard operation) allowed
 localparam NO_WRITE_BURST      = 1'b1;     // 0= write burst enabled, 1=only single access write
 localparam MODE                = {3'b000, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH};
@@ -114,7 +114,7 @@ typedef enum
 
 always @(posedge clk) begin
 	reg old_we, old_rd;
-	reg [CAS_LATENCY+3:0] data_ready_delay;
+	reg [CAS_LATENCY+4:0] data_ready_delay;
 
 	reg [15:0] new_data;
 	reg  [1:0] new_wtbt;
@@ -127,7 +127,7 @@ always @(posedge clk) begin
 	command <= CMD_NOP;
 	refresh_count  <= refresh_count+1'b1;
 
-	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY+3:1]};
+	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY+4:1]};
 
 	// make it ready 1T in advance
 	if(data_ready_delay[4]) {latched_first, ready_first} <= {1'b0, 1'b1};
