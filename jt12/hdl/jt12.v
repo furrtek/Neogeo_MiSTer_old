@@ -25,7 +25,7 @@
 module jt12 (
     input           rst,        // rst should be at least 6 clk&cen cycles long
     input           clk,        // CPU clock
-    input           cen,        // optional clock enable, it not needed leave as 1'b1
+    input           cen,        // optional clock enable, if not needed leave as 1'b1
     input   [7:0]   din,
     input   [1:0]   addr,
     input           cs_n,
@@ -39,6 +39,7 @@ module jt12 (
     output          snd_sample
 );
 
+// Default parameters for JT12 select a YM2610
 jt12_top u_jt12(
     .rst    ( rst   ),        // rst should be at least 6 clk&cen cycles long
     .clk    ( clk   ),        // CPU clock
@@ -49,7 +50,14 @@ jt12_top u_jt12(
     .wr_n   ( wr_n  ),
     
     .dout   ( dout  ),  
-    .irq_n  ( irq_n ), 
+    .irq_n  ( irq_n ),
+    // Unused ADPCM pins
+    .adpcma_addr    (      ), // real hardware has 10 pins multiplexed through RMPX pin
+    .adpcma_bank    (      ),
+    .adpcma_roe_n   (      ), // ADPCM-A ROM output enable
+    .adpcma_data    ( 8'd0 ), // Data from RAM
+    .adpcmb_addr    (      ), // real hardware has 12 pins multiplexed through PMPX pin
+    .adpcmb_roe_n   (      ), // ADPCM-B ROM output enable
     // Separated output
     .psg_A          (),
     .psg_B          (),

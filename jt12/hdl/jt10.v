@@ -16,24 +16,30 @@
 
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
-    Date: 27-12-2018
+    Date: 21-03-2019
 */
 
-// Wrapper to output only combined channels. Defaults to YM2203 mode.
+// YM2610 wrapper
+// Clock enabled at 7.5 - 8.5MHz
 
-
-
-module jt03(
+module jt10(
     input           rst,        // rst should be at least 6 clk&cen cycles long
     input           clk,        // CPU clock
     input           cen,        // optional clock enable, if not needed leave as 1'b1
     input   [7:0]   din,
-    input           addr,
+    input   [1:0]   addr,
     input           cs_n,
     input           wr_n,
     
     output  [7:0]   dout,
     output          irq_n,
+    // ADPCM pins
+    output  [19:0]  adpcma_addr,  // real hardware has 10 pins multiplexed through RMPX pin
+    output  [3:0]   adpcma_bank,
+    output          adpcma_roe_n, // ADPCM-A ROM output enable
+    input   [7:0]   adpcma_data,  // Data from RAM
+    output  [23:0]  adpcmb_addr,  // real hardware has 12 pins multiplexed through PMPX pin
+    output          adpcmb_roe_n, // ADPCM-B ROM output enable
     // Separated output
     output          [ 7:0] psg_A,
     output          [ 7:0] psg_B,
@@ -45,26 +51,27 @@ module jt03(
     output          snd_sample
 );
 
+// Uses 6 FM channels but only 4 are outputted
 jt12_top #(
-    .use_lfo(0),.use_ssg(1), .num_ch(3), .use_pcm(0), .use_adpcm(0) )
+    .use_lfo(1),.use_ssg(1), .num_ch(6), .use_pcm(0), .use_adpcm(1) )
 u_jt12(
     .rst            ( rst          ),        // rst should be at least 6 clk&cen cycles long
     .clk            ( clk          ),        // CPU clock
     .cen            ( cen          ),        // optional clock enable, it not needed leave as 1'b1
     .din            ( din          ),
-    .addr           ( {1'b0, addr} ),
+    .addr           ( addr         ),
     .cs_n           ( cs_n         ),
     .wr_n           ( wr_n         ),
     
     .dout           ( dout         ),
     .irq_n          ( irq_n        ),
-    // Unused ADPCM pins
-    .adpcma_addr    (      ), // real hardware has 10 pins multiplexed through RMPX pin
-    .adpcma_bank    (      ),
-    .adpcma_roe_n   (      ), // ADPCM-A ROM output enable
-    .adpcma_data    ( 8'd0 ), // Data from RAM
-    .adpcmb_addr    (      ), // real hardware has 12 pins multiplexed through PMPX pin
-    .adpcmb_roe_n   (      ), // ADPCM-B ROM output enable
+    // ADPCM pins
+    .adpcma_addr    ( adpcma_addr  ), // real hardware has 10 pins multiplexed through RMPX pin
+    .adpcma_bank    ( adpcma_bank  ),
+    .adpcma_roe_n   ( adpcma_roe_n ), // ADPCM-A ROM output enable
+    .adpcma_data    ( adpcma_data  ), // Data from RAM
+    .adpcmb_addr    ( adpcmb_addr  ), // real hardware has 12 pins multiplexed through PMPX pin
+    .adpcmb_roe_n   ( adpcmb_roe_n ), // ADPCM-B ROM output enable
     // Separated output
     .psg_A          ( psg_A        ),
     .psg_B          ( psg_B        ),

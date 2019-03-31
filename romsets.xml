@@ -1,5 +1,9 @@
 <romsets>
     <!-- See https://github.com/mamedev/mame/blob/master/src/mame/drivers/neogeo.cpp -->
+    <romset name="debug">
+		<file name="debug.p1" type="P" index="0" offset="0" size="0x20000"/>
+		<file name="debug.m1" type="M" index="9" offset="0" size="0x20000"/>
+    </romset>
     <romset name="nam1975">
 		<file name="001-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
 		<file name="001-s1.s1" type="S" index="8" offset="0" size="0x20000"/>

@@ -10,7 +10,7 @@ aof2 | Yes |
 aof3 | No |
 bakatono | Yes |
 bangbead | No |
-bjourney | Yes | No backgrounds
+bjourney | Yes |
 blazstar | No |
 breakers | Yes |
 breakrev | Yes |
@@ -21,7 +21,7 @@ crsword | Yes |
 ctomaday | ? |
 cyberlip | Yes |
 doubledr | Yes |
-eightman | Yes | No backgrounds
+eightman | Yes |
 fatfursp | Yes |
 fatfury1 | Yes |
 fatfury2 | Yes |
@@ -70,7 +70,7 @@ matrim | No |
 miexchng | Yes |
 minasan | Yes |
 moshougi | Yes |
-mslug | Yes |
+mslug | Yes | No sound at all
 mslug2 | No |
 mslug3 | No |
 mslug4 | No |
@@ -105,7 +105,7 @@ ragnagrd | No |
 rbff1 | No |
 rbff2 | ? |
 rbffspec | No |
-ridhero | Yes | Requires link MCU
+ridhero | Yes |
 roboarmy | Yes |
 rotd | No |
 s1945p | No |
@@ -137,10 +137,10 @@ svc | No |
 tophuntr | Yes |
 tpgolf | Yes |
 trally | Yes |
-turfmast | Yes |
+turfmast | Yes | No sound at all
 twinspri | Yes |
 tws96 | Yes |
-viewpoin | Yes | Crashes after eye-catcher
+viewpoin | Yes |
 vliner | ? | Special hw in cart
 wakuwak7 | Yes |
 wh1 | Yes |

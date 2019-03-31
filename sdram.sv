@@ -48,7 +48,7 @@ module sdram
                                   // Ignored while reading.
                                   //
    input      [24:0] addr,        // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
-   output     [63:0] dout, 		 // data output to cpu
+   output reg [63:0] dout, 		 // data output to cpu
    input      [15:0] din,         // data input from cpu
    input             we,          // cpu requests write
    input             rd,          // cpu requests read
@@ -56,16 +56,16 @@ module sdram
    output reg        ready_fourth
 );
 
-wire [15:0] dout_first;
+//wire [15:0] dout_first;
 assign SDRAM_nCS  = command[3];
 assign SDRAM_nRAS = command[2];
 assign SDRAM_nCAS = command[1];
 assign SDRAM_nWE  = command[0];
 assign SDRAM_CKE  = cke;
 
-assign dout = {dout_first, data_second, data_third, data_fourth};
+//assign dout = {dout_first, data_second, data_third, data_fourth};
 //assign dout = {data_first, data_second, data_third, data_fourth};
-assign dout_first = latched_first ? data_first : SDRAM_DQ;
+//assign dout_first = latched_first ? data_first : SDRAM_DQ;
 
 // Burst length = 4
 localparam BURST_LENGTH        = 3'b010;   // 000=1, 001=2, 010=4, 011=8
@@ -96,10 +96,10 @@ reg        cke     = 0;
 reg [24:0] save_addr;
 
 reg        latched_first;
-reg [15:0] data_first;
+/*reg [15:0] data_first;
 reg [15:0] data_second;
 reg [15:0] data_third;
-reg [15:0] data_fourth;
+reg [15:0] data_fourth;*/
 
 typedef enum
 {
@@ -114,7 +114,7 @@ typedef enum
 
 always @(posedge clk) begin
 	reg old_we, old_rd;
-	reg [CAS_LATENCY+4:0] data_ready_delay;
+	reg [CAS_LATENCY+3:0] data_ready_delay;
 
 	reg [15:0] new_data;
 	reg  [1:0] new_wtbt;
@@ -125,16 +125,31 @@ always @(posedge clk) begin
 	state_t state = STATE_STARTUP;
 
 	command <= CMD_NOP;
-	refresh_count  <= refresh_count+1'b1;
+	refresh_count <= refresh_count+1'b1;
 
-	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY+4:1]};
+	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY+3:1]};
 
-	// make it ready 1T in advance
-	if(data_ready_delay[4]) {latched_first, ready_first} <= {1'b0, 1'b1};
-	if(data_ready_delay[3])	{latched_first, data_first}  <= {1'b1, SDRAM_DQ};
-	if(data_ready_delay[2]) data_second <= SDRAM_DQ;
-	if(data_ready_delay[1]) data_third <= SDRAM_DQ;
-	if(data_ready_delay[0]) {ready_fourth, data_fourth}  <= {1'b1, SDRAM_DQ};
+	case (data_ready_delay)
+		7'b0010000: begin
+			latched_first <= 1'b0;
+			ready_first <= 1'b1;
+		end
+		7'b0001000: begin
+			latched_first <= 1'b1;
+			dout[63:48] <= SDRAM_DQ;
+		end
+		7'b0000100: begin
+			dout[47:32] <= SDRAM_DQ;
+		end
+		7'b0000010: begin
+			dout[31:16] <= SDRAM_DQ;
+		end
+		7'b0000001: begin
+			ready_fourth <= 1'b1;
+			dout[15:0] <= SDRAM_DQ;
+		end
+		default:;
+	endcase
 
 	case(state)
 		STATE_STARTUP: begin
