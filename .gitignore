@@ -1,0 +1,5 @@
+db/
+incremental_db/
+testprogram/
+stp1.stp
+*.bak
