@@ -21,7 +21,7 @@
 
 // Sampling rates: 2kHz ~ 55.5 kHz. in 0.85Hz steps
 
-module jt10_adpcm(
+module jt10_adpcm_dt(
     input           rst_n,
     input           clk,        // CPU clock
     input           cen,        // optional clock enable, if not needed leave as 1'b1

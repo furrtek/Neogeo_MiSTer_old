@@ -37,10 +37,11 @@ module jt12_top (
     output          irq_n,
     // ADPCM pins
     output  [19:0]  adpcma_addr,  // real hardware has 10 pins multiplexed through RMPX pin
-    output  [3:0]   adpcma_bank,
+    output  [ 3:0]  adpcma_bank,
     output          adpcma_roe_n, // ADPCM-A ROM output enable
-    input   [7:0]   adpcma_data,  // Data from RAM
+    input   [ 7:0]  adpcma_data,  // Data from RAM
     output  [23:0]  adpcmb_addr,  // real hardware has 12 pins multiplexed through PMPX pin
+    input   [ 7:0]  adpcmb_data,
     output          adpcmb_roe_n, // ADPCM-B ROM output enable
     // Separated output
     output          [ 7:0] psg_A,
@@ -115,6 +116,7 @@ wire            pg_stop, eg_stop;
 
 wire            ch6op;
 wire    [ 2:0]  cur_ch;
+wire    [ 1:0]  cur_op;
 
 // Operator
 wire            xuse_internal, yuse_internal;
@@ -130,13 +132,25 @@ wire    [3:0]   psg_addr;
 wire    [7:0]   psg_data, psg_dout;
 wire            psg_wr_n;
 // ADPCM-A
-wire signed [15:0]  pcm55_l, pcm55_r;
-wire [11:0] addr_a;
-wire [2:0] up_start, up_end, up_lracl;
-wire [7:0] aon_a, lracl;
-wire [5:0] atl_a;     // ADPCM Total Level
+wire signed [15:0]  adpcmA_l, adpcmA_r;
+wire [15:0] addr_a;
+wire [ 2:0] up_addr, up_lracl;
+wire        up_start, up_end;
+wire [ 7:0] aon_a, lracl;
+wire [ 5:0] atl_a;     // ADPCM Total Level
+// APDCM-B
+wire signed [15:0]  adpcmB_l, adpcmB_r;
+wire        acmd_on_b;  // Control - Process start, Key On
+wire        acmd_rep_b; // Control - Repeat
+wire        acmd_rst_b; // Control - Reset
+wire [ 1:0] alr_b;      // Left / Right
+wire [15:0] astart_b;   // Start address
+wire [15:0] aend_b;     // End   address
+wire [15:0] adeltan_b;  // Delta-N
+wire [ 7:0] aeg_b;      // Envelope Generator Control
 
-wire clk_en_adpcm, clk_en_adpcm3;
+
+wire clk_en_adpcm, clk_en_adpcm3, clk_en_55;
 
 generate
 if( use_adpcm==1 ) begin: gen_adpcm
@@ -161,28 +175,53 @@ if( use_adpcm==1 ) begin: gen_adpcm
 
         // Control Registers
         .atl        (  atl_a        ),        // ADPCM Total Level
-        .cur_ch     (  cur_ch       ),
         .addr_in    (  addr_a       ),
         .lracl_in   (  lracl        ),
         .up_start   (  up_start     ),
         .up_end     (  up_end       ),
+        .up_addr    (  up_addr      ),
         .up_lracl   (  up_lracl     ),
 
         .aon_cmd    ( aon_a         ),    // ADPCM ON equivalent to key on for FM
 
 
-        .pcm55_l    (  pcm55_l      ),
-        .pcm55_r    (  pcm55_r      )
+        .pcm55_l    (  adpcmA_l     ),
+        .pcm55_r    (  adpcmA_r     )
+    );
+
+    jt10_adpcm_drvB u_adpcm_b(
+        .rst_n      ( rst_n         ),
+        .clk        ( clk           ),
+        .cen        ( cen           ),
+        .cen55      ( clk_en_55     ),
+
+        // Control
+        .acmd_on_b  ( acmd_on_b     ),  // Control - Process start, Key On
+        .acmd_rep_b ( acmd_rep_b    ),  // Control - Repeat
+        .acmd_rst_b ( acmd_rst_b    ),  // Control - Reset
+        .alr_b      ( alr_b         ),  // Left / Right
+        .astart_b   ( astart_b      ),  // Start address
+        .aend_b     ( aend_b        ),  // End   address
+        .adeltan_b  ( adeltan_b     ),  // Delta-N
+        .aeg_b      ( aeg_b         ),  // Envelope Generator Control
+        // memory
+        .addr       ( adpcmb_addr   ),
+        .data       ( adpcmb_data   ),
+        .roe_n      ( adpcmb_roe_n  ),
+
+        .pcm55_l    ( adpcmB_l      ),
+        .pcm55_r    ( adpcmB_r      )
     );
 end else begin : gen_adpcm_no
-    assign pcm55_l      = 'd0;
-    assign pcm55_r      = 'd0;
+    assign adpcmA_l      = 'd0;
+    assign adpcmA_r      = 'd0;
     assign adpcma_addr  = 'd0;
     assign adpcma_bank  = 'd0;
     assign adpcma_roe_n = 'b1;
 end
 endgenerate
 
+/* verilator tracing_off */
 jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm), .use_adpcm(use_adpcm))
     u_mmr(
     .rst        ( rst       ),
@@ -192,12 +231,14 @@ jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm), .use_adpcm(use_a
     .clk_en_ssg ( clk_en_ssg),  // internal clock enable
     .clk_en_adpcm ( clk_en_adpcm  ),
     .clk_en_adpcm3( clk_en_adpcm3 ),
+    .clk_en_55  ( clk_en_55 ),
     .din        ( din       ),
     .write      ( write     ),
     .addr       ( addr      ),
     .busy       ( busy      ),
     .ch6op      ( ch6op     ),
     .cur_ch     ( cur_ch    ),
+    .cur_op     ( cur_op    ),
     // LFO
     .lfo_freq   ( lfo_freq  ),
     .lfo_en     ( lfo_en    ),
@@ -224,7 +265,17 @@ jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm), .use_adpcm(use_a
     .lracl      ( lracl         ),   // L/R ADPCM Channel Level
     .up_start   ( up_start      ),   // write enable start address latch
     .up_end     ( up_end        ),   // write enable end address latch
+    .up_addr    ( up_addr       ),   // write enable end address latch
     .up_lracl   ( up_lracl      ),
+    // ADPCM-B
+    .acmd_on_b  ( acmd_on_b     ),  // Control - Process start, Key On
+    .acmd_rep_b ( acmd_rep_b    ),  // Control - Repeat
+    .acmd_rst_b ( acmd_rst_b    ),  // Control - Reset
+    .alr_b      ( alr_b         ),  // Left / Right
+    .astart_b   ( astart_b      ),  // Start address
+    .aend_b     ( aend_b        ),  // End   address
+    .adeltan_b  ( adeltan_b     ),  // Delta-N
+    .aeg_b      ( aeg_b         ),  // Envelope Generator Control    
     // Operator
     .xuse_prevprev1 ( xuse_prevprev1  ),
     .xuse_internal  ( xuse_internal   ),
@@ -272,6 +323,7 @@ jt12_mmr #(.use_ssg(use_ssg),.num_ch(num_ch),.use_pcm(use_pcm), .use_adpcm(use_a
     .psg_wr_n   ( psg_wr_n  )
 );
 
+/* verilator tracing_off */
 jt12_timers u_timers(
     .clk        ( clk           ),
     .clk_en     ( clk_en | fast_timers  ),
@@ -350,7 +402,7 @@ endgenerate
 
 
 `ifndef TIMERONLY
-
+/* verilator tracing_off */
 jt12_pg #(.num_ch(num_ch)) u_pg(
     .rst        ( rst           ),
     .clk        ( clk           ),
@@ -437,9 +489,12 @@ jt12_op #(.num_ch(num_ch)) u_op(
     .full_result    ( op_result_hd  )
 );
 
+/* verilator tracing_on */
+
 generate
     if( use_adpcm==1 ) begin: gen_adpcm_acc // YM2610 accumulator
-        assign snd_sample   = zero;
+        assign snd_sample   = zero;        
+        /* verilator lint_off PINMISSING */
         jt10_acc u_acc(
             .clk        ( clk           ),
             .clk_en     ( clk_en        ),
@@ -451,13 +506,19 @@ generate
             .s3_enters  ( s4_enters     ),
             .s4_enters  ( s3_enters     ),
             .cur_ch     ( cur_ch        ),
+            .cur_op     ( cur_op        ),
             .alg        ( alg_I         ),
-            .adpcma_l   ( pcm55_l       ),
-            .adpcma_r   ( pcm55_r       ),
+            .adpcmA_l   ( adpcmA_l      ),
+            .adpcmA_r   ( adpcmA_r      ),
+            .adpcmB_l   ( adpcmB_l      ),
+            .adpcmB_r   ( adpcmB_r      ),
             // combined output
             .left       ( fm_snd_left   ),
             .right      ( fm_snd_right  )
         );
+        /* verilator lint_on PINMISSING */
+        // assign fm_snd_left = pcm55_l;
+        // assign fm_snd_right= pcm55_r;
     end
     if( use_pcm==1 ) begin: gen_pcm_acc // YM2612 accumulator
         assign fm_snd_right[3:0] = 4'd0;

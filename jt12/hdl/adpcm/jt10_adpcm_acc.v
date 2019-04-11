@@ -62,6 +62,8 @@ always @(posedge clk or negedge rst_n)
         end
     end
 
+//assign pcm_out = last[15:0];
+
 wire overflow = |pcm_full[17:15] & ~&pcm_full[17:15];
 
 always @(posedge clk or negedge rst_n)
@@ -70,7 +72,7 @@ always @(posedge clk or negedge rst_n)
     end else if(cen) begin
         case( cur_ch )
             3'd0: pcm_full <= last;
-            3'b010, 3'b101: pcm_full <= pcm_full + step;
+            3'b010, 3'b100: pcm_full <= pcm_full + step;
             default:;
         endcase
         if( overflow )

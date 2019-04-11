@@ -79,10 +79,9 @@ module lspc2_a2(
 	wire [15:0] VRAM_LOW_READ;
 	wire [15:0] VRAM_HIGH_READ;
 	wire [15:0] REG_VRAMADDR;
-	//wire [15:0] VRAM_ADDR;
-	reg [15:0] VRAM_ADDR;
-	//wire [15:0] VRAM_ADDR_MUX;
-	//wire [15:0] VRAM_ADDR_AUTOINC;
+	wire [15:0] VRAM_ADDR;
+	wire [15:0] VRAM_ADDR_MUX;
+	wire [15:0] VRAM_ADDR_AUTOINC;
 	wire [15:0] REG_VRAMRW;
 	wire [15:0] VRAM_WRITE;
 	
@@ -124,8 +123,7 @@ module lspc2_a2(
 	wire [7:0] ACTIVE_RD;
 	wire [3:0] P201_Q;
 	
-	//reg D112B_OUT_DELAY;
-	reg D112B_OUT_PREV;
+	reg D112B_OUT_DELAY;
 	
 
 	
@@ -186,31 +184,21 @@ module lspc2_a2(
 	
 	// VRAM_ADDR with REG_VRAMMOD applied
 	// G18 G81 F91 F127
-	//assign VRAM_ADDR_AUTOINC = REG_VRAMMOD + VRAM_ADDR;
+	assign VRAM_ADDR_AUTOINC = REG_VRAMMOD + VRAM_ADDR;
 	
 	// CPU VRAM address update mux
 	// C144A C142A C140B C138B
 	// A112B A111A A109A A110B
 	// D110B D106B D108B D85A
 	// F10A F12A F26A F12B
-	//assign VRAM_ADDR_MUX = VRAM_ADDR_UPD_TYPE ? VRAM_ADDR_AUTOINC : REG_VRAMADDR;
+	assign VRAM_ADDR_MUX = VRAM_ADDR_UPD_TYPE ? VRAM_ADDR_AUTOINC : REG_VRAMADDR;
 	
 	// VRAM address update FFs
 	// F14 D48 C105 C164
-	always @(posedge CLK_24M)
-	begin
-		//D112B_OUT_DELAY <= D112B_OUT;
-		if (~D112B_OUT_PREV & D112B_OUT)
-		begin
-			if (VRAM_ADDR_UPD_TYPE)
-				VRAM_ADDR <= VRAM_ADDR + REG_VRAMMOD;
-			else
-				VRAM_ADDR <= REG_VRAMADDR;
-		end
-		
-		D112B_OUT_PREV = D112B_OUT;
-	end
-	//FDS16bit F14(D112B_OUT_DELAY, VRAM_ADDR_MUX, VRAM_ADDR);
+	// TESTING
+	always @(negedge CLK_24M)
+		D112B_OUT_DELAY <= D112B_OUT;
+	FDS16bit F14(D112B_OUT_DELAY, VRAM_ADDR_MUX, VRAM_ADDR);
 	
 	// ...Second stage
 	// F165 D178 D141 E196

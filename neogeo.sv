@@ -119,39 +119,60 @@ assign VGA_DE = ~CHBL & nBNKB;
 
 // status bit definition:
 // 31       23       15       7
-// xxAAxxSS xxxxxxxx xxxCxxDD DEEMVTTR
+// xxAAxxSS xxxxxxxx xxxCGGDD DEEMVTTR
 // R: Reset, used by the HPS, keep it there
 // T: System type, 0=Console, 1=Arcade, 2=CD, 3=CDZ
 // V: Video mode
 // M: Memory card presence
 // EE: Stereo mix
 // DDD: DIP switches
+// GG: Neo CD region
 // C: Save memory card & backup RAM
 // SS: Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU
 // AA: sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
 
 `include "build_id.v"
+
+// Common to all systems
 localparam CONF_STR1 = {
 	"NEOGEO;;",
-	"-;",
-	"FS,EP1P1,Load romset;",
+	"-;"
+};
+
+localparam CONF_STR2_CART = {
+	"S,EP1P1,Load romset;"	// F
+};
+localparam CONF_STR2_CD = {
+	"S,ISO,Load disc;"	// F
+};
+
+// Common to all systems
+localparam CONF_STR3 = {
 	"-;",
 	"O12,System type,Console,Arcade,CD,CDZ;",
 	"O3,Video mode,NTSC,PAL;",
-	"O4,Memory card,Plugged,Unplugged;",
 	"RC,Save memory card;"
 };
 
-localparam CONF_STR2 = {
-	"7,DIP:Settings,OFF,ON;"
+localparam CONF_STR4_CART = {
+	"4,Memory card,Plugged,Unplugged;",	// O
+};
+localparam CONF_STR4_CD = {
+	"AB,Region,US,EU,JP;",	// O
 };
 
-localparam CONF_STR3 = {
-	"8,DIP:Freeplay,OFF,ON;"
+localparam CONF_STR5_MVS = {
+	"7,DIP:Settings,OFF,ON;"	// O
+};
+localparam CONF_STR6_MVS = {
+	"8,DIP:Freeplay,OFF,ON;"	// O
+};
+localparam CONF_STR7_MVS = {
+	"9,DIP:Freeze,OFF,ON;",		// O
 };
 
-localparam CONF_STR4 = {
-	"9,DIP:Freeze,OFF,ON;",
+// Common to all systems
+localparam CONF_STR8 = {
 	"-;",
 	"O56,Stereo mix,none,25%,50%,100%;",
 	"R0,Reset & apply;",
@@ -259,14 +280,51 @@ wire  [7:0] ioctl_index;
 wire        ioctl_wait;
 
 wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
-wire [7:0] mvs_char = SYSTEM_MVS ? "O" : "+";
+wire SYSTEM_CDx = SYSTEM_TYPE[1];
 
-hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR3)>>3) + ($size(CONF_STR4)>>3) + 3), .WIDE(1)) hps_io
+// Conditional modification of the CONF strings chaining according to chosen system type
+wire [7:0] char_cart_file = SYSTEM_CDx ? "+" : "F";
+wire [7:0] char_cd_file = SYSTEM_CDx ? "F" : "+";
+wire [7:0] char_cart_option = SYSTEM_CDx ? "+" : "O";
+wire [7:0] char_mvs_option = SYSTEM_MVS ? "O" : "+";
+wire [7:0] char_cd_option = SYSTEM_CDx ? "O" : "+";
+
+//                   Con Arc CD CDz
+// SYSTEM_TYPE       00  01  10 11
+// char_cart_file    F   F   +  +
+// char_cd_file      +   +   F  F
+// char_cart_option  O   O   +  +
+// char_mvs_option   +   O   +  +
+// char_cd_option    +   +   O  O
+
+hps_io #(
+	.STRLEN(
+		($size(CONF_STR1)>>3) +
+		($size(CONF_STR2_CART)>>3) +
+		($size(CONF_STR2_CD)>>3) +
+		($size(CONF_STR3)>>3) +
+		($size(CONF_STR4_CART)>>3) +
+		($size(CONF_STR4_CD)>>3) +
+		($size(CONF_STR5_MVS)>>3) +
+		($size(CONF_STR6_MVS)>>3) +
+		($size(CONF_STR7_MVS)>>3) +
+		($size(CONF_STR8)>>3) + 7), .WIDE(1)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
 
-	.conf_str({CONF_STR1, mvs_char, CONF_STR2, mvs_char, CONF_STR3, mvs_char, CONF_STR4}),
+	.conf_str({
+		CONF_STR1,
+		char_cart_file, CONF_STR2_CART,
+		char_cd_file, CONF_STR2_CD,
+		CONF_STR3,
+		char_cart_option, CONF_STR4_CART,
+		char_cd_option, CONF_STR4_CD,
+		char_mvs_option, CONF_STR5_MVS,
+		char_mvs_option, CONF_STR6_MVS,
+		char_mvs_option, CONF_STR7_MVS,
+		CONF_STR8
+	}),
 
 	//.ps2_mouse(ps2_mouse),	// Could be used for The Irritating Maze ?
 	
@@ -618,9 +676,13 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 	end
 	
 	wire [63:0] sdram_dout;
-	wire [15:0] sdram_din = ioctl_download ? ioctl_dout : 16'h0000;
+	wire [15:0] sdram_din = ioctl_download ? ioctl_dout :
+										(SYSTEM_CDx & CD_TR_WR) ? CD_TR_WR_DATA : 
+										16'h0000;
 	wire sdram_rd = ioctl_download ? 1'b0 : SDRAM_RD_PULSE;
-	wire sdram_we = (ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM)) ? ioctl_wr : 1'b0;
+	// ioctl_download is used to load the system ROM on CD systems, we need it !
+	wire sdram_we = SYSTEM_CDx ? (ioctl_download | CD_TR_WR) :
+							(ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM)) ? ioctl_wr : 1'b0;
 	
 	// Sprite graphics gap removal hack
 	wire [19:0] tile = {C_LATCH_EXT, C_LATCH[19:4]};
@@ -683,110 +745,85 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 		(ioctl_index >= INDEX_CROMS) ? {ioctl_addr[23:0], 1'b0} + {ioctl_index[5:1], 18'h00000, ioctl_index[0], 1'b0} + 25'h0800000 : // C*
 		25'h0000000;
 	
+	wire [24:0] cd_addr;
 	
-	// CD stuff
+	// CD Region remap:
+	// status[11:10] remap
+	// 00            10 US
+	// 01            01 EU
+	// 10            11 JP
+	// 11            00 Portugal ?
+	wire [1:0] CD_REGION = (status[11:10] == 2'b00) ? 2'b10 :
+									(status[11:10] == 2'b01) ? 2'b01 :
+									(status[11:10] == 2'b10) ? 2'b11 :
+									2'b00;
 	
-	reg [3:0] LC8951_ADDR;
-	reg [7:0] LC8951_REG [16];
-	reg CD_SPR_EN, CD_FIX_EN, CD_VIDEO_EN;
-	reg CD_USE_SPR, CD_USE_PCM, CD_USE_Z80, CD_USE_FIX;
-	reg CD_UPLOAD_EN;
-	reg CD_nRESET_DRIVE, CD_nRESET_Z80;
-	reg [1:0] CD_BANK_SPR;
-	reg CD_BANK_ADPCM;
-	reg [2:0] CD_AREA;
-	reg [15:0] CD_TRANSFER_WR_DATA;
-	reg [19:0] CD_TRANSFER_WR_ADDR;
+	wire [2:0] CD_TR_AREA;
+	wire [15:0] CD_TR_WR_DATA;
+	wire [19:1] CD_TR_WR_ADDR;
+	wire [24:0] CD_REMAP_WR_ADDR;
+	wire [1:0] CD_BANK_SPR;
+	wire CD_BANK_ADPCM;
 	
-	always @(posedge CLK_68KCLK or negedge nRESET)
-	begin
-		if (!nRESET)
-		begin
-			LC8951_ADDR <= 4'd0;
-			CD_USE_SPR <= 0;
-			CD_USE_PCM <= 0;
-			CD_USE_Z80 <= 0;
-			CD_USE_FIX <= 0;
-			CD_SPR_EN <= 1;	// ?
-			CD_FIX_EN <= 1;	// ?
-			CD_VIDEO_EN <= 1;	// ?
-			CD_UPLOAD_EN <= 0;
-			// CD_nRESET_Z80 ?
-		end
-		else
-		begin
-			if (!M68K_RW)
-			begin
-				// Writes
-				if (M68K_ADDR[23:8] == 16'hFF01)
-				begin
-					casez ({M68K_ADDR[7:1], nUDS, nLDS})
-						9'b0000000_x0: LC8951_ADDR <= M68K_DATA[3:0];	// FF0101 LC8951 register addr
-						9'b0000001_x0: LC8951_REG[LC8951_ADDR] <= M68K_DATA[7:0];	// FF0103 LC8951 register data
-						9'b0000010_x0: CD_AREA <= M68K_DATA[2:0];		// FF0105 Upload area select
-						9'b0001000_x0: CD_SPR_EN <= ~M68K_DATA[0];	// FF0111 REG_DISBLSPR
-						9'b0001010_x0: CD_FIX_EN <= ~M68K_DATA[0];	// FF0115 REG_DISBLFIX
-						9'b0001100_x0: CD_VIDEO_EN <= M68K_DATA[0];	// FF0119 REG_ENVIDEO
-						9'b0010000_x0: CD_USE_SPR <= 1;	// FF0121 REG_UPMAPSPR
-						9'b0010001_x0: CD_USE_PCM <= 1;	// FF0123 REG_UPMAPPCM
-						9'b0010011_x0: CD_USE_Z80 <= 1;	// FF0127 REG_UPMAPZ80
-						9'b0010100_x0: CD_USE_FIX <= 1;	// FF0129 REG_UPMAPFIX
-						9'b0100000_x0: CD_USE_SPR <= 0;	// FF0141 REG_UPUNMAPSPR
-						9'b0100001_x0: CD_USE_PCM <= 0;	// FF0143 REG_UPUNMAPSPR
-						9'b0100011_x0: CD_USE_Z80 <= 0;	// FF0147 REG_UPUNMAPSPR
-						9'b0100100_x0: CD_USE_FIX <= 0;	// FF0149 REG_UPUNMAPSPR
-						9'b0110111_x0: CD_UPLOAD_EN <= M68K_DATA[0];		// FF016F
-						9'b1000000_x0: CD_nRESET_DRIVE <= M68K_DATA[0];	// FF0181
-						9'b1000001_x0: CD_nRESET_Z80 <= M68K_DATA[0];	// FF0183
-						9'b1010000_x0: CD_BANK_SPR <= M68K_DATA[1:0];	// FF01A1 REG_SPRBANK
-						9'b1010001_x0: CD_BANK_ADPCM <= M68K_DATA[0];	// FF01A3 REG_PCMBANK
-						default;
-					endcase
-				end
-				else if (M68K_ADDR[23:20] == 4'hE)
-				begin
-					// Upload zone
-					CD_TRANSFER_WR_DATA <= M68K_DATA;
-					CD_TRANSFER_WR_ADDR <= {M68K_ADDR[19:1], 1'b0};
-				end
-			end
-		end
-	end
+	cd_sys cdsystem(
+		nRESET,
+		CLK_68KCLK,
+		M68K_ADDR,
+		M68K_DATA,
+		A22Z, A23Z,
+		nLDS, nUDS,
+		M68K_RW, nAS,
+		SYSTEM_TYPE,
+		CD_REGION,
+		CD_VIDEO_EN,
+		CD_FIX_EN,
+		CD_SPR_EN,
+		
+		CD_nRESET_Z80,
+		
+		CD_TR_WR_SPR,
+		CD_TR_WR_PCM,
+		CD_TR_WR_Z80,
+		CD_TR_WR_FIX,
+		CD_TR_AREA,
+		CD_BANK_SPR,
+		CD_BANK_PCM,
+		CD_TR_WR_DATA,
+		CD_TR_WR_ADDR
+	);
 	
-	wire [3:0] CD_JUMPERS = 4'b1110;	// 1111:JP, 1110:US, 1101: EU
+	// This can be used for the SDRAM or other memories
+	// Use CD_AREA to know in which one to write
+	assign CD_REMAP_WR_ADDR = (CD_TR_AREA == 3'd0) ? {3'b0_10, CD_BANK_SPR, CD_TR_WR_ADDR, 1'b0} :	// Sprites SDRAM
+									(CD_TR_AREA == 3'd1) ? {4'b0_000, CD_BANK_PCM, CD_TR_WR_ADDR, 1'b0} :	// ADPCM DDRAM
+									(CD_TR_AREA == 3'd5) ? {8'b0_0000_100, CD_TR_WR_ADDR[16:1], 1'b0} :	// Fix SDRAM
+									{8'b0_0000_000, CD_TR_WR_ADDR[16:1], 1'b0};	// Z80 BRAM
 	
-	assign M68K_DATA = ({M68K_ADDR[23:1], 1'b0} == 24'hFF011C) & SYSTEM_TYPE[1] ? {4'b1100, CD_JUMPERS, 8'h00} :	// Top mech, lid closed
-							({M68K_ADDR[23:1], 1'b0} == 24'hFF0188) & SYSTEM_TYPE[1] ? 16'h0000 :	// CDDA L
-							({M68K_ADDR[23:1], 1'b0} == 24'hFF018A) & SYSTEM_TYPE[1] ? 16'h0000 :	// CDDA R
-							16'bzzzzzzzz_zzzzzzzz;
-	
-	wire cd_download = 1'b0;	// TODO, only active for SPR or Z80 writes
-	wire [24:0] cd_addr = (CD_AREA == 3'd0) ? {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:1], 1'b0} :
-								(CD_AREA == 3'd4) ? {8'b0_0000_100, M68K_ADDR[16:1], 1'b0} :
-								25'h0000000;
-	wire SDRAM_LOAD = SYSTEM_TYPE[1] ? cd_download : ioctl_download;
+	wire CD_TR_WR = CD_TR_WR_SPR | CD_TR_WR_FIX;
 	
 	// sdram_addr is 25 bits, LSB is = 0 in word mode
 	always_comb begin 
-		casez ({SDRAM_LOAD, CROM_RD_RUN, SROM_RD_RUN, ~nROMOE & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN})
-			// Loading pass-through
-			6'b1zzzzz: sdram_addr = SYSTEM_TYPE[1] ? cd_addr : ioctl_addr_offset;
+		casez ({ioctl_download, CD_TR_WR, CROM_RD_RUN, SROM_RD_RUN, ~nROMOE & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN})
+			// HPS loading pass-through
+			7'b1zzzzzz: sdram_addr = ioctl_addr_offset;
+			// CD transfer
+			7'b01zzzzz: sdram_addr = CD_REMAP_WR_ADDR;
 			// C ROMs Bytes $0800000~$1FFFFFF
-			6'b01zzzz: sdram_addr = CROM_ADDR;
+			7'b001zzzz: sdram_addr = CROM_ADDR;
 			// S ROM $0080000~$009FFFF or SFIX ROM (cart) $0100000~$011FFFF
-			6'b001zzz: sdram_addr = (nSYSTEM_G | SYSTEM_TYPE[1]) ?
+			7'b0001zzz: sdram_addr = (nSYSTEM_G | SYSTEM_CDx) ?
 												{8'b0_0000_100, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
 												{8'b0_0001_000, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
 			// P1 ROM $0200000~$02FFFFF
-			6'b0001zz: sdram_addr = {5'b0_0010, M68K_ADDR[19:1], 1'b0};
+			7'b00001zz: sdram_addr = {5'b0_0010, M68K_ADDR[19:1], 1'b0};
 			// P2 ROM $0300000~$07FFFFF bankswitched
-			6'b00001z: sdram_addr = {2'b0_0, P2ROM_ADDR};
+			7'b000001z: sdram_addr = {2'b0_0, P2ROM_ADDR};
 			// System ROM (CD)	$0000000~$007FFFF
 			// System ROM (cart)	$0000000~$001FFFF
-			6'b000001: sdram_addr = SYSTEM_TYPE[1] ? {8'b0_0000_0, M68K_ADDR[18:1], 1'b0} :
+			7'b0000001: sdram_addr = SYSTEM_CDx ? {8'b0_0000_0, M68K_ADDR[18:1], 1'b0} :
 															{8'b0_0000_000, M68K_ADDR[16:1], 1'b0};
 			// Default
-			6'b000000: sdram_addr = 25'h0000000;
+			7'b0000000: sdram_addr = 25'h0000000;
 		endcase
 	end
 	
@@ -832,7 +869,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 		if (!nRESET)
 			P_BANK <= 2'd0;
 		else
-			if (!SYSTEM_TYPE[1]) P_BANK <= M68K_DATA[1:0];
+			if (!SYSTEM_CDx) P_BANK <= M68K_DATA[1:0];
 	end
 	
 	// This is used to split burst-read fix gfx data in half at the right time
@@ -862,6 +899,7 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 	assign M68K_DATA[7:0] = nWRL ? 8'bzzzzzzzz : WRAML_OUT;
 	assign M68K_DATA[15:8] = nWRU ? 8'bzzzzzzzz : WRAMU_OUT;
 	
+
 	// Backup RAM
 	wire nBWL = nSRAMWEL | nSRAMWEN_G;
 	wire nBWU = nSRAMWEU | nSRAMWEN_G;
@@ -905,7 +943,8 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 	
 	
 	// Memory card
-	assign {nCD1, nCD2} = {2{status[4]}};
+	// Always plugged in CD systems
+	assign {nCD1, nCD2} = {2{status[4] & ~SYSTEM_CDx}};
 	assign CARD_WE = ~(nCARDWEN | ~CARDWENB | nCRDW);
 	
 	wire [7:0] CDD_L;
@@ -951,53 +990,10 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 	assign sd_buff_din = sd_lba[7] ? sd_buff_din_memcard : sd_buff_din_sram;
 	
 	
-	syslatch SL(M68K_ADDR[4:1], nBITW1, nRESET,
-					SHADOW, nVEC, nCARDWEN, CARDWENB, nREGEN, nSYSTEM, nSRAMWEN, PALBNK,
-					CLK_68KCLK);
-	wire nSRAMWEN_G = SYSTEM_MVS ? nSRAMWEN : 1'b1;	// nSRAMWEN is only for MVS
-	wire nSYSTEM_G = SYSTEM_MVS ? nSYSTEM : 1'b1;	// nSYSTEM is only for MVS
-	
-	neo_e0 E0(M68K_ADDR[23:1], BNK, nSROMOEU, nSROMOEL, nSROMOE, nVEC, A23Z, A22Z, CDA);
-	
-	wire [7:0] DIPSW = {~status[9:8], 5'b11111, ~status[7]};
-	neo_f0 F0(nRESET, nDIPRD0, nDIPRD1, nBITW0, nBITWD0, DIPSW, ~joystick_0[10], ~joystick_1[10], M68K_ADDR[7:4],
-				M68K_DATA[7:0], ~nSYSTEM_G, , , , , , , RTC_DOUT, RTC_TP, RTC_DIN, RTC_CLK, RTC_STROBE, , SYSTEM_TYPE[0]);
-	
-	uPD4990 RTC(nRESET, CLK_12M, rtc, 1'b1, 1'b1, RTC_CLK, RTC_DIN, RTC_STROBE, RTC_TP, RTC_DOUT);
-	
-	neo_g0 G0(M68K_DATA, nCRDC, nPAL, M68K_RW, {8'hFF, CDD}, PAL_RAM_DATA, nPAL_WE);
-	
-	wire [2:0] joystick_0_hack = joystick_0[11] ? 3'b111 : joystick_0[6:4];
-	neo_c1 C1(M68K_ADDR[21:17], M68K_DATA[15:8], A22Z, A23Z, nLDS, nUDS, M68K_RW, nAS, nROMOEL, nROMOEU,
-				nPORTOEL, nPORTOEU, nPORTWEL, nPORTWEU, nPORTADRS, nWRL, nWRU, nWWL, nWWU, nSROMOEL, nSROMOEU, 
-				nSRAMOEL, nSRAMOEU, nSRAMWEL, nSRAMWEU, nLSPOE, nLSPWE, nCRDO, nCRDW, nCRDC, nSDW,
-				~{joystick_0[9:7], joystick_0_hack, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]},
-				~{joystick_1[9:4], joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]},
-				nCD1, nCD2, 1'b0,			// Memory card is never write-protected
-				1'b1, 1'b1, 1'b1, 1'b1,	// nROMWAIT, nPWAIT0, nPWAIT1, PDTACK,
-				SDD, nSDZ80R, nSDZ80W, nSDZ80CLR, CLK_68KCLK,
-				nDTACK, nBITW0, nBITW1, nDIPRD0, nDIPRD1, nPAL, SYSTEM_TYPE[0]);
-	
-	neo_273	NEO273(PBUS[19:0], ~PCK1, ~PCK2, C_LATCH, S_LATCH);
-	// 4 MSBs not handled by NEO-273
-	always @(negedge PCK1)
-		C_LATCH_EXT <= PBUS[23:20];
 
-	// This is used to split burst-read sprite gfx data in half at the right time
-	reg [2:0] LOAD_SR;
-	reg CA4_REG;
-	
-	always @(posedge clk_sys)
-	begin
-		LOAD_SR <= {LOAD_SR[1:0], LOAD};
-		if (LOAD_SR == 3'b011)
-			CA4_REG <= CA4;
-	end
-	
-	wire [31:0] CR = CA4_REG ? CR_DOUBLE[63:32] : CR_DOUBLE[31:0];
-	
-	neo_zmc2 ZMC2(CLK_12M, EVEN1, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
-	
+	// Cartridge stuff
+	zmc ZMC(SDRD0, SDA[1:0], SDA[15:8], MA);
+
 	// PRO-CT0 used as security chip
 	wire [3:0] GAD_SEC;
 	wire [3:0] GBD_SEC;
@@ -1015,11 +1011,61 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 	assign M68K_DATA[7:0] = ((cart_chip == 2'd1) & ~nPORTOEL) ?
 									{GBD_SEC[1], GBD_SEC[0], GBD_SEC[3], GBD_SEC[2],
 									GAD_SEC[1], GAD_SEC[0], GAD_SEC[3], GAD_SEC[2]} : 8'bzzzzzzzz;
+
+	neo_273	NEO273(PBUS[19:0], ~PCK1, ~PCK2, C_LATCH, S_LATCH);
+	
+	// 4 MSBs not handled by NEO-273
+	always @(negedge PCK1)
+		C_LATCH_EXT <= PBUS[23:20];
 	
 	// Fake COM MCU
 	wire [15:0] COM_DOUT;
 	com COM(nRESET, CLK_24M, nPORTOEL, nPORTOEU, nPORTWEL, COM_DOUT);
 	assign M68K_DATA = (cart_chip == 2'd2) ? COM_DOUT : 16'bzzzzzzzz_zzzzzzzz;
+	
+	
+	
+	syslatch SL(M68K_ADDR[4:1], nBITW1, nRESET,
+					SHADOW, nVEC, nCARDWEN, CARDWENB, nREGEN, nSYSTEM, nSRAMWEN, PALBNK,
+					CLK_68KCLK);
+	wire nSRAMWEN_G = SYSTEM_MVS ? nSRAMWEN : 1'b1;	// nSRAMWEN is only for MVS
+	wire nSYSTEM_G = SYSTEM_MVS ? nSYSTEM : 1'b1;	// nSYSTEM is only for MVS
+	
+	neo_e0 E0(M68K_ADDR[23:1], BNK, nSROMOEU, nSROMOEL, nSROMOE, nVEC, A23Z, A22Z, CDA);
+	
+	wire [7:0] DIPSW = {~status[9:8], 5'b11111, ~status[7]};
+	neo_f0 F0(nRESET, nDIPRD0, nDIPRD1, nBITW0, nBITWD0, DIPSW, ~joystick_0[10], ~joystick_1[10], M68K_ADDR[7:4],
+				M68K_DATA[7:0], ~nSYSTEM_G, , , , , , , RTC_DOUT, RTC_TP, RTC_DIN, RTC_CLK, RTC_STROBE, , SYSTEM_MVS);
+	
+	uPD4990 RTC(nRESET, CLK_12M, rtc, 1'b1, 1'b1, RTC_CLK, RTC_DIN, RTC_STROBE, RTC_TP, RTC_DOUT);
+	
+	neo_g0 G0(M68K_DATA, nCRDC, nPAL, M68K_RW, {8'hFF, CDD}, PAL_RAM_DATA, nPAL_WE);
+	
+	wire [2:0] joystick_0_hack = joystick_0[11] ? 3'b111 : joystick_0[6:4];
+	neo_c1 C1(M68K_ADDR[21:17], M68K_DATA[15:8], A22Z, A23Z, nLDS, nUDS, M68K_RW, nAS, nROMOEL, nROMOEU,
+				nPORTOEL, nPORTOEU, nPORTWEL, nPORTWEU, nPORTADRS, nWRL, nWRU, nWWL, nWWU, nSROMOEL, nSROMOEU, 
+				nSRAMOEL, nSRAMOEU, nSRAMWEL, nSRAMWEU, nLSPOE, nLSPWE, nCRDO, nCRDW, nCRDC, nSDW,
+				~{joystick_0[9:7], joystick_0_hack, joystick_0[0], joystick_0[1], joystick_0[2], joystick_0[3]},
+				~{joystick_1[9:4], joystick_1[0], joystick_1[1], joystick_1[2], joystick_1[3]},
+				nCD1, nCD2, 1'b0,			// Memory card is never write-protected
+				1'b1, 1'b1, 1'b1, 1'b1,	// nROMWAIT, nPWAIT0, nPWAIT1, PDTACK,
+				SDD, nSDZ80R, nSDZ80W, nSDZ80CLR, CLK_68KCLK,
+				nDTACK, nBITW0, nBITW1, nDIPRD0, nDIPRD1, nPAL, SYSTEM_TYPE[0]);
+
+	// This is used to split burst-read sprite gfx data in half at the right time
+	reg [2:0] LOAD_SR;
+	reg CA4_REG;
+	
+	always @(posedge clk_sys)
+	begin
+		LOAD_SR <= {LOAD_SR[1:0], LOAD};
+		if (LOAD_SR == 3'b011)
+			CA4_REG <= CA4;
+	end
+	
+	wire [31:0] CR = CA4_REG ? CR_DOUBLE[63:32] : CR_DOUBLE[31:0];
+	
+	neo_zmc2 ZMC2(CLK_12M, EVEN1, LOAD, H, CR, GAD, GBD, DOTA, DOTB);
 	
 	// VCS is normally used as the LO ROM's nOE but the NeoGeo relies on the fact that the LO ROM
 	// will still have its output active for a short moment (~50ns) after nOE goes high
@@ -1049,8 +1095,6 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 	wire [7:0] M1_ROM_DATA;
 	wire [7:0] Z80_RAM_DATA;
 	
-	zmc ZMC(SDRD0, SDA[1:0], SDA[15:8], MA);
-	
 	wire m1_loading = ioctl_download & (ioctl_index == INDEX_M1ROM);
 	wire [16:0] M1_ADDR = m1_loading ? ioctl_addr[17:1] : {MA[16:11], SDA[10:0]};
 	wire m1_we = m1_loading ? ioctl_wr : 1'b0;
@@ -1064,26 +1108,31 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 						(~n2610CS & ~n2610RD) ? YM2610_DOUT :
 						8'bzzzzzzzz;
 	
+	wire Z80_nRESET = SYSTEM_CDx ? CD_nRESET_Z80 : nRESET;
 	cpu_z80 Z80CPU(CLK_4M, nRESET, SDD, SDA, nIORQ, nMREQ, nSDRD, nSDWR, nZ80INT, nZ80NMI);
 	
 	wire [19:0] ADPCMA_ADDR;
 	wire [3:0] ADPCMA_BANK;
 	wire [7:0] ADPCMA_DATA = 8'h00;
 	wire [23:0] ADPCMB_ADDR;
-	wire [7:0] ADPCMB_DATA = (SYSTEM_TYPE[1]) ? 8'h00 : 8'h00;	// CD has no ADPCM-B
+	wire [7:0] ADPCMB_DATA = SYSTEM_CDx ? 8'h00 : 8'h00;	// CD has no ADPCM-B
 	
 	wire [7:0] YM2610_DOUT;
-	jt10 YM2610(~nRESET, CLK_8M, 1'b1, SDD, SDA[1:0], n2610CS, n2610WR, YM2610_DOUT, nZ80INT,
+	jt10 YM2610(~nRESET, CLK_8M, 1'b1, SDD, SDA[1:0], n2610CS, n2610WR, YM2610_DOUT, nZ80INT,	// SDA[1:0]
 					ADPCMA_ADDR, ADPCMA_BANK, nSDROE, ADPCMA_DATA, ADPCMB_ADDR, nSDPOE,
-						, , , , , snd);				
-						
+						, , , , , snd);
+	
+	// For Neo CD only
+	wire DOTA_GATED = SPR_EN & DOTA;
+	wire DOTB_GATED = SPR_EN & DOTB;
+	
 	lspc2_a2	LSPC(CLK_24M, nRESET,
 					PBUS[15:0],
 					PBUS[23:16],
 					M68K_ADDR[3:1],
 					M68K_DATA,
 					nLSPOE, nLSPWE,
-					DOTA, DOTB,
+					DOTA_GATED, DOTB_GATED,
 					CA4, S2H1, S1H1,
 					LOAD,
 					H, EVEN1, EVEN2,
@@ -1102,6 +1151,11 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 					video_mode
 					);
 	
+	// These are always set on cartridg systems
+	wire VIDEO_EN = SYSTEM_CDx ? CD_VIDEO_EN : 1'b1;
+	wire FIX_EN = SYSTEM_CDx ? CD_FIX_EN : 1'b1;
+	wire SPR_EN = SYSTEM_CDx ? CD_SPR_EN : 1'b1;
+	
 	neo_b1	B1(CLK_24M, CLK_6MB, CLK_1HB,
 					PBUS,
 					FIXD,
@@ -1111,8 +1165,10 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 					WE, CK,
 					CHG, LD1, LD2, SS1, SS2, S1H1, A23Z, A22Z,
 					PAL_RAM_ADDR,
-					nLDS, M68K_RW, nAS, M68K_ADDR[21:17], M68K_ADDR[12:1]);	// nHALT, nRESET, nRST
-
+					nLDS, M68K_RW, nAS, M68K_ADDR[21:17], M68K_ADDR[12:1],
+					 , , ,	// nHALT, nRESET, nRST
+					FIX_EN);
+	
 	pal_ram PALRAM({PALBNK, PAL_RAM_ADDR}, CLK_24M, M68K_DATA, ~nPAL_WE, PAL_RAM_DATA);	// Was CLK_12M
 	
 	// DAC latches
@@ -1121,22 +1177,13 @@ hps_io #(.STRLEN(($size(CONF_STR1)>>3) + ($size(CONF_STR2)>>3) + ($size(CONF_STR
 		if (!nBNKB)
 			PAL_RAM_REG <= 16'h0000;
 		else
-			PAL_RAM_REG <= PAL_RAM_DATA;
+			// For Neo CD only:
+			PAL_RAM_REG <= VIDEO_EN ? PAL_RAM_DATA : 16'h0000;
 	end
-
+	
 	// Final video output 6 bits -> 8 bits
 	assign VGA_R = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], PAL_RAM_REG[15], 2'b00};
 	assign VGA_G = {PAL_RAM_REG[7:4], PAL_RAM_REG[13], PAL_RAM_REG[15], 2'b00};
 	assign VGA_B = {PAL_RAM_REG[3:0], PAL_RAM_REG[12], PAL_RAM_REG[15], 2'b00};
 	
-	
-	cd_dma DMA(
-		SYSTEM_MODE,
-		M68K_ADDR,
-		M68K_DATA,
-		nLDS, nUDS,
-		M68K_RW, nAS
-		// BR, BG, BGACK
-	);
-
 endmodule

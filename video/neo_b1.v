@@ -45,7 +45,9 @@ module neo_b1(
 	input [12:1] M68K_ADDR_L,
 	output nHALT,
 	output nRESET,
-	input nRST
+	input nRST,
+	
+	input EN_FIX
 );
 
 	reg nCPU_ACCESS;
@@ -75,7 +77,8 @@ module neo_b1(
 	assign FIX_COLOR = S1H1 ? FIXD_REG[7:4] : FIXD_REG[3:0];
 
 	// IDUF
-	wire FIX_OPAQUE = |{FIX_COLOR};
+	// EN_FIX gate for Neo CD only
+	wire FIX_OPAQUE = |{FIX_COLOR} & EN_FIX;
 
 	// GETU FUCA...
 	always @(posedge PCK1)

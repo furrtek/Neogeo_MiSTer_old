@@ -35,16 +35,16 @@ localparam dw=10; // widht of the decimal portion
 
 reg  signed [sw+dw:0] integ, exact, error;
 //reg  signed [2*(9+dw)-1:0] mult;
-wire signed [sw+dw:0] plus1 = { {sw+dw{1'b0}},1'b1};
+// wire signed [sw+dw:0] plus1 = { {sw+dw{1'b0}},1'b1};
 reg  signed [sw:0] pre_dout;
-reg signed [sw+dw:0] dout_ext;
+// reg signed [sw+dw:0] dout_ext;
 reg signed [sw:0] q;
 
 always @(*) begin
     exact = integ+error;
     q = exact[sw+dw:dw];
     pre_dout  = { 1'b0, din } - q;
-    dout_ext = { pre_dout, {dw{1'b0}} };    
+    //dout_ext = { pre_dout, {dw{1'b0}} };    
     //mult  = dout_ext;
 end
 

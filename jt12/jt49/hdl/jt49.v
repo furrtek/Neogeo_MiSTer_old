@@ -24,7 +24,7 @@
 module jt49 ( // note that input ports are not multiplexed
     input            rst_n,
     input            clk,    // signal on positive edge
-    input            clk_en,    // clock enable on negative edge
+    input            clk_en /* synthesis direct_enable = 1 */,
     input  [3:0]     addr,
     input            cs_n,
     input            wr_n,  // write
@@ -41,7 +41,7 @@ reg [7:0] regarray[15:0];
 
 wire [4:0] envelope;
 wire bitA, bitB, bitC;
-wire noise, envclk;
+wire noise;
 reg Amix, Bmix, Cmix;
 
 wire cen2, cen4, cen_ch, cen16;
@@ -103,7 +103,7 @@ jt49_div #(16) u_envdiv(
 reg eg_restart;
 
 jt49_eg u_env(
-    .clk    ( envclk            ),
+    .clk    ( clk               ),
     .cen    ( cen_ch            ),
     .step   ( eg_step           ),
     .rst_n  ( rst_n             ),
@@ -148,17 +148,29 @@ always @(posedge clk) if( clk_en ) begin
     sound <= { 2'b0, A } + { 2'b0, B } + { 2'b0, C };
 end
 
+reg [7:0] read_mask;
+
+always @(*)
+    case(addr)
+        4'h0,4'h2,4'h4,4'h7,4'hb,4'hc,4'he,4'hf:
+            read_mask = 8'hff;
+        4'h1,4'h3,4'h5,4'hd:
+            read_mask = 8'h0f;
+        4'h6,4'h8,4'h9,4'ha: 
+            read_mask = 8'h1f;
+    endcase // addr
+
 // register array
 always @(posedge clk)
     if( !rst_n ) begin
         dout <= 8'd0;
         eg_restart <= 1'b0;
-        regarray[0]=8'd0; regarray[4]=8'd0; regarray[ 8]=8'd0; regarray[12]=8'd0;
-        regarray[1]=8'd0; regarray[5]=8'd0; regarray[ 9]=8'd0; regarray[13]=8'd0;
-        regarray[2]=8'd0; regarray[6]=8'd0; regarray[10]=8'd0; regarray[14]=8'd0;
-        regarray[3]=8'd0; regarray[7]=8'd0; regarray[11]=8'd0; regarray[15]=8'd0;
+        regarray[0]<=8'd0; regarray[4]<=8'd0; regarray[ 8]<=8'd0; regarray[12]<=8'd0;
+        regarray[1]<=8'd0; regarray[5]<=8'd0; regarray[ 9]<=8'd0; regarray[13]<=8'd0;
+        regarray[2]<=8'd0; regarray[6]<=8'd0; regarray[10]<=8'd0; regarray[14]<=8'd0;
+        regarray[3]<=8'd0; regarray[7]<=8'd0; regarray[11]<=8'd0; regarray[15]<=8'd0;
     end else if( !cs_n ) begin
-        dout <= regarray[ addr ];
+        dout <= regarray[ addr ] & read_mask;
         if( !wr_n ) regarray[addr] <= din;
         eg_restart <= addr == 4'hD;
     end
