@@ -48,9 +48,7 @@ module cd_sys(
 	
 	// BR, BG, BGACK
 );
-	
-	reg [3:0] LC8951_ADDR;
-	reg [7:0] LC8951_REG [16];
+
 	reg CD_USE_SPR, CD_USE_PCM, CD_USE_Z80, CD_USE_FIX;
 	reg CD_UPLOAD_EN;
 	reg CD_nRESET_DRIVE;
@@ -64,12 +62,38 @@ module cd_sys(
 	
 	reg PREV_nAS;
 	
+	wire [3:0] CDD_DIN;
+	wire [3:0] CDD_DOUT;
+	
+	cd_drive DRIVE(
+		nRESET & CD_nRESET_DRIVE,
+		CLK_68KCLK,
+		HOCK, CDCK,
+		CDD_DIN, CDD_DOUT,
+		CD_nIRQ
+	);
+
+	wire [3:0] LC8953_DOUT;
+	
+	lc8953 LC8953(
+		nRESET,
+		CLK_68KCLK,
+		~LC8953_WR, ~LC8953_RD, M68K_ADDR[1],
+		M68K_DATA[7:0],
+		LC8953_DOUT
+	);
+	
+	wire READING = ~nAS & M68K_RW & (M68K_ADDR[23:12] == 12'hFF0) & SYSTEM_TYPE[1];
+	wire WRITING = ~nAS & ~M68K_RW & (M68K_ADDR[23:12] == 12'hFF0) & SYSTEM_TYPE[1];
+	
+	wire LC8953_RD = (READING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
+	wire LC8953_WR = (WRITING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
+
 	// We should be detecting the falling edge of nAS and check the state of M68K_RW
 	always @(negedge CLK_68KCLK or negedge nRESET)
 	begin
 		if (!nRESET)
 		begin
-			LC8951_ADDR <= 4'd0;
 			CD_USE_SPR <= 0;
 			CD_USE_PCM <= 0;
 			CD_USE_Z80 <= 0;
@@ -109,8 +133,6 @@ module cd_sys(
 						10'b0_0111111_00: DMA_MICROCODE[M68K_ADDR[4:1]] <= M68K_DATA;	// FF007E+
 						
 						// FF01
-						10'b1_0000000_?0: LC8951_ADDR <= M68K_DATA[3:0];	// FF0101 LC8951 register addr
-						10'b1_0000001_?0: LC8951_REG[LC8951_ADDR] <= M68K_DATA[7:0];	// FF0103 LC8951 register data
 						10'b1_0000010_?0: CD_TR_AREA <= M68K_DATA[2:0];		// FF0105 Upload area select
 						10'b1_0001000_?0: CD_SPR_EN <= ~M68K_DATA[0];	// FF0111 REG_DISBLSPR
 						10'b1_0001010_?0: CD_FIX_EN <= ~M68K_DATA[0];	// FF0115 REG_DISBLFIX
@@ -123,6 +145,8 @@ module cd_sys(
 						10'b1_0100001_?0: CD_USE_PCM <= 0;	// FF0143 REG_UPUNMAPSPR
 						10'b1_0100011_?0: CD_USE_Z80 <= 0;	// FF0147 REG_UPUNMAPSPR
 						10'b1_0100100_?0: CD_USE_FIX <= 0;	// FF0149 REG_UPUNMAPSPR
+						10'b1_0110001_10: CDD_DIN <= M68K_DATA[3:0];		// FF0163 REG_CDDOUTPUT
+						10'b1_0110010_10: HOCK <= M68K_DATA[0];			// FF0165 REG_CDDCTRL
 						10'b1_0110111_?0: CD_UPLOAD_EN <= M68K_DATA[0];		// FF016F
 						10'b1_1000000_?0: CD_nRESET_DRIVE <= M68K_DATA[0];	// FF0181
 						10'b1_1000001_?0: CD_nRESET_Z80 <= M68K_DATA[0];	// FF0183
@@ -158,11 +182,11 @@ module cd_sys(
 	// 1111:JP, 1110:US, 1101: EU
 	wire [3:0] CD_JUMPERS = {2'b11, CD_REGION};
 	
-	wire READING = ~nAS & M68K_RW & (M68K_ADDR[23:12] == 12'hFF0) & SYSTEM_TYPE[1];
-	
 	assign M68K_DATA = (READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {4'b1100, CD_JUMPERS, 8'h00} :	// Top mech, lid closed
+							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h165) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h188) ? 16'h0000 :	// CDDA L
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h18A) ? 16'h0000 :	// CDDA R
+							(LC8953_RD) ? {8'h00, LC8953_DOUT} :
 							16'bzzzzzzzz_zzzzzzzz;
 	
 endmodule

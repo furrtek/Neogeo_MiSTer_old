@@ -119,17 +119,17 @@ assign VGA_DE = ~CHBL & nBNKB;
 
 // status bit definition:
 // 31       23       15       7
-// xxAAxxSS xxxxxxxx xxxCGGDD DEEMVTTR
-// R: Reset, used by the HPS, keep it there
-// T: System type, 0=Console, 1=Arcade, 2=CD, 3=CDZ
-// V: Video mode
-// M: Memory card presence
-// EE: Stereo mix
-// DDD: DIP switches
-// GG: Neo CD region
-// C: Save memory card & backup RAM
-// SS: Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU
-// AA: sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
+// --AA--SS -------- ---CGGDD DEEMVTTR
+// R:	status[0]		Reset, used by the HPS, keep it there
+// T:	status[2:1]		System type, 0=Console, 1=Arcade, 2=CD, 3=CDZ
+// V: status[3]		Video mode
+// M: status[4]		Memory card presence
+// E:	status[6:5]		Stereo mix
+// D:	status[9:7]		DIP switches
+// G:	status[11:10]	Neo CD region
+// C:	status[12]		Save memory card & backup RAM
+// S:	status[25:24]	Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU
+// A: status[29:28]	Sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
 
 `include "build_id.v"
 
@@ -264,7 +264,7 @@ reg memcard_state = 0;
 reg memcard_load_prev = 0, memcard_save_prev = 0, sd_ack_prev;
 reg [31:0] sd_lba;
 
-wire [15:0] joystick_0;	// xxxxHNLS DCBAUDLR
+wire [15:0] joystick_0;	// ----HNLS DCBAUDLR
 wire [15:0] joystick_1;
 wire  [1:0] buttons;
 wire        forced_scandoubler;
