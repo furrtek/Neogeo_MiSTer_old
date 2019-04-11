@@ -20,7 +20,6 @@
 
 // TODO: Check if ZMC is working correctly
 // TODO: See if Fatal Fury 2 is still working passed stage 1
-
 module emu
 (
 	//Master input clock
@@ -49,7 +48,9 @@ module emu
 	output  [7:0] VGA_B,
 	output        VGA_HS,
 	output        VGA_VS,
-	output        VGA_DE,
+	output        VGA_DE,    // = ~(VBlank | HBlank)
+	output        VGA_F1,
+	output  [1:0] VGA_SL,
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
 
@@ -61,7 +62,7 @@ module emu
 
 	output [15:0] AUDIO_L,
 	output [15:0] AUDIO_R,
-	output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
+	output        AUDIO_S, // 1 - signed audio samples, 0 - unsigned
 	output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
 	input         TAPE_IN,
 
@@ -92,14 +93,32 @@ module emu
 	output  [1:0] SDRAM_BA,
 	inout  [15:0] SDRAM_DQ,
 	output        SDRAM_DQML,
-
 	output        SDRAM_DQMH,
 	output        SDRAM_nCS,
 	output        SDRAM_nCAS,
 	output        SDRAM_nRAS,
-	output        SDRAM_nWE
+	output        SDRAM_nWE,
+
+	input         UART_CTS,
+	output        UART_RTS,
+	input         UART_RXD,
+	output        UART_TXD,
+	output        UART_DTR,
+	input         UART_DSR,
+
+	// Open-drain User port.
+	// 0 - D+/RX
+	// 1 - D-/TX
+	// 2..5 - USR1..USR4
+	// Set USER_OUT to 1 to read from USER_IN.
+	input   [5:0] USER_IN,
+	output  [5:0] USER_OUT,
+
+	input         OSD_STATUS
 );
 
+assign USER_OUT = '1;
+assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 
@@ -112,10 +131,10 @@ assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 
-assign VIDEO_ARX = 8'd10;	// 320/32
-assign VIDEO_ARY = 8'd7;	// 224/32
+assign VIDEO_ARX = 8'd4;	// 320/32
+assign VIDEO_ARY = 8'd3;	// 224/32
 
-assign VGA_DE = ~CHBL & nBNKB;
+//assign VGA_DE = ~CHBL & nBNKB;
 
 // status bit definition:
 // 31       23       15       7
@@ -197,8 +216,8 @@ pll pll
 	.locked(locked)
 );
 
-assign CLK_VIDEO = clk_sys;
-assign CE_PIXEL = CLK_6MB;
+// assign CLK_VIDEO = clk_sys;
+// assign CE_PIXEL = CLK_6MB;
 wire nRST = ~(ioctl_download | status[0]);
 
 // The watchdog should output nRESET but it makes video sync stop for a moment, so the
@@ -1141,7 +1160,7 @@ hps_io #(
 					PCK1, PCK2,
 					WE, CK, SS1, SS2,
 					nRESETP,
-					VGA_HS, VGA_VS,
+					hsync, vsync,
 					CHBL, nBNKB,
 					VCS,
 					CLK_8M, CLK_4M,
@@ -1182,8 +1201,38 @@ hps_io #(
 	end
 	
 	// Final video output 6 bits -> 8 bits
-	assign VGA_R = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], PAL_RAM_REG[15], 2'b00};
-	assign VGA_G = {PAL_RAM_REG[7:4], PAL_RAM_REG[13], PAL_RAM_REG[15], 2'b00};
-	assign VGA_B = {PAL_RAM_REG[3:0], PAL_RAM_REG[12], PAL_RAM_REG[15], 2'b00};
+	// assign VGA_R = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], PAL_RAM_REG[15], 2'b00};
+	// assign VGA_G = {PAL_RAM_REG[7:4], PAL_RAM_REG[13], PAL_RAM_REG[15], 2'b00};
+	// assign VGA_B = {PAL_RAM_REG[3:0], PAL_RAM_REG[12], PAL_RAM_REG[15], 2'b00};
+
+	wire hsync, vsync;
+
+	// Final video output 6 bits -> 8 bits
+	wire [7:0] R = {PAL_RAM_REG[11:8], PAL_RAM_REG[14], PAL_RAM_REG[15], 2'b00};
+	wire [7:0] G = {PAL_RAM_REG[7:4], PAL_RAM_REG[13], PAL_RAM_REG[15], 2'b00};
+	wire [7:0] B = {PAL_RAM_REG[3:0], PAL_RAM_REG[12], PAL_RAM_REG[15], 2'b00};
+
+	// assign CLK_VIDEO = clk_sys;
+	// assign CE_PIXEL = CLK_6MB;
 	
+	assign VGA_SL = 2'b00;
+	assign VGA_F1 = 1'b0;
+	//assign VGA_DE = ~CHBL & nBNKB;
+	assign CLK_VIDEO = clk_sys;
+	video_mixer #(.LINE_LENGTH(320)) video
+	(
+		.*,
+		.HSync(hsync),
+		.VSync(vsync),
+		.HBlank(CHBL),
+		.VBlank(~nBNKB),
+		.mono(1'b0),
+		.hq2x(1'b0),
+		.scanlines(2'b00),
+		.scandoubler(1'b0),
+		.clk_sys(clk_sys),
+		.ce_pix(CLK_6MB),
+		.ce_pix_out(CE_PIXEL)
+
+	);
 endmodule

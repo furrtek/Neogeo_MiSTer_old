@@ -4,7 +4,7 @@
 # Your use of Intel Corporation's design tools, logic functions 
 # and other software and tools, and its AMPP partner logic 
 # functions, and any output files from any of the foregoing 
-# (including device programming or simulation files), and any 
+# (including device programming or simulation files), and any
 # associated documentation or information are expressly subject 
 # to the terms and conditions of the Intel Program License 
 # Subscription Agreement, the Intel Quartus Prime License Agreement,
@@ -52,7 +52,7 @@ set_global_assignment -name TIMEQUEST_MULTICORNER_ANALYSIS OFF
 set_global_assignment -name OPTIMIZE_POWER_DURING_FITTING OFF
 set_global_assignment -name FINAL_PLACEMENT_OPTIMIZATION ALWAYS
 set_global_assignment -name FITTER_EFFORT "AUTO FIT"
-set_global_assignment -name OPTIMIZATION_MODE BALANCED
+set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
 set_global_assignment -name SEED 1
 
 #============================================================
@@ -70,19 +70,6 @@ set_location_assignment PIN_AD4 -to ADC_SDO
 #============================================================
 # ARDUINO
 #============================================================
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[3]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[4]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[5]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[6]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[7]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[8]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[9]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[10]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[11]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[12]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[13]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[14]
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[15]
 set_location_assignment PIN_AG9 -to ARDUINO_IO[3]
 set_location_assignment PIN_U14 -to ARDUINO_IO[4]
 set_location_assignment PIN_U13 -to ARDUINO_IO[5]
@@ -90,12 +77,22 @@ set_location_assignment PIN_AG8 -to ARDUINO_IO[6]
 set_location_assignment PIN_AH8 -to ARDUINO_IO[7]
 set_location_assignment PIN_AF17 -to ARDUINO_IO[8]
 set_location_assignment PIN_AE15 -to ARDUINO_IO[9]
-set_location_assignment PIN_AF15 -to ARDUINO_IO[10]
-set_location_assignment PIN_AG16 -to ARDUINO_IO[11]
-set_location_assignment PIN_AH11 -to ARDUINO_IO[12]
-set_location_assignment PIN_AH12 -to ARDUINO_IO[13]
-set_location_assignment PIN_AH9 -to ARDUINO_IO[14]
-set_location_assignment PIN_AG11 -to ARDUINO_IO[15]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ARDUINO_IO[*]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to ARDUINO_IO[*]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to ARDUINO_IO[*]
+
+#============================================================
+# USER PORT
+#============================================================
+set_location_assignment PIN_AF15 -to USER_IO[5]
+set_location_assignment PIN_AG16 -to USER_IO[4]
+set_location_assignment PIN_AH11 -to USER_IO[3]
+set_location_assignment PIN_AH12 -to USER_IO[2]
+set_location_assignment PIN_AH9 -to USER_IO[1]
+set_location_assignment PIN_AG11 -to USER_IO[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to USER_IO[*]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to USER_IO[*]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to USER_IO[*]
 
 #============================================================
 # SDIO
@@ -354,7 +351,7 @@ set_location_assignment PIN_W20 -to SW[3]
 
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:sys/build_id.tcl"
 
-set_global_assignment -name ENABLE_SIGNALTAP ON
+set_global_assignment -name ENABLE_SIGNALTAP OFF
 set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp
 set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT NORMAL
 set_global_assignment -name IO_PLACEMENT_OPTIMIZATION OFF
@@ -652,4 +649,5 @@ set_global_assignment -name VERILOG_FILE dpram.v
 set_global_assignment -name VERILOG_FILE io/com.v
 set_global_assignment -name SYSTEMVERILOG_FILE cd/cd.sv
 set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp
+
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
