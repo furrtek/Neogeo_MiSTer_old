@@ -18,7 +18,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-module lc8953(
+module lc8951(
 	input nRESET,
 	input CLK_12M,
 	input nWR, nRD,

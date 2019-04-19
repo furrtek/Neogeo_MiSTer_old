@@ -25,8 +25,30 @@ module cd_drive(
 	output reg CDCK,
 	input [3:0] CDD_DIN,
 	output reg [3:0] CDD_DOUT,
-	output reg CD_nIRQ
+	output reg CD_nIRQ,
+	output reg [15:0] sd_req_type
 );
+
+	// TOC sub-commands:
+	// 0: Get position
+	//		Unimplemented
+	// 1: Get position relative
+	//		Unimplemented
+	// 2: Get track number
+	//		Unimplemented
+	// 3: Get CD length: sd_req_type = 16'hD100
+	//		0: M
+	//		1: S
+	//		2: F
+	// 4: Get first/last: sd_req_type = 16'hD000
+	//		0: First track # BCD
+	//		1: Last track # BCD
+	// 5: Get track start: sd_req_type = 16'hD2nn
+	//		0: M
+	//		1: S
+	//		2: F
+	// 6: Get track type
+	//		Unimplemented
 
 	reg [5:0] CLK_DIV;
 	reg [11:0] IRQ_TIMER;
@@ -39,6 +61,8 @@ module cd_drive(
 	reg HOCK_PREV;
 	reg [1:0] COMM_STATE;		// 0~2
 	
+	reg [3:0] CHECKSUM;
+	
 	always @(posedge CLK_12M or negedge nRESET)
 	begin
 		if (!nRESET)
@@ -49,6 +73,8 @@ module cd_drive(
 			DIN_COUNTER <= 4'd10;
 			HOCK_PREV <= 0;
 			COMM_STATE <= 2'd0;
+			CD_nIRQ <= 1;
+			sd_req_type <= 16'h0000;
 		end
 		else
 		begin
@@ -72,10 +98,16 @@ module cd_drive(
 					DIN_COUNTER <= 4'd0;
 				end
 				else
+				begin
+					// To allow CD_nIRQ retry
+					if (IRQ_TIMER == 12'd1953-1)
+						CD_nIRQ <= 1'b1;
+						
 					IRQ_TIMER <= IRQ_TIMER + 1'b1;
+				end
 				
 				if (~HOCK & ~CD_nIRQ)
-					CD_nIRQ <= 1'b1;		// IRQ was ack'd
+					CD_nIRQ <= 1'b1;		// Comm. started ok
 				
 				if (CD_nIRQ)
 				begin
@@ -102,6 +134,7 @@ module cd_drive(
 								begin
 									DOUT_COUNTER <= 4'd10;
 									COMM_STATE <= 2'd0;
+									CHECKSUM <= 4'd5;
 								end
 							end
 						end
@@ -126,8 +159,50 @@ module cd_drive(
 							if (~HOCK_PREV & HOCK)
 							begin
 								COMMAND_DATA[DIN_COUNTER] <= CDD_DIN;
+								CHECKSUM <= CHECKSUM + CDD_DIN;
 								CDCK <= 1'b1;
 								DIN_COUNTER <= DIN_COUNTER + 1'b1;
+								if (DIN_COUNTER == 4'd9)
+								begin
+									if (COMMAND_DATA[9] == ~CHECKSUM)
+									begin
+										// Process command
+										if (COMMAND_DATA[0] == 4'd2)
+										begin
+											// TOC command
+											STATUS_DATA[1] <= COMMAND_DATA[3];
+											
+											if (COMMAND_DATA[3] == 4'd0)
+											begin
+												// Get absolute position
+											end
+											else if (COMMAND_DATA[3] == 4'd1)
+											begin
+												// Get relative position
+											end
+											else if (COMMAND_DATA[3] == 4'd2)
+											begin
+												// Get track number
+											end
+											else if (COMMAND_DATA[3] == 4'd3)
+											begin
+												// Get CD length
+											end
+											else if (COMMAND_DATA[3] == 4'd4)
+											begin
+												// Get first and last tracks
+											end
+											else if (COMMAND_DATA[3] == 4'd5)
+											begin
+												// Get track length
+											end
+											else if (COMMAND_DATA[3] == 4'd6)
+											begin
+												// Get track type
+											end
+										end
+									end
+								end
 								COMM_STATE <= 2'd1;
 							end
 						end

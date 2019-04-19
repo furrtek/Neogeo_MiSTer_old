@@ -32,16 +32,22 @@ The generated .rbf is `output_files\neogeo-lite.rbf`
 
 The ROM files are normally loaded by user_io_file_tx from user_io.cpp. For this core, neogeo_romset_tx from `/support/neogeo/loader.cpp` is used instead. 
 
-## Save file
+## Save files for cartridge games
 
 Data | Start | End
 ---- | ---- | ----
 Backup RAM | 000000 | 00FFFF
 Memory card | 010000 | 0107FF
 
+## Save file for CD systems
+
+Data | Start | End
+---- | ---- | ----
+Memory card | 000000 | 001FFF
+
 ## SDRAM multiplexing
 The SDRAM extension board stores the 68k program, sprites and fix graphics.
-It currently runs at 96MHz (4*24M) but may be pushed up to 144MHz (6*24M) if needed.
+It currently runs at 120MHz (5*24M) but may be pushed up to 144MHz (6*24M) if needed.
 
 ### 68k data
 Read as soon as nSROMOE (system ROM read), nROMOE (cart ROM read) or nPORTOE (cart ROM extension read) goes low.
@@ -98,7 +104,7 @@ ioctl_index is used to tell the core where to store the data being loaded. The c
  S: word shift (used to interleave odd/even ROMs)
  So SDRAM address = 0x0800000 + 0b1_BBBBB000_00000000_000000S0 + ioctl_addr
 
-## BRAM map
+## BRAM zones
 
 Memory | Size
 ------ | ----

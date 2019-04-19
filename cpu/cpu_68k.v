@@ -21,14 +21,15 @@
 module cpu_68k(
 	input CLK_24M,	//CLK_68KCLK,
 	input nRESET,
-	input IPL1, IPL0,
+	input IPL2, IPL1, IPL0,
 	input nDTACK,
 	output [23:1] M68K_ADDR,
 	input [15:0] FX68K_DATAIN,
 	output [15:0] FX68K_DATAOUT,
 	output nLDS, nUDS,
 	output nAS,
-	output M68K_RW
+	output M68K_RW,
+	output FC2, FC1, FC0
 );
 	
 reg  M68K_CLKEN;
@@ -66,14 +67,19 @@ fx68k FX68K(
 		
 		.DTACKn(nDTACK),
 		
-		.VPAn(nAS),		// Is this enough ?
+		.VPAn(~IPL2 | nAS),		// Is this enough ?
 		.BERRn(1'b1),
 		.BRn(1'b1),
 		.BGACKn(1'b1),
 		
-		.IPL2n(1'b1),
-		.IPL1n(IPL1),
 		.IPL0n(IPL0),
+		.IPL1n(IPL1),
+		.IPL2n(IPL2),
+		
+		.FC0(FC0),
+		.FC1(FC1),
+		.FC2(FC2),
+		
 		.iEdb(FX68K_DATAIN),
 		.oEdb(FX68K_DATAOUT),
 		.eab(M68K_ADDR)

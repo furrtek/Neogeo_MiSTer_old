@@ -34,7 +34,7 @@ module cd_sys(
 	output reg CD_FIX_EN,
 	output reg CD_SPR_EN,
 	
-	output CD_nRESET_Z80,
+	output reg CD_nRESET_Z80,
 	
 	output reg CD_TR_WR_SPR,
 	output reg CD_TR_WR_PCM,
@@ -44,7 +44,12 @@ module cd_sys(
 	output reg [1:0] CD_BANK_SPR,
 	output reg CD_BANK_PCM,
 	output reg [15:0] CD_TR_WR_DATA,
-	output reg [19:1] CD_TR_WR_ADDR
+	output reg [19:1] CD_TR_WR_ADDR,
+	
+	input IACK,
+	output reg IPL2,
+	
+	output [15:0] sd_req_type
 	
 	// BR, BG, BGACK
 );
@@ -52,6 +57,8 @@ module cd_sys(
 	reg CD_USE_SPR, CD_USE_PCM, CD_USE_Z80, CD_USE_FIX;
 	reg CD_UPLOAD_EN;
 	reg CD_nRESET_DRIVE;
+	reg [15:0] REG_FF0002;
+	reg [2:0] CD_IRQ_FLAGS;
 	
 	reg [31:0] DMA_SOURCE;
 	reg [31:0] DMA_DEST;
@@ -60,7 +67,8 @@ module cd_sys(
 	reg [15:0] DMA_MICROCODE [9];
 	reg DMA_RUN;
 	
-	reg PREV_nAS;
+	reg CD_nIRQ_PREV;
+	reg nLDS_PREV, nUDS_PREV;
 	
 	wire [3:0] CDD_DIN;
 	wire [3:0] CDD_DOUT;
@@ -70,24 +78,25 @@ module cd_sys(
 		CLK_68KCLK,
 		HOCK, CDCK,
 		CDD_DIN, CDD_DOUT,
-		CD_nIRQ
+		CD_nIRQ,
+		sd_req_type
 	);
 
-	wire [3:0] LC8953_DOUT;
+	wire [7:0] LC8951_DOUT;
 	
-	lc8953 LC8953(
+	lc8951 LC8951(
 		nRESET,
 		CLK_68KCLK,
-		~LC8953_WR, ~LC8953_RD, M68K_ADDR[1],
+		~LC8951_WR, ~LC8951_RD, M68K_ADDR[1],
 		M68K_DATA[7:0],
-		LC8953_DOUT
+		LC8951_DOUT
 	);
 	
 	wire READING = ~nAS & M68K_RW & (M68K_ADDR[23:12] == 12'hFF0) & SYSTEM_TYPE[1];
 	wire WRITING = ~nAS & ~M68K_RW & (M68K_ADDR[23:12] == 12'hFF0) & SYSTEM_TYPE[1];
 	
-	wire LC8953_RD = (READING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
-	wire LC8953_WR = (WRITING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
+	wire LC8951_RD = (READING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
+	wire LC8951_WR = (WRITING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
 
 	// We should be detecting the falling edge of nAS and check the state of M68K_RW
 	always @(negedge CLK_68KCLK or negedge nRESET)
@@ -98,29 +107,52 @@ module cd_sys(
 			CD_USE_PCM <= 0;
 			CD_USE_Z80 <= 0;
 			CD_USE_FIX <= 0;
+			CD_TR_WR_SPR <= 0;
+			CD_TR_WR_PCM <= 0;
+			CD_TR_WR_Z80 <= 0;
+			CD_TR_WR_FIX <= 0;
 			CD_SPR_EN <= 1;	// ?
 			CD_FIX_EN <= 1;	// ?
 			CD_VIDEO_EN <= 1;	// ?
 			CD_UPLOAD_EN <= 0;
 			CD_nRESET_Z80 <= 0;	// ?
-			PREV_nAS <= 1;
+			REG_FF0002 <= 16'h0;	// ?
+			nLDS_PREV <= 1;
+			nUDS_PREV <= 1;
+			IPL2 <= 1;
+			CD_IRQ_FLAGS <= 3'b111;
 		end
 		else
 		begin
-			PREV_nAS <= nAS;
+			nLDS_PREV <= nLDS;
+			nUDS_PREV <= nUDS;
+			CD_nIRQ_PREV <= CD_nIRQ;
 			
 			if (CD_TR_WR_SPR) CD_TR_WR_SPR <= 0;
 			if (CD_TR_WR_PCM) CD_TR_WR_PCM <= 0;
 			if (CD_TR_WR_Z80) CD_TR_WR_Z80 <= 0;
 			if (CD_TR_WR_FIX) CD_TR_WR_FIX <= 0;
 			
-			if (SYSTEM_TYPE[1] & PREV_nAS & ~nAS)
+			// Falling edge of CD_nIRQ
+			if (CD_nIRQ_PREV & ~CD_nIRQ)
+			begin
+				// CD comm. interrupt enable
+				if (REG_FF0002[6] | REG_FF0002[4])
+					CD_IRQ_FLAGS[1] <= 0;
+			end
+			
+			IPL2 <= &{CD_IRQ_FLAGS};
+			
+			if (SYSTEM_TYPE[1] & ((nLDS_PREV & ~nLDS) | (nUDS_PREV & ~nUDS)))	// & PREV_nAS & ~nAS
 			begin
 				// Writes
 				if ((M68K_ADDR[23:9] == 15'b11111111_0000000) & ~M68K_RW)
 				begin
 					casez ({M68K_ADDR[8:1], nUDS, nLDS})
 						// FF00
+						10'b0_0000001_00: REG_FF0002 <= M68K_DATA;			// FF0002
+						10'b0_0000111_?0: CD_IRQ_FLAGS <= CD_IRQ_FLAGS | M68K_DATA[5:3];	// FF000E
+						
 						10'b0_0110000_10: DMA_RUN <= M68K_DATA[6];			// FF0061
 						10'b0_0110010_00: DMA_SOURCE[31:16]	<= M68K_DATA;	// FF0064~FF0065
 						10'b0_0110011_00: DMA_SOURCE[15:0] <= M68K_DATA;	// FF0066~FF0067
@@ -182,11 +214,16 @@ module cd_sys(
 	// 1111:JP, 1110:US, 1101: EU
 	wire [3:0] CD_JUMPERS = {2'b11, CD_REGION};
 	
-	assign M68K_DATA = (READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {4'b1100, CD_JUMPERS, 8'h00} :	// Top mech, lid closed
+	wire [7:0] CD_IRQ_VECTOR = ~CD_IRQ_FLAGS[0] ? 8'd23 :
+										~CD_IRQ_FLAGS[1] ? 8'd22 :
+										~CD_IRQ_FLAGS[2] ? 8'd21 :
+										8'd24;	// Spurious interrupt, should not happen
+	
+	assign M68K_DATA = (IACK & (M68K_ADDR[3:1] == 3'd4)) ? {8'h00, CD_IRQ_VECTOR} :		// Vectored interrupt handler
+							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {4'b1100, CD_JUMPERS, 8'h00} :	// Top mech, lid closed
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h165) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h188) ? 16'h0000 :	// CDDA L
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h18A) ? 16'h0000 :	// CDDA R
-							(LC8953_RD) ? {8'h00, LC8953_DOUT} :
+							(LC8951_RD) ? {8'h00, LC8951_DOUT} :
 							16'bzzzzzzzz_zzzzzzzz;
-	
 endmodule
