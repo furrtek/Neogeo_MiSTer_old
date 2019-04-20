@@ -149,7 +149,7 @@ module cd_drive(
 						end
 						
 					end
-					else if (DIN_COUNTER != 4'd10)
+					else if (DIN_COUNTER < 4'd10)
 					begin
 						// HOST to CDD
 						
@@ -162,47 +162,6 @@ module cd_drive(
 								CHECKSUM <= CHECKSUM + CDD_DIN;
 								CDCK <= 1'b1;
 								DIN_COUNTER <= DIN_COUNTER + 1'b1;
-								if (DIN_COUNTER == 4'd9)
-								begin
-									if (COMMAND_DATA[9] == ~CHECKSUM)
-									begin
-										// Process command
-										if (COMMAND_DATA[0] == 4'd2)
-										begin
-											// TOC command
-											STATUS_DATA[1] <= COMMAND_DATA[3];
-											
-											if (COMMAND_DATA[3] == 4'd0)
-											begin
-												// Get absolute position
-											end
-											else if (COMMAND_DATA[3] == 4'd1)
-											begin
-												// Get relative position
-											end
-											else if (COMMAND_DATA[3] == 4'd2)
-											begin
-												// Get track number
-											end
-											else if (COMMAND_DATA[3] == 4'd3)
-											begin
-												// Get CD length
-											end
-											else if (COMMAND_DATA[3] == 4'd4)
-											begin
-												// Get first and last tracks
-											end
-											else if (COMMAND_DATA[3] == 4'd5)
-											begin
-												// Get track length
-											end
-											else if (COMMAND_DATA[3] == 4'd6)
-											begin
-												// Get track type
-											end
-										end
-									end
-								end
 								COMM_STATE <= 2'd1;
 							end
 						end
@@ -216,6 +175,78 @@ module cd_drive(
 							end
 						end
 						
+					end
+					else if (DIN_COUNTER == 4'd10)
+					begin
+						DIN_COUNTER <= 4'd11;
+						
+						// Comm frame just ended
+						if (COMMAND_DATA[9] == ~CHECKSUM)
+						begin
+							// Checksum ok, process command
+							if (COMMAND_DATA[0] == 4'd2)
+							begin
+								// TOC command
+								STATUS_DATA[1] <= COMMAND_DATA[3];
+								
+								if (COMMAND_DATA[3] == 4'd0)
+								begin
+									// Get absolute position
+								end
+								else if (COMMAND_DATA[3] == 4'd1)
+								begin
+									// Get relative position
+								end
+								else if (COMMAND_DATA[3] == 4'd2)
+								begin
+									// Get track number
+								end
+								else if (COMMAND_DATA[3] == 4'd3)
+								begin
+									// Get CD length
+									STATUS_DATA[0] <= 4'd9;	// STOPPED ?
+									STATUS_DATA[2] <= 4'd5;	// 59:00:00 length DEBUG
+									STATUS_DATA[3] <= 4'd9;
+									STATUS_DATA[4] <= 4'd0;
+									STATUS_DATA[5] <= 4'd0;
+									STATUS_DATA[6] <= 4'd0;
+									STATUS_DATA[7] <= 4'd0;
+									STATUS_DATA[8] <= 4'd0;
+									STATUS_DATA[9] <= 4'd0;	// Checksum ~(5+ 9+3+5+9)
+								end
+								else if (COMMAND_DATA[3] == 4'd4)
+								begin
+									// Get first and last tracks
+									STATUS_DATA[0] <= 4'd9;	// STOPPED ?
+									STATUS_DATA[2] <= 4'd0;
+									STATUS_DATA[3] <= 4'd1;
+									STATUS_DATA[4] <= 4'd1;	// 15 tracks DEBUG
+									STATUS_DATA[5] <= 4'd5;
+									STATUS_DATA[6] <= 4'd0;
+									STATUS_DATA[7] <= 4'd0;
+									STATUS_DATA[8] <= 4'd0;
+									STATUS_DATA[9] <= 4'd6;	// Checksum ~(5+ 9+4+1+1+5)
+								end
+								else if (COMMAND_DATA[3] == 4'd5)
+								begin
+									// Get track MSF
+									STATUS_DATA[0] <= 4'd9;	// STOPPED ?
+									STATUS_DATA[2] <= 4'd0;
+									STATUS_DATA[3] <= 4'd0;
+									STATUS_DATA[4] <= 4'd0;	// 00:02:00
+									STATUS_DATA[5] <= 4'd2;
+									STATUS_DATA[6] <= 4'd0;
+									STATUS_DATA[7] <= 4'd0;
+									STATUS_DATA[8] <= 4'd0;
+									STATUS_DATA[9] <= 4'd10;	// Checksum ~(5+ 9+5+2)
+								end
+								else if (COMMAND_DATA[3] == 4'd6)
+								begin
+									// Get track type
+								end
+							end
+						end
+							
 					end
 					
 				end

@@ -18,9 +18,6 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-// TODO: Fix data reordering for Neo CD (opposite !)
-// TEST: Neo CD internal memory card save/load
-// TEST: Write runs to SDRAM (transfer zone, P1 zone, EXT RAM zone...)
 // TODO: Check if ZMC is working correctly
 // TODO: See if Fatal Fury 2 is still working passed stage 1
 
@@ -162,6 +159,9 @@ localparam CONF_STR4_CART = {
 };
 localparam CONF_STR4_CD = {
 	"AB,Region,US,EU,JP,AS;",	// O
+};
+localparam CONF_STR4B_CD = {
+	"F,CD lid,Opened,Closed;",	// O
 };
 
 localparam CONF_STR5_MVS = {
@@ -344,10 +344,11 @@ hps_io #(
 		($size(CONF_STR3)>>3) +
 		($size(CONF_STR4_CART)>>3) +
 		($size(CONF_STR4_CD)>>3) +
+		($size(CONF_STR4B_CD)>>3) +
 		($size(CONF_STR5_MVS)>>3) +
 		($size(CONF_STR6_MVS)>>3) +
 		($size(CONF_STR7_MVS)>>3) +
-		($size(CONF_STR8)>>3) + 7), .WIDE(1)) hps_io
+		($size(CONF_STR8)>>3) + 8), .WIDE(1)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
@@ -359,6 +360,7 @@ hps_io #(
 		CONF_STR3,
 		char_cart_option, CONF_STR4_CART,
 		char_cd_option, CONF_STR4_CD,
+		char_cd_option, CONF_STR4B_CD,
 		char_mvs_option, CONF_STR5_MVS,
 		char_mvs_option, CONF_STR6_MVS,
 		char_mvs_option, CONF_STR7_MVS,
@@ -640,21 +642,10 @@ hps_io #(
 		IACK,
 		IPL2,
 		
-		sd_req_type
+		sd_req_type,
+		
+		status[15]	// CD lid state (DEBUG)
 	);
-	
-	// This can be used for the SDRAM or other memories
-	// Use CD_TR_AREA to know in which one to read/write
-	/*always @(*)
-	begin
-		case(CD_TR_AREA)
-			3'd0: CD_REMAP_TR_ADDR = {3'b0_10, CD_BANK_SPR, CD_TR_WR_ADDR, 1'b0};	// Sprites SDRAM
-			3'd1: CD_REMAP_TR_ADDR = {4'b0_000, CD_BANK_PCM, CD_TR_WR_ADDR, 1'b0};	// ADPCM DDRAM
-			3'd5: CD_REMAP_TR_ADDR = {8'b0_0000_100, CD_TR_WR_ADDR[16:1], 1'b0};		// Fix SDRAM
-			3'd4: CD_REMAP_TR_ADDR = {8'b0_0000_000, CD_TR_WR_ADDR[16:1], 1'b0};		// Z80 BRAM
-			default: CD_REMAP_TR_ADDR = 25'h0000000;
-		endcase
-	end*/
 	
 	// The P1 zone is writable on the Neo CD
 	// Is there a write enable register for it ?
@@ -666,6 +657,8 @@ hps_io #(
 	wire nROMOE = nROMOEL & nROMOEU;
 	wire nPORTOE = nPORTOEL & nPORTOEU;
 	wire SDRAM_M68K_SIG = ~&{nSROMOE, nROMOE, nPORTOE};
+	
+	reg SDRAM_WR_BYTE_MODE;
 	
 	//wire M68K_CACHE_MISS = (M68K_RD_ADDR_CACHED[24:3] != M68K_RD_ADDR_SDRAM[24:3]);
 	
@@ -681,6 +674,7 @@ hps_io #(
 			SROM_RD_RUN <= 0;
 			M68K_RD_RUN <= 0;
 			CD_WR_RUN <= 0;
+			SDRAM_WR_BYTE_MODE <= 0;
 			//M68K_RD_ADDR_CACHED[3:0] <= 4'b1111;	// Force cache miss on startup
 		end
 		else
@@ -690,14 +684,59 @@ hps_io #(
 			CD_WR_SDRAM_SIG_SR <= {CD_WR_SDRAM_SIG_SR[0], CD_WR_SDRAM_SIG};
 			if ((CD_WR_SDRAM_SIG_SR == 2'b01) & nRESET)
 			begin
+				// Convert and latch address
 				casez({CD_WR_EXT, CD_TR_AREA})
 					4'b1_???: CD_REMAP_TR_ADDR <= {4'b0_001, M68K_ADDR[20:1], 1'b0};	// EXT zone SDRAM
-					4'b0_000: CD_REMAP_TR_ADDR <= {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:6], ~M68K_ADDR[1], M68K_ADDR[5:2], 1'b0};	// Sprites SDRAM
+					4'b0_000: CD_REMAP_TR_ADDR <= {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:7], M68K_ADDR[5:2], ~M68K_ADDR[6], ~M68K_ADDR[1], 1'b0};	// Sprites SDRAM
 					//4'b0_001: CD_REMAP_TR_ADDR <= {4'b0_000, CD_BANK_PCM, CD_TR_WR_ADDR, 1'b0};	// ADPCM DDRAM
-					4'b0_101: CD_REMAP_TR_ADDR <= {8'b0_0000_100, M68K_ADDR[16:5], ~M68K_ADDR[1], 1'b0, M68K_ADDR[4:3], 1'b0};	// Fix SDRAM
+					4'b0_101: CD_REMAP_TR_ADDR <= {8'b0_0000_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], M68K_ADDR[4]};	// Fix SDRAM
 					//4'b0_100: CD_REMAP_TR_ADDR <= {8'b0_0000_000, CD_TR_WR_ADDR[16:1], 1'b0};		// Z80 BRAM
 					default: CD_REMAP_TR_ADDR <= 25'h0000000;
 				endcase
+				
+				/*
+				Normal fix data bytes:
+				10 18 00 08
+				11 19 01 09
+				12 1A 02 0A
+				13 1B 03 0B
+				14 1C 04 0C
+				15 1D 05 0D
+				16 1E 06 0E
+				17 1F 07 0F
+				
+				SDRAM organization words:
+				10-18 00-08 11-19 01-09 12-1A 02-0A 13-1B 03-0B...
+				
+				The Neo CD will write fix data as bytes so two byte writes would have to be grouped in
+				one SDRAM word write, but that won't work with the byte address remapping. It would require
+				a 32 byte buffer which would be burst written and it would be a mess...
+				Instead of that, just use LDQM/UDQM to do byte writes with the remapped address directly.
+				
+				addr_out = ?, addr_in[...:0], ~addr_in[4], addr_in[3]
+				00 -> 02
+				01 -> 06
+				02 -> 0A
+				...
+				07 -> 1E
+				
+				08 -> 03
+				09 -> 07
+				...
+				
+				10 -> 00
+				11 -> 04
+				...
+				
+				18 -> 01
+				19 -> 05
+				*/
+				
+				// Warning: this is fed RIGHT NOW to the sdram controller. If the write cycle starts now, it's fine,
+				// but if the write cycle is reported, the byte mode could affect the currently running cycle !
+				// Is this dangerous ? are CD uploads spaced enough to not cause any problems ?
+				SDRAM_WR_BYTE_MODE <= (CD_TR_AREA == 3'd5);	// Fix data
+				
 				if (~|{M68K_RD_REQ, M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN} & sdram_ready)
 				begin
 					// Start write cycle right now
@@ -896,7 +935,7 @@ hps_io #(
 		.dout(sdram_dout),
 		.din(sdram_din),
 		.addr(sdram_addr),
-		.wtbt(2'b11),		// Always used in 16-bit mode
+		.wtbt((ioctl_download | ~SDRAM_WR_BYTE_MODE) ? 2'b11 : 2'b00),		// Always used in 16-bit mode except for CD fix data write
 		.we(sdram_we),
 		.rd(sdram_rd),
 		.ready_first(sdram_ready),
@@ -1015,7 +1054,7 @@ hps_io #(
 	// Memory card
 	// Always plugged in CD systems
 	assign {nCD1, nCD2} = {2{status[4] & ~SYSTEM_CDx}};
-	assign CARD_WE = ~(nCARDWEN | ~CARDWENB | nCRDW);
+	assign CARD_WE = (SYSTEM_CDx | (~nCARDWEN & CARDWENB)) & ~nCRDW;
 	
 	wire [7:0] CDD_L;
 	wire [7:0] CDD_U;
@@ -1116,6 +1155,7 @@ hps_io #(
 	neo_g0 G0(M68K_DATA, nCRDC, nPAL, M68K_RW, {8'hFF, CDD}, PAL_RAM_DATA, nPAL_WE);
 	
 	wire [2:0] joystick_0_hack = joystick_0[11] ? 3'b111 : joystick_0[6:4];
+	
 	neo_c1 C1(M68K_ADDR[21:17], M68K_DATA[15:8], A22Z, A23Z, nLDS, nUDS, M68K_RW, nAS, nROMOEL, nROMOEU,
 				nPORTOEL, nPORTOEU, nPORTWEL, nPORTWEU, nPORTADRS, nWRL, nWRU, nWWL, nWWU, nSROMOEL, nSROMOEU, 
 				nSRAMOEL, nSRAMOEU, nSRAMWEL, nSRAMWEU, nLSPOE, nLSPWE, nCRDO, nCRDW, nCRDC, nSDW,
@@ -1137,6 +1177,8 @@ hps_io #(
 			CA4_REG <= CA4;
 	end
 	
+	// CR_DOUBLE: [8px left] [8px right]
+	//         BP  A B C D    A B C D
 	wire [31:0] CR = CA4_REG ? CR_DOUBLE[63:32] : CR_DOUBLE[31:0];
 	
 	neo_zmc2 ZMC2(CLK_12M, EVEN1, LOAD, H, CR, GAD, GBD, DOTA, DOTB);

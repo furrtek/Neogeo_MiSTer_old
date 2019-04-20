@@ -49,9 +49,11 @@ module cd_sys(
 	input IACK,
 	output reg IPL2,
 	
-	output [15:0] sd_req_type
+	output [15:0] sd_req_type,
 	
-	// BR, BG, BGACK
+	input CD_LID	// DEBUG
+	
+	// For DMA: BR, BG, BGACK
 );
 
 	reg CD_USE_SPR, CD_USE_PCM, CD_USE_Z80, CD_USE_FIX;
@@ -99,7 +101,7 @@ module cd_sys(
 	wire LC8951_WR = (WRITING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
 
 	// We should be detecting the falling edge of nAS and check the state of M68K_RW
-	always @(negedge CLK_68KCLK or negedge nRESET)
+	always @(posedge CLK_68KCLK or negedge nRESET)
 	begin
 		if (!nRESET)
 		begin
@@ -220,8 +222,8 @@ module cd_sys(
 										8'd24;	// Spurious interrupt, should not happen
 	
 	assign M68K_DATA = (IACK & (M68K_ADDR[3:1] == 3'd4)) ? {8'h00, CD_IRQ_VECTOR} :		// Vectored interrupt handler
-							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {4'b1100, CD_JUMPERS, 8'h00} :	// Top mech, lid closed
-							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h165) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT
+							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {3'b110, CD_LID, CD_JUMPERS, 8'h00} :	// Top mech
+							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h161) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h188) ? 16'h0000 :	// CDDA L
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h18A) ? 16'h0000 :	// CDDA R
 							(LC8951_RD) ? {8'h00, LC8951_DOUT} :

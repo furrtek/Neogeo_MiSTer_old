@@ -118,6 +118,8 @@ LO ROM | 64kB
 M1 ROM | 128kB
 Memory card | 2kB
 Backup RAM | 32kB
+------ | ----
+Total  | 385kB
 
 ## SDRAM cart map
 
@@ -145,7 +147,3 @@ Extended RAM | 1MB | 0300000 | 03FFFFF
 Free | 4MB | 0400000 | 07FFFFF
 C ROM | 4MB | 0800000 | 0BFFFFF
 Free | 20MB | 0C00000 | 01FFFFF
-
-# TODO
-
-* Check if FD2 and FD4 are really clocked on negedge
