@@ -16,7 +16,8 @@
 
 module c1_wait(
 	input CLK_68KCLK, nAS,
-	input nROM_ZONE, nPORT_ZONE, nCARD_ZONE, nSROM_ZONE,
+	input SYSTEM_CDx,
+	input nROM_ZONE, nWRAM_ZONE, nPORT_ZONE, nCARD_ZONE, nSROM_ZONE,
 	input nROMWAIT, nPWAIT0, nPWAIT1, PDTACK,
 	output nDTACK
 );
@@ -31,6 +32,7 @@ module c1_wait(
 	assign nDTACK = nAS | ~WAIT_MUX;					// Is it nVALID instead of nAS ?
 	
 	wire WAIT_MUX = (!nROM_ZONE) ? (WAIT_CNT < 4) :
+			(!nWRAM_ZONE & SYSTEM_CDx) ? (WAIT_CNT < 4) :
 			(!nPORT_ZONE) ? (WAIT_CNT < 4) :
 			(!nCARD_ZONE) ? (WAIT_CNT < 3) :
 			(!nSROM_ZONE) ? (WAIT_CNT < 4) :

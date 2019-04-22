@@ -36,10 +36,14 @@ module cd_sys(
 	
 	output reg CD_nRESET_Z80,
 	
-	output reg CD_TR_WR_SPR,
+	/*output reg CD_TR_WR_SPR,
 	output reg CD_TR_WR_PCM,
 	output reg CD_TR_WR_Z80,
-	output reg CD_TR_WR_FIX,
+	output reg CD_TR_WR_FIX,*/
+	output CD_TR_WR_SPR,
+	output CD_TR_WR_PCM,
+	output CD_TR_WR_Z80,
+	output CD_TR_WR_FIX,
 	output reg [2:0] CD_TR_AREA,
 	output reg [1:0] CD_BANK_SPR,
 	output reg CD_BANK_PCM,
@@ -47,7 +51,7 @@ module cd_sys(
 	output reg [19:1] CD_TR_WR_ADDR,
 	
 	input IACK,
-	output reg IPL2,
+	output reg CD_IRQ,
 	
 	output [15:0] sd_req_type,
 	
@@ -99,6 +103,27 @@ module cd_sys(
 	
 	wire LC8951_RD = (READING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
 	wire LC8951_WR = (WRITING & (M68K_ADDR[11:2] == 10'b0001_000000));	// FF0101, FF0103
+	
+	// Allow writes only if the "allow write" flag of the corresponding region is set
+	/*if (CD_UPLOAD_EN)
+	begin
+		if ((CD_TR_AREA == 3'd0) & CD_USE_SPR)
+			CD_TR_WR_SPR <= 1;
+		else if ((CD_TR_AREA == 3'd1) & CD_USE_PCM)
+			CD_TR_WR_PCM <= 1;
+		else if ((CD_TR_AREA == 3'd4) & CD_USE_Z80)
+			CD_TR_WR_Z80 <= 1;
+		else if ((CD_TR_AREA == 3'd5) & CD_USE_FIX)
+			CD_TR_WR_FIX <= 1;
+	end*/
+	
+	wire TR_ZONE_WR = CD_UPLOAD_EN & (M68K_ADDR[23:20] == 4'hE) & ~M68K_RW;
+	
+	assign CD_TR_WR_SPR = TR_ZONE_WR & (CD_TR_AREA == 3'd0) & CD_USE_SPR;
+	assign CD_TR_WR_PCM = TR_ZONE_WR & (CD_TR_AREA == 3'd1) & CD_USE_PCM;
+	assign CD_TR_WR_Z80 = TR_ZONE_WR & (CD_TR_AREA == 3'd4) & CD_USE_Z80;
+	assign CD_TR_WR_FIX = TR_ZONE_WR & (CD_TR_AREA == 3'd5) & CD_USE_FIX;
+	
 
 	// We should be detecting the falling edge of nAS and check the state of M68K_RW
 	always @(posedge CLK_68KCLK or negedge nRESET)
@@ -109,10 +134,10 @@ module cd_sys(
 			CD_USE_PCM <= 0;
 			CD_USE_Z80 <= 0;
 			CD_USE_FIX <= 0;
-			CD_TR_WR_SPR <= 0;
+			/*CD_TR_WR_SPR <= 0;
 			CD_TR_WR_PCM <= 0;
 			CD_TR_WR_Z80 <= 0;
-			CD_TR_WR_FIX <= 0;
+			CD_TR_WR_FIX <= 0;*/
 			CD_SPR_EN <= 1;	// ?
 			CD_FIX_EN <= 1;	// ?
 			CD_VIDEO_EN <= 1;	// ?
@@ -121,7 +146,7 @@ module cd_sys(
 			REG_FF0002 <= 16'h0;	// ?
 			nLDS_PREV <= 1;
 			nUDS_PREV <= 1;
-			IPL2 <= 1;
+			CD_IRQ <= 1;
 			CD_IRQ_FLAGS <= 3'b111;
 		end
 		else
@@ -130,10 +155,12 @@ module cd_sys(
 			nUDS_PREV <= nUDS;
 			CD_nIRQ_PREV <= CD_nIRQ;
 			
+			/*
 			if (CD_TR_WR_SPR) CD_TR_WR_SPR <= 0;
 			if (CD_TR_WR_PCM) CD_TR_WR_PCM <= 0;
 			if (CD_TR_WR_Z80) CD_TR_WR_Z80 <= 0;
 			if (CD_TR_WR_FIX) CD_TR_WR_FIX <= 0;
+			*/
 			
 			// Falling edge of CD_nIRQ
 			if (CD_nIRQ_PREV & ~CD_nIRQ)
@@ -143,7 +170,7 @@ module cd_sys(
 					CD_IRQ_FLAGS[1] <= 0;
 			end
 			
-			IPL2 <= &{CD_IRQ_FLAGS};
+			CD_IRQ <= ~&{CD_IRQ_FLAGS};
 			
 			if (SYSTEM_TYPE[1] & ((nLDS_PREV & ~nLDS) | (nUDS_PREV & ~nUDS)))	// & PREV_nAS & ~nAS
 			begin
@@ -197,7 +224,7 @@ module cd_sys(
 					CD_TR_WR_ADDR <= M68K_ADDR[19:1];
 					
 					// Allow writes only if the "allow write" flag of the corresponding region is set
-					if (CD_UPLOAD_EN)
+					/*if (CD_UPLOAD_EN)
 					begin
 						if ((CD_TR_AREA == 3'd0) & CD_USE_SPR)
 							CD_TR_WR_SPR <= 1;
@@ -207,7 +234,7 @@ module cd_sys(
 							CD_TR_WR_Z80 <= 1;
 						else if ((CD_TR_AREA == 3'd5) & CD_USE_FIX)
 							CD_TR_WR_FIX <= 1;
-					end
+					end*/
 				end
 			end
 		end
@@ -221,9 +248,9 @@ module cd_sys(
 										~CD_IRQ_FLAGS[2] ? 8'd21 :
 										8'd24;	// Spurious interrupt, should not happen
 	
-	assign M68K_DATA = (IACK & (M68K_ADDR[3:1] == 3'd4)) ? {8'h00, CD_IRQ_VECTOR} :		// Vectored interrupt handler
+	assign M68K_DATA = (~nAS & M68K_RW & IACK & (M68K_ADDR[3:1] == 3'd4)) ? {8'h00, CD_IRQ_VECTOR} :		// Vectored interrupt handler
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h11C) ? {3'b110, CD_LID, CD_JUMPERS, 8'h00} :	// Top mech
-							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h161) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT
+							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h160) ? {11'b00000000_000, CDCK, CDD_DOUT} :	// REG_CDDINPUT
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h188) ? 16'h0000 :	// CDDA L
 							(READING & {M68K_ADDR[11:1], 1'b0} == 12'h18A) ? 16'h0000 :	// CDDA R
 							(LC8951_RD) ? {8'h00, LC8951_DOUT} :

@@ -497,7 +497,7 @@ hps_io #(
 	reg [1:0] SDRAM_M68K_SIG_SR;
 	reg [1:0] SDRAM_CROM_SIG_SR;
 	reg [1:0] SDRAM_SROM_SIG_SR;
-	reg [1:0] CD_WR_SDRAM_SIG_SR;
+	//reg [1:0] CD_WR_SDRAM_SIG_SR;
 	reg [15:0] SROM_DATA;
 	//reg [31:0] SROM_DATA;
 	reg [15:0] PROM_DATA;
@@ -640,7 +640,7 @@ hps_io #(
 		CD_TR_WR_ADDR,
 		
 		IACK,
-		IPL2,
+		CD_IRQ,
 		
 		sd_req_type,
 		
@@ -656,9 +656,12 @@ hps_io #(
 	// SDRAM stuff
 	wire nROMOE = nROMOEL & nROMOEU;
 	wire nPORTOE = nPORTOEL & nPORTOEU;
-	wire SDRAM_M68K_SIG = ~&{nSROMOE, nROMOE, nPORTOE};
+	// CD system work ram is in SDRAM
+	wire CD_EXT_RD = SYSTEM_CDx & (~nWRL | ~nWRU);
+	wire SDRAM_M68K_SIG = ~&{nSROMOE, nROMOE, nPORTOE} | CD_EXT_RD;
 	
 	reg SDRAM_WR_BYTE_MODE;
+	reg nLDS_PREV, nUDS_PREV;
 	
 	//wire M68K_CACHE_MISS = (M68K_RD_ADDR_CACHED[24:3] != M68K_RD_ADDR_SDRAM[24:3]);
 	
@@ -675,21 +678,26 @@ hps_io #(
 			M68K_RD_RUN <= 0;
 			CD_WR_RUN <= 0;
 			SDRAM_WR_BYTE_MODE <= 0;
+			nLDS_PREV <= 1;
+			nUDS_PREV <= 1;
 			//M68K_RD_ADDR_CACHED[3:0] <= 4'b1111;	// Force cache miss on startup
 		end
 		else
 		begin
 			
-			// Detect rising edge of CD_WR_SDRAM_SIG
-			CD_WR_SDRAM_SIG_SR <= {CD_WR_SDRAM_SIG_SR[0], CD_WR_SDRAM_SIG};
-			if ((CD_WR_SDRAM_SIG_SR == 2'b01) & nRESET)
+			// Detect falling edge of nLDS or nUDS while CD_WR_SDRAM_SIG is high
+			nLDS_PREV <= nLDS;
+			nUDS_PREV <= nUDS;
+			//CD_WR_SDRAM_SIG_SR <= {CD_WR_SDRAM_SIG_SR[0], CD_WR_SDRAM_SIG};
+			//if ((CD_WR_SDRAM_SIG_SR == 2'b01) & nRESET)
+			if (((nLDS_PREV & ~nLDS) | (nUDS_PREV & ~nUDS)) & CD_WR_SDRAM_SIG & nRESET)
 			begin
 				// Convert and latch address
 				casez({CD_WR_EXT, CD_TR_AREA})
-					4'b1_???: CD_REMAP_TR_ADDR <= {4'b0_001, M68K_ADDR[20:1], 1'b0};	// EXT zone SDRAM
+					4'b1_???: CD_REMAP_TR_ADDR <= {4'b0_001, M68K_ADDR[20:1], ~nLDS};	// EXT zone SDRAM
 					4'b0_000: CD_REMAP_TR_ADDR <= {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:7], M68K_ADDR[5:2], ~M68K_ADDR[6], ~M68K_ADDR[1], 1'b0};	// Sprites SDRAM
 					//4'b0_001: CD_REMAP_TR_ADDR <= {4'b0_000, CD_BANK_PCM, CD_TR_WR_ADDR, 1'b0};	// ADPCM DDRAM
-					4'b0_101: CD_REMAP_TR_ADDR <= {8'b0_0000_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], M68K_ADDR[4]};	// Fix SDRAM
+					4'b0_101: CD_REMAP_TR_ADDR <= {8'b0_0000_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], ~M68K_ADDR[4]};	// Fix SDRAM
 					//4'b0_100: CD_REMAP_TR_ADDR <= {8'b0_0000_000, CD_TR_WR_ADDR[16:1], 1'b0};		// Z80 BRAM
 					default: CD_REMAP_TR_ADDR <= 25'h0000000;
 				endcase
@@ -735,7 +743,7 @@ hps_io #(
 				// Warning: this is fed RIGHT NOW to the sdram controller. If the write cycle starts now, it's fine,
 				// but if the write cycle is reported, the byte mode could affect the currently running cycle !
 				// Is this dangerous ? are CD uploads spaced enough to not cause any problems ?
-				SDRAM_WR_BYTE_MODE <= (CD_TR_AREA == 3'd5);	// Fix data
+				SDRAM_WR_BYTE_MODE <= ((CD_TR_AREA == 3'd5) & ~CD_WR_EXT) | (CD_WR_EXT & (nLDS ^ nUDS));	// Fix or extended RAM data
 				
 				if (~|{M68K_RD_REQ, M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN} & sdram_ready)
 				begin
@@ -902,7 +910,7 @@ hps_io #(
 	
 	// sdram_addr is 25 bits, LSB is = 0 in word mode
 	always_comb begin 
-		casez ({ioctl_download, CD_WR_RUN, CROM_RD_RUN, SROM_RD_RUN, ~nROMOE & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN})
+		casez ({ioctl_download, CD_WR_RUN, CROM_RD_RUN, SROM_RD_RUN, ~nROMOE & M68K_RD_RUN, (CD_EXT_RD | ~nPORTOE) & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN})
 			// HPS loading pass-through
 			7'b1zzzzzz: sdram_addr = ioctl_addr_offset;
 			// CD transfer
@@ -947,12 +955,25 @@ hps_io #(
 				nSDZ80W, nSDZ80CLR, nSDROM, nSDMRD, nSDMWR, SDRD0, SDRD1, n2610CS, n2610RD, n2610WR, nZRAMCS,
 				BNK);
 	
+	// Re-priority-encode the interrupt lines with the CD_IRQ one (IPL* are active-low)
+	// Also swap IPL0 and IPL1 for CD systems
+	//                      Cartridge     		CD
+	// CD_IRQ IPL1 IPL0		IPL2 IPL1 IPL0		IPL2 IPL1 IPL0
+	//    0     1    1		  1    1    1  	  1    1    1	No IRQ
+	//    0     1    0        1    1    0		  1    0    1	Vblank
+	//    0     0    1        1    0    1		  1    1    0  Timer
+	//    0     0    0        1    0    0		  1    0    0	Cold boot
+	//    1     x    x        1    1    1  	  0    1    1	CD vectored IRQ
+	wire IPL0_OUT = SYSTEM_CDx ? CD_IRQ | IPL1 : IPL0;
+	wire IPL1_OUT = SYSTEM_CDx ? CD_IRQ | IPL0 : IPL1;
+	wire IPL2_OUT = ~(SYSTEM_CDx & CD_IRQ);
+	
 	// Because of the SDRAM latency, nDTACK is handled differently for ROM zones
 	// If the address is in a ROM zone, nDTACK_ADJ is used instead of the normal nDTACK output by NEO-C1
 	//wire nDTACK_ADJ = SDRAM_M68K_SIG ? nDTACK | M68K_CACHE_MISS : nDTACK;
 	cpu_68k	M68KCPU(
 		CLK_24M, nRESET,
-		SYSTEM_CDx ? IPL2 : 1'b1, SYSTEM_CDx ? IPL0 : IPL1, SYSTEM_CDx ? IPL1 : IPL0,
+		IPL2_OUT, IPL1_OUT, IPL0_OUT,
 		nDTACK, M68K_ADDR, FX68K_DATAIN, FX68K_DATAOUT, nLDS, nUDS, nAS, M68K_RW,
 		FC2, FC1, FC0
 		);
@@ -1004,8 +1025,12 @@ hps_io #(
 	wire [15:0] WRAM_DIN = TRASHING ? TRASH_ADDR[15:0] : M68K_DATA;
 	m68k_ram WRAML(WRAM_ADDR, CLK_24M, WRAM_DIN[7:0], ~nWWL | TRASHING, WRAML_OUT);
 	m68k_ram WRAMU(WRAM_ADDR, CLK_24M, WRAM_DIN[15:8], ~nWWU | TRASHING, WRAMU_OUT);
-	assign M68K_DATA[7:0] = nWRL ? 8'bzzzzzzzz : WRAML_OUT;
-	assign M68K_DATA[15:8] = nWRU ? 8'bzzzzzzzz : WRAMU_OUT;
+	// On CD systems, disable the blockRAM WRAM, use the SDRAM instead
+	assign M68K_DATA[7:0] = (nWRL | SYSTEM_CDx) ? 8'bzzzzzzzz : WRAML_OUT;
+	assign M68K_DATA[15:8] = (nWRU | SYSTEM_CDx) ? 8'bzzzzzzzz : WRAMU_OUT;
+	// ~CD_EXT_RD & 
+	assign M68K_DATA[7:0] = (nWRL | ~SYSTEM_CDx) ? 8'bzzzzzzzz : PROM_DATA[7:0];
+	assign M68K_DATA[15:8] = (nWRU | ~SYSTEM_CDx) ? 8'bzzzzzzzz : PROM_DATA[15:8];
 	
 
 	// Backup RAM
@@ -1164,7 +1189,8 @@ hps_io #(
 				nCD1, nCD2, 1'b0,			// Memory card is never write-protected
 				1'b1, 1'b1, 1'b1, 1'b1,	// nROMWAIT, nPWAIT0, nPWAIT1, PDTACK,
 				SDD, nSDZ80R, nSDZ80W, nSDZ80CLR, CLK_68KCLK,
-				nDTACK, nBITW0, nBITW1, nDIPRD0, nDIPRD1, nPAL, SYSTEM_TYPE[0]);
+				nDTACK, nBITW0, nBITW1, nDIPRD0, nDIPRD1, nPAL,
+				SYSTEM_TYPE);
 
 	// This is used to split burst-read sprite gfx data in half at the right time
 	reg [2:0] LOAD_SR;

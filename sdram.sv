@@ -249,8 +249,8 @@ always @(posedge clk) begin
 		STATE_OPEN_1: state <= STATE_OPEN_2;
 		STATE_OPEN_2: begin
 			SDRAM_A     <= {4'b0010, save_addr[9:1]}; 		// addr[22:14] = 9 bits
-			SDRAM_DQML  <= save_we & (new_wtbt ? ~new_wtbt[0] :  save_addr[0]);
-			SDRAM_DQMH  <= save_we & (new_wtbt ? ~new_wtbt[1] : ~save_addr[0]);
+			SDRAM_DQML  <= save_we & (new_wtbt ? ~new_wtbt[0] : ~save_addr[0]);
+			SDRAM_DQMH  <= save_we & (new_wtbt ? ~new_wtbt[1] :  save_addr[0]);
 			state       <= save_we ? STATE_WRITE : STATE_READ;
 		end
 

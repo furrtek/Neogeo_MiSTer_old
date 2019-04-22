@@ -55,13 +55,17 @@ module cd_drive(
 	reg [3:0] DOUT_COUNTER;	// 0~10
 	reg [3:0] DIN_COUNTER;	// 0~10
 	
-	reg [3:0] STATUS_DATA [10];
+	reg [3:0] STATUS_DATA [9];
 	reg [3:0] COMMAND_DATA [10];
 	
 	reg HOCK_PREV;
 	reg [1:0] COMM_STATE;		// 0~2
 	
-	reg [3:0] CHECKSUM;
+	reg [3:0] CHECKSUM_IN;
+	
+	wire [3:0] CHECKSUM_OUT = ~(4'd5 + STATUS_DATA[0] + STATUS_DATA[1] + STATUS_DATA[2] +  STATUS_DATA[3] + 
+										STATUS_DATA[4] +  STATUS_DATA[5] +  STATUS_DATA[6] +  STATUS_DATA[7] + 
+										STATUS_DATA[8]);
 	
 	always @(posedge CLK_12M or negedge nRESET)
 	begin
@@ -75,6 +79,16 @@ module cd_drive(
 			COMM_STATE <= 2'd0;
 			CD_nIRQ <= 1;
 			sd_req_type <= 16'h0000;
+			
+			STATUS_DATA[0] <= 4'd0;	// Stopped
+			STATUS_DATA[1] <= 4'd0;
+			STATUS_DATA[2] <= 4'd0;
+			STATUS_DATA[3] <= 4'd0;
+			STATUS_DATA[4] <= 4'd0;
+			STATUS_DATA[5] <= 4'd0;
+			STATUS_DATA[6] <= 4'd0;
+			STATUS_DATA[7] <= 4'd0;
+			STATUS_DATA[8] <= 4'd0;
 		end
 		else
 		begin
@@ -118,7 +132,7 @@ module cd_drive(
 						if (COMM_STATE == 2'd0)
 						begin
 							// Put data on bus
-							CDD_DOUT <= STATUS_DATA[DOUT_COUNTER];
+							CDD_DOUT <= (DOUT_COUNTER == 4'd9) ? CHECKSUM_OUT : STATUS_DATA[DOUT_COUNTER];
 							CDCK <= 1'b0;
 							COMM_STATE <= 2'd1;
 						end
@@ -133,8 +147,8 @@ module cd_drive(
 								if (DOUT_COUNTER == 4'd9)
 								begin
 									DOUT_COUNTER <= 4'd10;
-									COMM_STATE <= 2'd0;
-									CHECKSUM <= 4'd5;
+									COMM_STATE <= 2'd1;
+									CHECKSUM_IN <= 4'd5;
 								end
 							end
 						end
@@ -159,7 +173,7 @@ module cd_drive(
 							if (~HOCK_PREV & HOCK)
 							begin
 								COMMAND_DATA[DIN_COUNTER] <= CDD_DIN;
-								CHECKSUM <= CHECKSUM + CDD_DIN;
+								CHECKSUM_IN <= CHECKSUM_IN + CDD_DIN;
 								CDCK <= 1'b1;
 								DIN_COUNTER <= DIN_COUNTER + 1'b1;
 								COMM_STATE <= 2'd1;
@@ -181,10 +195,15 @@ module cd_drive(
 						DIN_COUNTER <= 4'd11;
 						
 						// Comm frame just ended
-						if (COMMAND_DATA[9] == ~CHECKSUM)
+						if (CHECKSUM_IN == 4'd15)
 						begin
 							// Checksum ok, process command
-							if (COMMAND_DATA[0] == 4'd2)
+							if (COMMAND_DATA[0] == 4'd1)
+							begin
+								// STOP command
+								STATUS_DATA[0] <= 4'd0;	// Stopped
+							end
+							else if (COMMAND_DATA[0] == 4'd2)
 							begin
 								// TOC command
 								STATUS_DATA[1] <= COMMAND_DATA[3];
@@ -204,7 +223,7 @@ module cd_drive(
 								else if (COMMAND_DATA[3] == 4'd3)
 								begin
 									// Get CD length
-									STATUS_DATA[0] <= 4'd9;	// STOPPED ?
+									STATUS_DATA[0] <= 4'd9;	// Reading TOC
 									STATUS_DATA[2] <= 4'd5;	// 59:00:00 length DEBUG
 									STATUS_DATA[3] <= 4'd9;
 									STATUS_DATA[4] <= 4'd0;
@@ -212,12 +231,11 @@ module cd_drive(
 									STATUS_DATA[6] <= 4'd0;
 									STATUS_DATA[7] <= 4'd0;
 									STATUS_DATA[8] <= 4'd0;
-									STATUS_DATA[9] <= 4'd0;	// Checksum ~(5+ 9+3+5+9)
 								end
 								else if (COMMAND_DATA[3] == 4'd4)
 								begin
 									// Get first and last tracks
-									STATUS_DATA[0] <= 4'd9;	// STOPPED ?
+									STATUS_DATA[0] <= 4'd9;	// Reading TOC
 									STATUS_DATA[2] <= 4'd0;
 									STATUS_DATA[3] <= 4'd1;
 									STATUS_DATA[4] <= 4'd1;	// 15 tracks DEBUG
@@ -225,24 +243,22 @@ module cd_drive(
 									STATUS_DATA[6] <= 4'd0;
 									STATUS_DATA[7] <= 4'd0;
 									STATUS_DATA[8] <= 4'd0;
-									STATUS_DATA[9] <= 4'd6;	// Checksum ~(5+ 9+4+1+1+5)
 								end
 								else if (COMMAND_DATA[3] == 4'd5)
 								begin
-									// Get track MSF
-									STATUS_DATA[0] <= 4'd9;	// STOPPED ?
-									STATUS_DATA[2] <= 4'd0;
-									STATUS_DATA[3] <= 4'd0;
-									STATUS_DATA[4] <= 4'd0;	// 00:02:00
+									// Get track start and type
+									STATUS_DATA[0] <= 4'd9;	// Reading TOC
+									STATUS_DATA[2] <= COMMAND_DATA[4];	// xx:02:00
+									STATUS_DATA[3] <= COMMAND_DATA[5];
+									STATUS_DATA[4] <= 4'd0;
 									STATUS_DATA[5] <= 4'd2;
-									STATUS_DATA[6] <= 4'd0;
+									STATUS_DATA[6] <= 4'd0;	// OR 8 for data track
 									STATUS_DATA[7] <= 4'd0;
-									STATUS_DATA[8] <= 4'd0;
-									STATUS_DATA[9] <= 4'd10;	// Checksum ~(5+ 9+5+2)
+									STATUS_DATA[8] <= COMMAND_DATA[5];
 								end
 								else if (COMMAND_DATA[3] == 4'd6)
 								begin
-									// Get track type
+									// Get last error
 								end
 							end
 						end

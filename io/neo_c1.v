@@ -49,7 +49,7 @@ module neo_c1(
 	output nDTACK,
 	output nBITW0, nBITW1, nDIPRD0, nDIPRD1,
 	output nPAL_ZONE,
-	input SYSTEM_TYPE
+	input [1:0] SYSTEM_TYPE
 );
 
 	wire nIO_ZONE;			// Internal
@@ -67,11 +67,11 @@ module neo_c1(
 	
 	c1_regs C1REGS(nICOM_ZONE, RW, M68K_DATA, SDD, nSDZ80R, nSDZ80W, nSDZ80CLR, nSDW);
 	
-	c1_wait C1WAIT(CLK_68KCLK, nAS, nROM_ZONE, nPORT_ZONE, nCARD_ZONE, nSROM_ZONE,
+	c1_wait C1WAIT(CLK_68KCLK, nAS, SYSTEM_TYPE[1], nROM_ZONE, nWRAM_ZONE, nPORT_ZONE, nCARD_ZONE, nSROM_ZONE,
 					nROMWAIT, nPWAIT0, nPWAIT1, PDTACK, nDTACK);
 	
 	c1_inputs C1INPUTS(nCTRL1_ZONE, nCTRL2_ZONE, nSTATUSB_ZONE, M68K_DATA, P1_IN, P2_IN,
-						nWP, nCD2, nCD1, SYSTEM_TYPE);
+						nWP, nCD2, nCD1, SYSTEM_TYPE[0]);
 	
 	// 000000~0FFFFF read/write
 	assign nROM_ZONE = |{A23Z, A22Z, M68K_ADDR[21], M68K_ADDR[20]};
