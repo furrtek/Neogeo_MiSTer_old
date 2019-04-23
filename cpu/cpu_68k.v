@@ -29,7 +29,9 @@ module cpu_68k(
 	output nLDS, nUDS,
 	output nAS,
 	output M68K_RW,
-	output FC2, FC1, FC0
+	output FC2, FC1, FC0,
+	output nBG,
+	input nBR, nBGACK
 );
 	
 reg  M68K_CLKEN;
@@ -62,15 +64,15 @@ fx68k FX68K(
 		.UDSn(nUDS),
 		.LDSn(nLDS),
 		
-		.BGn(),
+		.BGn(nBG),
+		.BRn(nBR),
+		.BGACKn(nBGACK),
 		//.oRESETn(nDTACK),
 		
 		.DTACKn(nDTACK),
 		
 		.VPAn(~IPL2 | nAS),		// Is this enough ?
 		.BERRn(1'b1),
-		.BRn(1'b1),
-		.BGACKn(1'b1),
 		
 		.IPL0n(IPL0),
 		.IPL1n(IPL1),

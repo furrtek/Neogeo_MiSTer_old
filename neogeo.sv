@@ -119,7 +119,7 @@ assign VGA_DE = ~CHBL & nBNKB;
 
 // status bit definition:
 // 31       23       15       7
-// --AA--SS -------- ---CGGDD DEEMVTTR
+// --AA--SS -------- L--CGGDD DEEMVTTR
 // R:	status[0]		Reset, used by the HPS, keep it there
 // T:	status[2:1]		System type, 0=Console, 1=Arcade, 2=CD, 3=CDZ
 // V: status[3]		Video mode
@@ -128,6 +128,7 @@ assign VGA_DE = ~CHBL & nBNKB;
 // D:	status[9:7]		DIP switches
 // G:	status[11:10]	Neo CD region
 // C:	status[12]		Save memory card & backup RAM
+// L:	status[12]		CD lid state (DEBUG)
 // S:	status[25:24]	Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU
 // A: status[29:28]	Sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
 
@@ -214,11 +215,13 @@ reg [15:0] TRASH_ADDR;
 always @(posedge CLK_24M)
 begin
 	nRST_PREV_24M <= nRST;
+	// nRST rising edge: start RAM trashing
 	if (~nRST_PREV_24M & nRST)
 	begin
 		TRASHING <= 1;
 		TRASH_ADDR <= 16'h0000;
 	end
+	// nRST falling edge: put system in reset
 	if (nRST_PREV_24M & ~nRST)
 		nRESET <= 0;
 	
@@ -226,6 +229,7 @@ begin
 	begin
 		if (TRASH_ADDR == 16'hFFFF)
 		begin
+			// Trashing done: release system reset
 			TRASHING <= 0;
 			nRESET <= 1;
 		end
@@ -302,6 +306,7 @@ reg memcard_loading = 0;
 reg memcard_state = 0;
 reg memcard_save_prev = 0, sd_ack_prev;
 reg [31:0] sd_lba;
+wire [31:0] CD_sd_lba;
 
 wire [15:0] joystick_0;	// ----HNLS DCBAUDLR
 wire [15:0] joystick_1;
@@ -383,7 +388,7 @@ hps_io #(
 	.ioctl_index(ioctl_index),
 	.ioctl_wait(ioctl_wait),
 	
-	.sd_lba(sd_lba),
+	.sd_lba(sd_req_type ? CD_sd_lba : sd_lba),
 	.sd_rd(sd_rd),
 	.sd_wr(sd_wr),
 	.sd_ack(sd_ack),
@@ -620,7 +625,7 @@ hps_io #(
 		M68K_DATA,
 		A22Z, A23Z,
 		nLDS, nUDS,
-		M68K_RW, nAS,
+		M68K_RW, nAS, nDTACK,
 		SYSTEM_TYPE,
 		CD_REGION,
 		CD_VIDEO_EN,
@@ -642,9 +647,17 @@ hps_io #(
 		IACK,
 		CD_IRQ,
 		
+		clk_sys,
 		sd_req_type,
+		sd_rd[0],
+		sd_ack,
+		sd_buff_dout,
+		sd_buff_wr,
+		CD_sd_lba,
 		
-		status[15]	// CD lid state (DEBUG)
+		status[15],	// CD lid state (DEBUG)
+		
+		nBR, nBG, nBGACK
 	);
 	
 	// The P1 zone is writable on the Neo CD
@@ -975,7 +988,8 @@ hps_io #(
 		CLK_24M, nRESET,
 		IPL2_OUT, IPL1_OUT, IPL0_OUT,
 		nDTACK, M68K_ADDR, FX68K_DATAIN, FX68K_DATAOUT, nLDS, nUDS, nAS, M68K_RW,
-		FC2, FC1, FC0
+		FC2, FC1, FC0,
+		nBG, nBR, nBGACK
 		);
 	
 	wire IACK = &{FC2, FC1, FC0};
@@ -1085,7 +1099,7 @@ hps_io #(
 	wire [7:0] CDD_U;
 	wire [15:0] sd_buff_din_memcard;
 	wire [11:0] memcard_addr = {sd_lba[3:0], sd_buff_addr};
-	wire memcard_wr = SYSTEM_CDx ? sd_buff_wr & sd_ack :		// Enable writes for save file's 000000+
+	wire memcard_wr = SYSTEM_CDx ? (sd_req_type == 16'h0000) & sd_buff_wr & sd_ack :		// Enable writes for save file's 000000+
 							sd_lba[7] & sd_buff_wr & sd_ack;			// Enable writes for save file's 010000+
 	
 	// Split the 8kB 8-bit memory card into two 1kB dual-port RAMs so the HPS
@@ -1250,7 +1264,7 @@ hps_io #(
 						(~n2610CS & ~n2610RD) ? YM2610_DOUT :
 						8'bzzzzzzzz;
 	
-	wire Z80_nRESET = SYSTEM_CDx ? CD_nRESET_Z80 : nRESET;
+	wire Z80_nRESET = SYSTEM_CDx ? nRESET & CD_nRESET_Z80 : nRESET;
 	cpu_z80 Z80CPU(CLK_4M, nRESET, SDD, SDA, nIORQ, nMREQ, nSDRD, nSDWR, nZ80INT, nZ80NMI);
 	
 	wire [19:0] ADPCMA_ADDR;
