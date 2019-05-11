@@ -132,6 +132,7 @@ module cd_drive(
 			REQ_TYPE <= 2'd0;
 			
 			MSF_INC_PREV <= 0;
+			READING <= 0;
 		end
 		else
 		begin

@@ -33,12 +33,12 @@ module lc8951(
 	
 	input [7:0] MSF_M,	// To give back the system ROM what it expects to see
 	input [7:0] MSF_S,	// Normally these come from the MSF data from the sector's header
-	input [7:0] MSF_F,	// Maybe use the real header given by the HPS instead ?
+	input [7:0] MSF_F,	// Maybe use the real header which would be given by the HPS instead ?
+	input MSF_LATCH,
 	
 	input SECTOR_READY,
-	input DMA_DONE,
-	output reg CDC_nIRQ,	// Triggers when SECTOR_READY or DMA_DONE rises and IRQ enabled
-	output reg NEXT_SECTOR_REQ
+	input DMA_RUNNING,
+	output reg CDC_nIRQ	// Triggers when SECTOR_READY or DMA_RUNNING rises and IRQ enabled
 );
 
 	/*
@@ -97,7 +97,7 @@ module lc8951(
 	reg SYIEN, SYDEN, DSCREN, COWREN, MODRQ, FORMRQ, SHDREN;
 	
 	reg nWR_PREV, nRD_PREV;
-	reg SECTOR_READY_PREV, DMA_DONE_PREV;
+	reg SECTOR_READY_PREV, DMA_RUNNING_PREV, MSF_LATCH_PREV;
 	
 	// TODO: Should this be clocked with clk_sys ?
 	always @(negedge CLK_12M or negedge nRESET)
@@ -136,12 +136,13 @@ module lc8951(
 			{SYIEN, SYDEN, DSCREN, COWREN, MODRQ, FORMRQ, SHDREN} <= 7'b0000000;
 			
 			SECTOR_READY_PREV <= 0;
-			DMA_DONE_PREV <= 0;
+			DMA_RUNNING_PREV <= 0;
 		end
 		else
 		begin
 			SECTOR_READY_PREV <= SECTOR_READY;
-			DMA_DONE_PREV <= DMA_DONE;
+			DMA_RUNNING_PREV <= DMA_RUNNING;
+			MSF_LATCH_PREV <= MSF_LATCH;
 			
 			// Rising edge of SECTOR_READY: Set decoder IRQ flag
 			if (~SECTOR_READY_PREV & SECTOR_READY)
@@ -150,15 +151,20 @@ module lc8951(
 				nVALST <= 0;
 			end
 			
-			// Rising edge of DMA_DONE: Set transfer end IRQ flag
-			if (~DMA_DONE_PREV & DMA_DONE)
+			// Falling edge of DMA_RUNNING: Set transfer end IRQ flag
+			if (DMA_RUNNING_PREV & ~DMA_RUNNING)
 				DTEI_FLAG <= 1;
 			
+			// Rising edge of MSF_LATCH
+			if (~MSF_LATCH_PREV & MSF_LATCH)
+			begin
+				HEAD[0] <= MSF_M;
+				HEAD[1] <= MSF_S;
+				HEAD[2] <= MSF_F;
+				//HEAD[3] <= 8'h01;
+			end
+			
 			CDC_nIRQ <= ~|{(CMDI_FLAG & CMDIEN), (DTEI_FLAG & DTEIEN), (DECI_FLAG & DECIEN)};
-		
-			// Trigger
-			if (NEXT_SECTOR_REQ)
-				NEXT_SECTOR_REQ <= 0;
 		
 			nWR_PREV <= nWR;
 			nRD_PREV <= nRD;
@@ -216,7 +222,7 @@ module lc8951(
 						4'd4: DOUT <= HEAD[0];
 						4'd5: DOUT <= HEAD[1];
 						4'd6: DOUT <= HEAD[2];
-						4'd7: DOUT <= HEAD[3];
+						4'd7: DOUT <= 8'h01;		//HEAD[3]; CD-ROM mode, always 1
 						
 						4'd8: DOUT <= 8'h04;	//PT[7:0];		// PTL
 						4'd9: DOUT <= 8'h00;	//PT[15:8];		// PTH
@@ -224,15 +230,13 @@ module lc8951(
 						4'd10: DOUT <= WA[7:0];		// WAL - Datasheet says these are undefined after reset
 						4'd11: DOUT <= WA[15:8];	// WAH
 						
-						4'd12: DOUT <= 8'b00000000;	// STAT0
+						4'd12: DOUT <= 8'b10000000;	// STAT0 - CRC OK
 						4'd13: DOUT <= 8'b00000000;	// STAT1
 						4'd14: DOUT <= 8'b00000000;	// STAT2 - MODE, FORM (Mode 1)
 						4'd15:
 						begin
 							DOUT <= {nVALST, 7'b0000000};	// STAT3 - Reading clears the decoder IRQ
 							DECI_FLAG <= 0;
-							NEXT_SECTOR_REQ <= 1;
-							nVALST <= 1;	// Maybe not ?
 						end
 					endcase
 				
