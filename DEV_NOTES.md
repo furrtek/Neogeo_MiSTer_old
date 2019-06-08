@@ -146,4 +146,77 @@ P ROM | 1MB | 0200000 | 02FFFFF
 Extended RAM | 1MB | 0300000 | 03FFFFF
 Free | 4MB | 0400000 | 07FFFFF
 C ROM | 4MB | 0800000 | 0BFFFFF
-Free | 20MB | 0C00000 | 01FFFFF
+Free | 20MB | 0C00000 | 1FFFFFF
+
+## Neo CD loading notes
+
+```
+To load sectors, the Neo CD does this:
+-Starts playing CD at requested MSF - 3
+	MSF must be given to the LC8951 module to be copied back in the HEAD registers
+	Start requesting sectors from HPS with interval timer
+	Wait a bit to let the system ROM set up the IRQ masks ?
+-Enables CDC interrupts
+-Sets CMDIEN, DTEIEN, DECIEN and DOUTEN
+-Sets DECEN, E01RQ, WRRQ, QRQ and PRQ
+-Sets SYIEN, SYDEN, DSCREN, COWREN
+-Waits for the CDC decoder interrupt
+	Trigger the decoder interrupt (CDC_nIRQ) when the HPS has finished sending a sector
+-Reads STAT3 to clear the IRQ
+-Does the same thing over again (to let at least one sector go by ?)
+	Need to trigger the decoder interrupt again ? Should have to do that only once per play
+-At the second CDC decoder interrupt:
+-Checks STAT1 to see if there aren't any error flags
+-Checks STAT3 to see if the decoder status is valid
+-Reads the HEAD registers, compares them with the requested MSF, if so:
+-Reads the STAT registers, checks if there aren't any error flags in STAT0 and CRC OK bit
+-Reads PT
+	Can always be 0004 (skips sector header bytes), the Neo CD doesn't care if it changes or not
+-Sets DBC to $7FF (2048-1 bytes)
+-Sets DAC to PT-4
+	So DAC should always be set to 0000
+-Sets up LC8953 DMA to retrieve 2048 bytes
+	This triggers the DMA copy from the cache to the CD sector buffer at $111204
+-After copy is done, increment MFS (pulse MSF_INC)
+-Decrements sector counter until 0
+```
+
+## Neo CD fix data notes
+
+```
+Normal fix data bytes:
+10 18 00 08
+11 19 01 09
+12 1A 02 0A
+13 1B 03 0B
+14 1C 04 0C
+15 1D 05 0D
+16 1E 06 0E
+17 1F 07 0F
+
+SDRAM organization words:
+10-18 00-08 11-19 01-09 12-1A 02-0A 13-1B 03-0B...
+
+The Neo CD will write fix data as bytes so two byte writes would have to be grouped in
+one SDRAM word write, but that won't work with the byte address remapping. It would require
+a 32 byte buffer which would be burst written and it would be a mess...
+Instead of that, just use LDQM/UDQM to do byte writes with the remapped address directly.
+
+addr_out = ?, addr_in[...:0], ~addr_in[4], addr_in[3]
+00 -> 02
+01 -> 06
+02 -> 0A
+...
+07 -> 1E
+
+08 -> 03
+09 -> 07
+...
+
+10 -> 00
+11 -> 04
+...
+
+18 -> 01
+19 -> 05
+```
