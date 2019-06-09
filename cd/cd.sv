@@ -68,7 +68,9 @@ module cd_sys(
 	output reg DMA_WR_OUT,
 	output reg DMA_RD_OUT,
 	output reg [23:0] DMA_ADDR_IN,	// Used for reading
-	output reg [23:0] DMA_ADDR_OUT	// Used for writing
+	output reg [23:0] DMA_ADDR_OUT,	// Used for writing
+	
+	input DMA_SDRAM_BUSY
 );
 
 	reg CD_USE_SPR, CD_USE_PCM, CD_USE_Z80, CD_USE_FIX;
@@ -96,22 +98,20 @@ module cd_sys(
 	wire HOCK, CDCK, CDD_nIRQ;
 	
 	cd_drive DRIVE(
-		nRESET & CD_nRESET_DRIVE,
-		CLK_68KCLK,
-		HOCK, CDCK,
-		CDD_DIN, CDD_DOUT,
-		CDD_nIRQ,
-		
-		clk_sys,
-		DRIVE_sd_req_type,
-		DRIVE_sd_rd,
-		sd_ack,
-		sd_buff_dout,
-		sd_buff_wr,
-		
-		MSF_M, MSF_S, MSF_F,
-		INC_MSF,
-		DRIVE_READING
+		.clk_sys(clk_sys),
+		.CLK_12M(CLK_68KCLK),
+		.nRESET(nRESET & CD_nRESET_DRIVE),
+		.HOCK(HOCK), .CDCK(CDCK),
+		.CDD_DIN(CDD_DIN), .CDD_DOUT(CDD_DOUT),
+		.CDD_nIRQ(CDD_nIRQ),
+		.sd_req_type(DRIVE_sd_req_type),
+		.sd_rd(DRIVE_sd_rd),
+		.sd_ack(sd_ack),
+		.sd_buff_dout(sd_buff_dout),
+		.sd_buff_wr(sd_buff_wr),
+		.MSF_M(MSF_M),	.MSF_S(MSF_S),	.MSF_F(MSF_F),
+		.MSF_INC(MSF_INC),
+		.READING(DRIVE_READING)
 	);
 	
 	wire [7:0] LC8951_DOUT;
@@ -133,7 +133,7 @@ module cd_sys(
 	);
 	
 	reg SECTOR_REQ;
-	reg INC_MSF;
+	reg MSF_INC;
 	wire [15:0] DRIVE_sd_req_type;
 	
 	assign sd_req_type = DRIVE_READING ? 16'h4801 : DRIVE_sd_req_type;
@@ -161,10 +161,9 @@ module cd_sys(
 	reg [1:0] DMA_MODE;
 	reg [3:0] DMA_STATE;
 	reg DMA_sd_rd;
-	reg [4:0] DMA_TIMER;
+	reg [7:0] DMA_TIMER;
 	reg [31:0] DMA_COUNT_RUN;
 	
-	reg DRIVE_READING_PREV;
 	reg [23:0] SECTOR_TIMER;
 	
 	always @(posedge clk_sys or negedge nRESET)
@@ -180,9 +179,8 @@ module cd_sys(
 			nBR <= 1;
 			nBGACK <= 1;
 			
-			DRIVE_READING_PREV <= 0;
 			DMA_RUNNING <= 0;
-			DMA_TIMER <= 5'd0;
+			DMA_TIMER <= 8'd0;
 			
 			SECTOR_TIMER <= 24'd0;
 		end
@@ -190,8 +188,8 @@ module cd_sys(
 		begin
 		
 			// Trigger
-			if (INC_MSF)
-				INC_MSF <= 0;
+			if (MSF_INC)
+				MSF_INC <= 0;
 			
 			if (SECTOR_TIMER)
 				SECTOR_TIMER <= SECTOR_TIMER - 1'b1;
@@ -201,10 +199,10 @@ module cd_sys(
 				if (DRIVE_READING & !SECTOR_TIMER)
 				begin
 					// Request sector from HPS
-					// TESTING: 20ms between sectors
-					SECTOR_TIMER <= 24'd2400000;
+					//SECTOR_TIMER <= 24'd2400000;	// 20ms between sectors (100kB/s)
+					SECTOR_TIMER <= 24'd600000;		// TESTING: 5ms between sectors (400kB/s)
 					SECTOR_READY <= 0;
-					sd_lba <= {8'h00, MSF_M, MSF_S, MSF_F};
+					sd_lba <= {8'h00, MSF_M, MSF_S, MSF_F};	// HPS converts this to proper LBA
 					DMA_sd_rd <= 1;
 					CACHE_ADDR <= 11'h000;
 					LOADING_STATE <= 2'd1;
@@ -212,6 +210,7 @@ module cd_sys(
 			end
 			else if (LOADING_STATE == 2'd1)
 			begin
+				// Wait for sd_ack
 				if (sd_ack)
 				begin
 					DMA_sd_rd <= 0;
@@ -222,7 +221,7 @@ module cd_sys(
 			begin
 				if (sd_buff_wr)
 				begin
-					// Wrote first byte of pair
+					// First byte of pair was written by sd_buff_wr
 					CACHE_ADDR <= CACHE_ADDR + 1'b1;
 					LOADING_STATE <= 2'd3;
 					FORCE_WR <= 1;
@@ -233,12 +232,12 @@ module cd_sys(
 					// Sector load done
 					SECTOR_READY <= 1;
 					LOADING_STATE <= 2'd0;
-					INC_MSF <= 1;
+					MSF_INC <= 1;
 				end
 			end
 			else if (LOADING_STATE == 2'd3)
 			begin
-				// Wrote second byte of pair
+				// Second byte of pair was written by FORCE_WR
 				FORCE_WR <= 0;
 				CACHE_ADDR <= CACHE_ADDR + 1'b1;
 				LOADING_STATE <= 2'd2;
@@ -246,115 +245,173 @@ module cd_sys(
 			
 			DMA_START_PREV <= DMA_START;
 			
+			// Rising edge of DMA_START
 			if (~DMA_START_PREV & DMA_START)
 			begin
 				DMA_STATE <= 4'd1;
 				DMA_RUNNING <= 1;
+				
+				DMA_COUNT_RUN <= DMA_COUNT;
+				
 				if (DMA_MODE == 2'd0)
 				begin
 					// Init byte copy LC8951 cache -> DMA_ADDR_A
-					DMA_COUNT_RUN <= DMA_COUNT;
 					DMA_ADDR_OUT <= DMA_ADDR_A;
 					CACHE_ADDR <= 11'h000;
 				end
 				else if (DMA_MODE == 2'd1)
 				begin
 					// Init word copy DMA_ADDR_A -> DMA_ADDR_B
-					DMA_COUNT_RUN <= DMA_COUNT;
 					DMA_ADDR_IN <= DMA_ADDR_A;
 					DMA_ADDR_OUT <= DMA_ADDR_B;
+				end
+				else if (DMA_MODE == 2'd2)
+				begin
+					// Init byte copy DMA_ADDR_A -> DMA_ADDR_B
+					DMA_ADDR_IN <= DMA_ADDR_A;
+					DMA_ADDR_OUT <= DMA_ADDR_B;
+				end
+				else if (DMA_MODE == 2'd3)
+				begin
+					// Init word fill from DMA_ADDR_A
+					DMA_ADDR_OUT <= DMA_ADDR_A;
+					DMA_DATA_OUT <= DMA_VALUE[31:16];	// Is [15:0] ever used ?
 				end
 			end
 			
 			// DMA logic
+			
+			// DMA_TIMER is a minimum wait, so tick it even when DMA_SDRAM_BUSY
 			if (DMA_TIMER)
-			begin
-				// Wait...
 				DMA_TIMER <= DMA_TIMER - 1'b1;
-			end
-			else
+			
+			if (!DMA_SDRAM_BUSY)
 			begin
-				if (DMA_STATE == 4'd1)
+				if (!DMA_TIMER)
 				begin
-					// Do 68k bus request
-					nBR <= 0;
-					DMA_STATE <= 4'd2;
-				end
-				else if (DMA_STATE == 4'd2)
-				begin
-					// Wait for nBG low
-					if (~nBG)
+					if (DMA_STATE == 4'd1)
 					begin
-						DMA_STATE <= 4'd3;
+						// Init: Do 68k bus request
+						nBR <= 0;
+						DMA_STATE <= 4'd2;
 					end
-				end
-				else if (DMA_STATE == 4'd3)
-				begin
-					// Wait for nAS and nDTACK high
-					if (nAS & nDTACK)
+					else if (DMA_STATE == 4'd2)
 					begin
-						nBR <= 1;
-						nBGACK <= 0;
+						// Init: Wait for nBG low
+						if (~nBG)
+							DMA_STATE <= 4'd3;
+					end
+					else if (DMA_STATE == 4'd3)
+					begin
+						// Init: Wait for nAS and nDTACK high
+						if (nAS & nDTACK)
+						begin
+							nBR <= 1;
+							nBGACK <= 0;
+							DMA_STATE <= 4'd4;
+						end
+					end
+					else if (DMA_STATE == 4'd4)
+					begin
+						// Base state for DMA loop
+						// FX68K doesn't tri-state its outputs when it releases the bus (good !)
+						// So use separate busses and signals when doing DMA and switch them according to DMA_RUNNING
+						if (!DMA_COUNT_RUN)
+						begin
+							// DMA done !
+							DMA_STATE <= 4'd0;	// Go back to idle
+							nBGACK <= 1;			// Release bus
+							DMA_RUNNING <= 0;		// Inform CDC that the transfer is finished
+						end
+						else
+						begin
+							// Working...
+							if (DMA_MODE == 2'd0)
+							begin
+								// Byte copy LC8951 cache -> DMA_ADDR_A
+								DMA_DATA_OUT[15:8] <= CACHE_DOUT;	// Got upper byte
+								CACHE_ADDR <= CACHE_ADDR + 1'b1;
+								DMA_TIMER <= 8'd10;	// TODO: Tune this
+								DMA_STATE <= 4'd5;
+							end
+							else if (DMA_MODE == 2'd1)
+							begin
+								// Word copy DMA_ADDR_A -> DMA_ADDR_B
+								// Get input data
+								DMA_RD_OUT <= 1;
+								DMA_TIMER <= 8'd20;	// TODO: Tune this
+								DMA_STATE <= 4'd6;
+							end
+							else if (DMA_MODE == 2'd2)
+							begin
+								// Byte copy DMA_ADDR_A -> DMA_ADDR_B odd bytes
+								// Get input data
+								DMA_RD_OUT <= 1;
+								DMA_TIMER <= 8'd30;	// TODO: Tune this
+								DMA_STATE <= 4'd8;
+							end
+							else if (DMA_MODE == 2'd3)
+							begin
+								// Word fill from DMA_ADDR_A
+								DMA_WR_OUT <= 1;
+								DMA_TIMER <= 8'd20;	// TODO: Tune this
+								DMA_STATE <= 4'd7;
+							end
+						end
+					end
+					else if (DMA_STATE == 4'd5)
+					begin
+						// Get second byte from cache and do write
+						DMA_DATA_OUT[7:0] <= CACHE_DOUT;	// Got lower byte
+						CACHE_ADDR <= CACHE_ADDR + 1'b1;
+						DMA_WR_OUT <= 1;
+						DMA_TIMER <= 8'd20;	// TODO: Tune this
+						DMA_STATE <= 4'd7;
+					end
+					else if (DMA_STATE == 4'd6)
+					begin
+						// Word copy read done, do write
+						DMA_RD_OUT <= 0;
+						DMA_WR_OUT <= 1;
+						DMA_DATA_OUT <= DMA_DATA_IN;
+						DMA_ADDR_IN <= DMA_ADDR_IN + 2'd2;
+						DMA_TIMER <= 8'd20;	// TODO: Tune this
+						DMA_STATE <= 4'd7;
+					end
+					else if (DMA_STATE == 4'd7)
+					begin
+						// Write done
+						DMA_WR_OUT <= 0;
+						DMA_ADDR_OUT <= DMA_ADDR_OUT + 2'd2;
+						DMA_COUNT_RUN <= DMA_COUNT_RUN - 1'b1;
 						DMA_STATE <= 4'd4;
 					end
-				end
-				else if (DMA_STATE == 4'd4)
-				begin
-					// Working...
-					// FX68K doesn't tri-state its outputs when it releases the bus (good !)
-					// So use separate busses and signals when doing DMA and mux them before memories
-					if (!DMA_COUNT_RUN)
+					else if (DMA_STATE == 4'd8)
 					begin
-						DMA_STATE <= 4'd0;	// Go back to idle
-						nBGACK <= 1;			// Release bus
-						DMA_RUNNING <= 0;		// Inform CDC that the transfer is finished
+						// Byte copy read done, do first write
+						DMA_RD_OUT <= 0;
+						//DMA_WR_OUT <= 1;	// DEBUG
+						DMA_DATA_OUT <= DMA_DATA_IN;	// Flip bytes in DMA_DATA_IN ?
+						DMA_ADDR_IN <= DMA_ADDR_IN + 2'd2;
+						DMA_TIMER <= 8'd30;	// TODO: Tune this
+						DMA_STATE <= 4'd9;
 					end
-					else
+					else if (DMA_STATE == 4'd9)
 					begin
-						if (DMA_MODE == 2'd0)
-						begin
-							// Byte copy LC8951 cache -> DMA_ADDR_A
-							DMA_DATA_OUT[15:8] <= CACHE_DOUT;	// Got upper byte
-							CACHE_ADDR <= CACHE_ADDR + 1'b1;
-							DMA_TIMER <= 5'd20;	// TODO: Tune this
-							DMA_STATE <= 4'd5;
-						end
-						else if (DMA_MODE == 2'd1)
-						begin
-							// Word copy DMA_ADDR_A -> DMA_ADDR_B
-							// Get input data
-							DMA_RD_OUT <= 1;
-							DMA_TIMER <= 5'd20;	// TODO: Tune this
-							DMA_STATE <= 4'd6;
-						end
+						// Byte copy first write done, prepare second write
+						DMA_WR_OUT <= 0;
+						DMA_ADDR_OUT <= DMA_ADDR_OUT + 2'd2;
+						DMA_DATA_OUT <= {DMA_DATA_OUT[7:0], DMA_DATA_OUT[15:8]};	// Flip bytes
+						DMA_TIMER <= 8'd5;	// TODO: Tune this
+						DMA_STATE <= 4'd10;
 					end
-				end
-				else if (DMA_STATE == 4'd5)
-				begin
-					// Get second byte from cache and do write
-					DMA_DATA_OUT[7:0] <= CACHE_DOUT;	// Got lower byte
-					CACHE_ADDR <= CACHE_ADDR + 1'b1;
-					DMA_WR_OUT <= 1;
-					DMA_TIMER <= 5'd20;	// TODO: Tune this
-					DMA_STATE <= 4'd7;
-				end
-				else if (DMA_STATE == 4'd6)
-				begin
-					// Word copy read done, do write
-					DMA_RD_OUT <= 0;
-					DMA_WR_OUT <= 1;
-					DMA_DATA_OUT <= DMA_DATA_IN;
-					DMA_ADDR_IN <= DMA_ADDR_IN + 1'b1;
-					DMA_TIMER <= 5'd20;	// TODO: Tune this
-					DMA_STATE <= 4'd7;
-				end
-				else if (DMA_STATE == 4'd7)
-				begin
-					// Write done
-					DMA_WR_OUT <= 0;
-					DMA_ADDR_OUT <= DMA_ADDR_OUT + 2'd2;
-					DMA_COUNT_RUN <= DMA_COUNT_RUN - 1'b1;
-					DMA_STATE <= 4'd4;
+					else if (DMA_STATE == 4'd10)
+					begin
+						// Byte copy do second write
+						//DMA_WR_OUT <= 1;	// DEBUG
+						DMA_TIMER <= 8'd30;	// TODO: Tune this
+						DMA_STATE <= 4'd7;
+					end
 				end
 			end
 		end
@@ -459,12 +516,7 @@ module cd_sys(
 									// Copy LC8951 cache -> DMA_ADDR_A
 									// Count in words even it's really a byte copy
 									// TOP-SP1 @ C119F4
-									// $FF89
-									// $FCF5
-									// $D8A6
-									// $F627
-									// $03FD
-									// $FFFF
+									// $FF89 $FCF5 $D8A6 $F627 $03FD $FFFF
 									DMA_MODE <= 2'd0;
 								end
 								else if (DMA_MICROCODE[0] == 16'hFE6D)
@@ -472,43 +524,13 @@ module cd_sys(
 									// Word copy DMA_ADDR_A -> DMA_ADDR_B
 									// Count in words
 									// TOP-SP1 @ C119D4
-									// $FE6D
-									// $FCF5
-									// $82BF
-									// $F693
-									// $BF29
-									// $2FD
-									// $FFFF
-									// $C515
-									// $FCF5
-									// $82F6
-									// $932E
-									// $02FF
-									// $FCF5
-									// $92F6
-									// $2E0A
-									// $FDFF
-									
+									// $FE6D $FCF5 $82BF $F693 $BF29 $02FD $FFFF $C515 $FCF5
 									
 									// Word copy DMA_ADDR_A -> DMA_ADDR_B
 									// Different microcode, same operation ?
 									// Used by UploadPRGDMAWords, UploadPalDMAWords
 									// TOP-SP1 @ C0C07C
-									// $FE6D
-									// $FCF5
-									// $82BF
-									// $F693
-									// $BF29
-									// $02FD
-									// $FFFF
-									// $F97D
-									// $FCF5
-									// $82F6
-									// $93BE
-									// $93DA
-									// $BE2B
-									// $02FD
-									// $FFFF
+									// $FE6D $FCF5 $82BF $F693 $BF29 $02FD $FFFF $F97D $FCF5
 									DMA_MODE <= 2'd1;		
 								end
 								else if (DMA_MICROCODE[0] == 16'hF2DD)
@@ -517,13 +539,7 @@ module cd_sys(
 									// Used by UploadFIXDMABytes, UploadPCMDMABytes, UploadZ80DMABytes
 									// Count in words
 									// TOP-SP1 @ C0C09A
-									// $F2DD
-									// $82F6
-									// $93DA
-									// $BE93
-									// $DABE
-									// $2C02
-									// $FDFF
+									// $F2DD $82F6 $93DA $BE93 $DABE $2C02 $FDFF
 									DMA_MODE <= 2'd2;		
 								end
 								else if (DMA_MICROCODE[0] == 16'hFFCD)
@@ -532,11 +548,7 @@ module cd_sys(
 									// Used by  DMAClearPalettes, DMAClearPCMDRAM?
 									// Count in words
 									// TOP-SP1 @ C0C09A
-									// $FFCD
-									// $FCF5
-									// $92F6
-									// $2602
-									// $FDFF
+									// $FFCD $FCF5 $92F6 $2602 $FDFF
 									DMA_MODE <= 2'd3;		
 								end
 								
@@ -552,7 +564,15 @@ module cd_sys(
 						10'b0_0110111_00: DMA_VALUE[15:0] <= M68K_DATA;		// FF006E~FF006F
 						10'b0_0111000_00: DMA_COUNT[31:16] <= M68K_DATA;	// FF0070~FF0071
 						10'b0_0111001_00: DMA_COUNT[15:0] <= M68K_DATA;		// FF0072~FF0073
-						10'b0_0111111_00: DMA_MICROCODE[M68K_ADDR[4:1]] <= M68K_DATA;	// FF007E+
+						10'b0_0111111_00: DMA_MICROCODE[0] <= M68K_DATA;	// FF007E	M68K_ADDR[4:1]
+						10'b0_1000000_00: DMA_MICROCODE[1] <= M68K_DATA;	// FF0080	M68K_ADDR[4:1]
+						10'b0_1000001_00: DMA_MICROCODE[2] <= M68K_DATA;	// FF0082	M68K_ADDR[4:1]
+						10'b0_1000010_00: DMA_MICROCODE[3] <= M68K_DATA;	// FF0084	M68K_ADDR[4:1]
+						10'b0_1000011_00: DMA_MICROCODE[4] <= M68K_DATA;	// FF0086	M68K_ADDR[4:1]
+						10'b0_1000100_00: DMA_MICROCODE[5] <= M68K_DATA;	// FF0088	M68K_ADDR[4:1]
+						10'b0_1000101_00: DMA_MICROCODE[6] <= M68K_DATA;	// FF008A	M68K_ADDR[4:1]
+						10'b0_1000110_00: DMA_MICROCODE[7] <= M68K_DATA;	// FF008C	M68K_ADDR[4:1]
+						10'b0_1000111_00: DMA_MICROCODE[8] <= M68K_DATA;	// FF008E	M68K_ADDR[4:1]
 						
 						// FF01xx
 						10'b1_0000010_?0: CD_TR_AREA <= M68K_DATA[2:0];		// FF0105 Upload area select

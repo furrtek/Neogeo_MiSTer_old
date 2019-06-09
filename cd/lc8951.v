@@ -41,42 +41,6 @@ module lc8951(
 	output reg CDC_nIRQ	// Triggers when SECTOR_READY or DMA_RUNNING rises and IRQ enabled
 );
 
-	/*
-	To load sectors, the Neo CD does this (indented text is what this module should do):
-	-Starts playing CD at requested MSF
-		MSF must be given to this module to be copied back in the HEAD registers
-		Request sector from HPS (SECTOR_REQ)
-		Wait a bit to let the system ROM set up the IRQ masks ?
-	-Enables CDC interrupts
-	-Sets CMDIEN, DTEIEN, DECIEN and DOUTEN
-	-Sets DECEN, E01RQ, WRRQ, QRQ and PRQ
-	-Sets SYIEN, SYDEN, DSCREN, COWREN
-	-Waits for the CDC decoder interrupt
-		Trigger the decoder interrupt (CDC_nIRQ) when the HPS has finished sending it
-	-Reads STAT3 to clear the IRQ
-	-Does the same thing over again (to let at least one sector go by ?)
-		Need to trigger the decoder interrupt again ? Should have to do that only once per play
-	-At the second CDC decoder interrupt, reads STAT3 to clear the IRQ
-	
-	-Checks STAT1 to see if there aren't any error flags
-	-Checks STAT3 to see if the decoder status is valid
-	-Reads the HEAD registers
-	-Compares them with the requested MSF, if so:
-	-Reads the STAT registers
-	-Checks if there aren't any error flags in STAT0 and CRC OK bit
-	-Reads PT
-		PT can always be 0004, the Neo CD doesn't care if it changes or not
-	-Sets DBC to $7FF
-	-Sets DAC to PT-4
-		So DAC should always be set to 0000
-	-Sets up LD8953 DMA to retrieve 2048 bytes
-		This triggers the DMA copy (pulse DMA_REQ) from the cache to the CD sector buffer at $111204
-		After copy is done, increment MFS (pulse MSF_INC) and ask HPS for new sector
-	-Decrements sector counter until 0
-	 If 0: Set CTRL0 all low
-	 If not: Let other sectors come in
-	*/
-
 	reg [3:0] AR;		// Address Register
 	reg [7:0] REGS_WRITE [16];
 	

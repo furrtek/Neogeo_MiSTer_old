@@ -419,7 +419,7 @@ hps_io #(
 
 	wire [15:0] snd_right;
 	wire [15:0] snd_left;
-	wire sdram_ready, ready_fourth;
+	wire sdram_ready;	//, ready_fourth;
 	wire  [24:0] sdram_addr;
 	
 	wire nRESETP, nSYSTEM, CARD_WE, SHADOW, nVEC, nREGEN, nSRAMWEN, PALBNK;
@@ -485,6 +485,7 @@ hps_io #(
 	wire [63:0] CR_DOUBLE;
 	wire [24:0] CROM_ADDR;
 	
+	wire [1:0] FIX_BANK;
 	wire [15:0] S_LATCH;
 	wire [7:0] FIXD;
 	
@@ -678,13 +679,13 @@ hps_io #(
 							(ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM)) ? ioctl_wr : 1'b0;
 	
 	wire [24:0] ioctl_addr_offset =
-		(ioctl_index == INDEX_SPROM) ?	{6'b0_0000_0, ioctl_addr[18:0]} :	// System ROM
-		(ioctl_index == INDEX_S1ROM) ?	{6'b0_0000_1, ioctl_addr[18:0]} :	// S1
-		(ioctl_index == INDEX_SFIXROM) ? {8'b0_0001_000, ioctl_addr[16:0]} :	// SFIX
-		(ioctl_index == INDEX_P1ROM_A) ? {5'b0_0010, ioctl_addr[19:0]} :		// P1 first half or full
-		(ioctl_index == INDEX_P1ROM_B) ? {6'b0_0010_1, ioctl_addr[18:0]} :	// P1 second half
-		(ioctl_index == INDEX_P2ROM) ? ioctl_addr + 25'h0300000 :				// P2+
-		(ioctl_index >= INDEX_CROMS) ? {ioctl_addr[23:0], 1'b0} + {ioctl_index[5:1], 18'h00000, ioctl_index[0], 1'b0} + 25'h0800000 : // C*
+		(ioctl_index == INDEX_SPROM) ?	{6'b0_0110_0, ioctl_addr[18:0]} :	// System ROM: $0600000~$067FFFF
+		(ioctl_index == INDEX_S1ROM) ?	{6'b0_0110_1, ioctl_addr[18:0]} :	// S1: $0680000~$07FFFFF
+		(ioctl_index == INDEX_SFIXROM) ? {8'b0_0110_001, ioctl_addr[16:0]} :	// SFIX: $0620000~$063FFFF
+		(ioctl_index == INDEX_P1ROM_A) ? {5'b0_0000, ioctl_addr[19:0]} :		// P1 first half or full: $0000000~$00FFFFF
+		(ioctl_index == INDEX_P1ROM_B) ? {6'b0_0000_1, ioctl_addr[18:0]} :	// P1 second half: $0080000~$00FFFFF
+		(ioctl_index == INDEX_P2ROM) ? 	ioctl_addr + 25'h0200000 :				// P2+: $0200000~$05FFFFF
+		(ioctl_index >= INDEX_CROMS) ? 	{ioctl_addr[23:0], 1'b0} + {ioctl_index[5:1], 18'h00000, ioctl_index[0], 1'b0} + 25'h0800000 : // C*: $0800000~$1FFFFFF
 		25'h0000000;
 
 	sdram_mux SDRAM_MUX(
@@ -693,6 +694,8 @@ hps_io #(
 		
 		.M68K_ADDR(M68K_ADDR), .M68K_DATA(M68K_DATA),
 		.nLDS(nLDS), .nUDS(nUDS),
+		
+		.SDRAM_DQ(SDRAM_DQ),
 		
 		.CD_TR_AREA(CD_TR_AREA),
 		.CD_EXT_RD(CD_EXT_RD),
@@ -712,9 +715,10 @@ hps_io #(
 		.CROM_ADDR(CROM_ADDR),
 		.S_LATCH(S_LATCH),
 		
-		.SDRAM_WR_PULSE(SDRAM_WR_PULSE),	.SDRAM_RD_PULSE(SDRAM_RD_PULSE),
+		.SDRAM_WR_PULSE(SDRAM_WR_PULSE),	.SDRAM_RD_PULSE(SDRAM_RD_PULSE), .SDRAM_RD_TYPE(sdram_rd_type),
 		
 		.SROM_DATA(SROM_DATA), .PROM_DATA(PROM_DATA), .CR_DOUBLE(CR_DOUBLE),
+		.FIX_BANK(FIX_BANK),
 		
 		.SPR_EN(SPR_EN), .FIX_EN(FIX_EN),
 		
@@ -728,7 +732,7 @@ hps_io #(
 		.sdram_addr(sdram_addr),
 		.sdram_dout(sdram_dout), .sdram_din(sdram_din),
 		.wtbt(wtbt),
-		.sdram_ready(sdram_ready), .ready_fourth(ready_fourth)
+		.sdram_ready(sdram_ready)	//, .ready_fourth(ready_fourth)
 	);
 	
 	sdram ram(
@@ -738,8 +742,9 @@ hps_io #(
 		.addr(sdram_addr),
 		.dout(sdram_dout), .din(sdram_din),
 		.wtbt(wtbt),		// Always used in 16-bit mode except for CD fix data write
-		.we(sdram_we),	.rd(sdram_rd),
-		.ready_first(sdram_ready),	.ready_fourth(ready_fourth)
+		.we(sdram_we),	.rd(sdram_rd), .rd_type(sdram_rd_type),
+		//.ready_first(sdram_ready),	.ready_fourth(ready_fourth)
+		.ready(sdram_ready)
 	);
 	
 	neo_d0 D0(
@@ -928,6 +933,9 @@ hps_io #(
 	// 4 MSBs not handled by NEO-273
 	always @(negedge PCK1)
 		C_LATCH_EXT <= PBUS[23:20];
+	
+	// NEO-CMC handles this, set to 0 for now ()
+	assign FIX_BANK = 2'b00;
 	
 	// Fake COM MCU
 	wire [15:0] COM_DOUT;

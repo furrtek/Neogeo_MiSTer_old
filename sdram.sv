@@ -52,8 +52,10 @@ module sdram
    input      [15:0] din,         // data input from cpu
    input             we,          // cpu requests write
    input             rd,          // cpu requests read
-   output reg        ready_first, // dout_a is valid. Ready to accept new read/write.
-   output reg        ready_fourth
+	input					rd_type,		 // 0=Single read, 1=Four-word burst read
+   //output reg        ready_first, // dout_a is valid. Ready to accept new read/write.
+   //output reg        ready_fourth
+	output reg			ready
 );
 
 //wire [15:0] dout_first;
@@ -95,8 +97,8 @@ reg  [3:0] command = CMD_INHIBIT;
 reg        cke     = 0;
 reg [24:0] save_addr;
 
-reg        latched_first;
-/*reg [15:0] data_first;
+/*reg        latched_first;
+reg [15:0] data_first;
 reg [15:0] data_second;
 reg [15:0] data_third;
 reg [15:0] data_fourth;*/
@@ -120,6 +122,7 @@ always @(posedge clk) begin
 	reg  [1:0] new_wtbt;
 	reg        new_we;
 	reg        new_rd;
+	reg		  new_rd_type;
 	reg        save_we = 1;
 
 	state_t state = STATE_STARTUP;
@@ -130,12 +133,16 @@ always @(posedge clk) begin
 	data_ready_delay <= {1'b0, data_ready_delay[CAS_LATENCY+3:1]};
 
 	case (data_ready_delay)
-		7'b0010000: begin
+		/*7'b0010000: begin
 			latched_first <= 1'b0;
 			ready_first <= 1'b1;
-		end
+		end*/
 		7'b0001000: begin
-			latched_first <= 1'b1;
+			// CAS_LATENCY just went by, data is ready to be latched
+			//latched_first <= 1'b1;
+			
+			//ready_first <= 1'b1;
+			if (~new_rd_type) ready <= 1;
 			dout[63:48] <= SDRAM_DQ;
 		end
 		7'b0000100: begin
@@ -145,13 +152,17 @@ always @(posedge clk) begin
 			dout[31:16] <= SDRAM_DQ;
 		end
 		7'b0000001: begin
-			ready_fourth <= 1'b1;
-			dout[15:0] <= SDRAM_DQ;
+			if (new_rd_type)
+			begin
+				//ready_fourth <= 1'b1;
+				dout[15:0] <= SDRAM_DQ;
+				ready <= 1;
+			end
 		end
 		default:;
 	endcase
 
-	case(state)
+	case (state)
 		STATE_STARTUP: begin
 			//------------------------------------------------------------------------
 			//-- This is the initial startup state, where we wait for at least 100us
@@ -200,10 +211,11 @@ always @(posedge clk) begin
 			//-- get prepared to accept a new command, and schedule
 			//-- the first refresh cycle
 			//------------------------------------------------------
-			if(!refresh_count) begin
+			if (!refresh_count) begin
 				state   <= STATE_IDLE;
-				ready_first   <= 1;
-				ready_fourth   <= 1;
+				//ready_first   <= 1;
+				//ready_fourth   <= 1;
+				ready <= 1;
 				refresh_count <= 0;
 			end
 		end
@@ -219,7 +231,7 @@ always @(posedge clk) begin
 			SDRAM_DQ   <= 16'bZZZZZZZZZZZZZZZZ;
 			state      <= STATE_IDLE;
 			// mask possible refresh to reduce colliding.
-			if(refresh_count > cycles_per_refresh) begin
+			if (refresh_count > cycles_per_refresh) begin
             //------------------------------------------------------------------------
             //-- Start the refresh cycle. 
             //-- This tasks tRFC (66ns), so 7 idle cycles are needed @ 120MHz
@@ -231,16 +243,18 @@ always @(posedge clk) begin
 		end
 
 		STATE_IDLE: begin
-			// Priority is to issue a refresh if one is outstanding
-			if(refresh_count > (cycles_per_refresh<<1)) state <= STATE_IDLE_1;
-			else if(new_rd | new_we) begin
+			if (refresh_count > (cycles_per_refresh << 1)) begin
+				// Priority is to issue a refresh if one is outstanding
+				state <= STATE_IDLE_1;
+			end else if (new_rd | new_we) begin
+				// Start new access cycle
 				new_we   <= 0;
 				new_rd   <= 0;
 				save_addr<= addr;
 				save_we  <= new_we;
 				state    <= STATE_OPEN_1;
 				command  <= CMD_ACTIVE;
-				SDRAM_A  <= addr[22:10];		// addr[13:1] = 13 bits
+				SDRAM_A  <= addr[22:10];
 				SDRAM_BA <= addr[24:23];
 			end
 		end
@@ -248,14 +262,16 @@ always @(posedge clk) begin
 		// ACTIVE-to-READ or WRITE delay >20ns (-75)
 		STATE_OPEN_1: state <= STATE_OPEN_2;
 		STATE_OPEN_2: begin
-			SDRAM_A     <= {4'b0010, save_addr[9:1]}; 		// addr[22:14] = 9 bits
+			SDRAM_A     <= {4'b0010, save_addr[9:1]};		// Enable auto-precharge
+			// DQM's are always low (no mask) for reads
 			SDRAM_DQML  <= save_we & (new_wtbt ? ~new_wtbt[0] : ~save_addr[0]);
 			SDRAM_DQMH  <= save_we & (new_wtbt ? ~new_wtbt[1] :  save_addr[0]);
 			state       <= save_we ? STATE_WRITE : STATE_READ;
 		end
 
 		STATE_READ: begin
-			state       <= STATE_IDLE_5;
+			// Wait longer before returning to STATE_IDLE for 4-word burst reads
+			state       <= new_rd_type ? STATE_IDLE_7 : STATE_IDLE_4;
 			command     <= CMD_READ;
 			SDRAM_DQ    <= 16'bZZZZZZZZZZZZZZZZ;
 
@@ -267,22 +283,32 @@ always @(posedge clk) begin
 			state       <= STATE_IDLE_5;
 			command     <= CMD_WRITE;
 			SDRAM_DQ    <= new_wtbt ? new_data : {new_data[7:0], new_data[7:0]};
-			ready_first <= 1;
+			//ready_first <= 1;
+			ready <= 1;
 		end
 	endcase
 
-	if(init) begin
+	if (init) begin
 		state <= STATE_STARTUP;
 		refresh_count <= startup_refresh_max - sdram_startup_cycles;
 	end
 
 	old_we <= we;
-	if(we & ~old_we) {ready_first, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
+	if (we & ~old_we) begin
+		// Request for write
+		//{ready_first, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
+		{ready, new_we, new_data, new_wtbt} <= {1'b0, 1'b1, din, wtbt};
+	end
 
 	old_rd <= rd;
-	if(rd & ~old_rd) begin
-		if(ready_first & ~save_we & (save_addr[24:1] == addr[24:1])) save_addr <= addr;
-			else {ready_first, ready_fourth, new_rd} <= {1'b0, 1'b0, 1'b1};
+	if (rd & ~old_rd) begin
+		// Request for read
+		//if (ready_first & ~save_we & (save_addr[24:1] == addr[24:1]))
+		if (ready & ~save_we & (save_addr[24:1] == addr[24:1]))
+			save_addr <= addr;
+		else
+			{ready, new_rd, new_rd_type} <= {1'b0, 1'b1, rd_type};
+			//{ready_first, ready_fourth, new_rd, new_rd_type} <= {1'b0, 1'b0, 1'b1, rd_type};
 	end
 end
 

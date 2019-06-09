@@ -27,6 +27,8 @@ module sdram_mux(
 	input nLDS,
 	input nUDS,
 	
+	input [15:0] SDRAM_DQ,	// TESTING
+	
 	input [2:0] CD_TR_AREA,
 	input CD_EXT_WR,
 	
@@ -45,17 +47,19 @@ module sdram_mux(
 	
 	output reg SDRAM_WR_PULSE,
 	output reg SDRAM_RD_PULSE,
+	output reg SDRAM_RD_TYPE,
 	
 	output reg [15:0] PROM_DATA,
 	output reg [63:0] CR_DOUBLE,	// 16 pixels
 	output reg [15:0] SROM_DATA,	// 4 pixels
+	input [1:0] FIX_BANK,
 	
 	input SPR_EN, FIX_EN,
 	
 	output reg [24:0] sdram_addr,
 	input [63:0] sdram_dout,
 	output [15:0] sdram_din,
-	input sdram_ready, ready_fourth,
+	input sdram_ready, //ready_fourth,
 	
 	input ioctl_download,
 	input [24:0] ioctl_addr_offset,
@@ -77,7 +81,7 @@ module sdram_mux(
 	
 	reg nDS_PREV, DMA_WR_OUT_PREV;
 	reg [1:0] SDRAM_READY_SR;
-	reg [1:0] SDRAM_READY_FOURTH_SR;
+	//reg [1:0] SDRAM_READY_FOURTH_SR;
 	reg [1:0] SDRAM_M68K_SIG_SR;
 	reg [1:0] SDRAM_CROM_SIG_SR;
 	reg [1:0] SDRAM_SROM_SIG_SR;
@@ -86,7 +90,8 @@ module sdram_mux(
 	
 	reg SDRAM_WR_BYTE_MODE;
 	
-	wire [22:0] P2ROM_ADDR = DMA_RUNNING ? {3'd3, DMA_ADDR_IN[19:0]} : {P_BANK + 3'd3, M68K_ADDR[19:1], 1'b0};
+	//wire [22:0] P2ROM_ADDR = DMA_RUNNING ? {3'd3, DMA_ADDR_IN[19:0]} : {P_BANK + 3'd3, M68K_ADDR[19:1], 1'b0};
+	wire [22:0] P2ROM_ADDR = {P_BANK + 3'd2, M68K_ADDR[19:1], 1'b0};
 	
 	assign wtbt = (ioctl_download | ~CD_WR_RUN) ? 2'b11 : SDRAM_WR_BYTE_MODE ? 2'b00 : 2'b11;
 	
@@ -99,35 +104,38 @@ module sdram_mux(
 	// SDRAM address mux
 	// sdram_addr LSB is = 0 in word mode
 	always_comb begin 
-		casez ({ioctl_download, CD_WR_RUN, CROM_RD_RUN, SROM_RD_RUN, ~nROMOE & M68K_RD_RUN, (CD_EXT_RD | ~nPORTOE) & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN})
+		casez ({ioctl_download, CD_WR_RUN, ~nROMOE & M68K_RD_RUN, CD_EXT_RD & M68K_RD_RUN, ~nPORTOE & M68K_RD_RUN, ~nSROMOE & M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN})
 			// HPS loading pass-through
-			7'b1zzzzzz: sdram_addr = ioctl_addr_offset;
+			8'b1zzzzzzz: sdram_addr = ioctl_addr_offset;
 			
 			// CD transfer
-			7'b01zzzzz: sdram_addr = CD_REMAP_TR_ADDR;
+			8'b01zzzzzz: sdram_addr = CD_REMAP_TR_ADDR;
+			
+			// P1 ROM $0000000~$00FFFFF
+			8'b001zzzzz: sdram_addr = {5'b0_0000, M68K_ADDR[19:1], 1'b0};
+			
+			// Work RAM (cart) $0100000~$010FFFF, or Extended RAM (CD) $0100000~$01FFFFF
+			8'b0001zzzz: sdram_addr = SYSTEM_CDx ? DMA_RUNNING ? {5'b0_0001, DMA_ADDR_IN[19:0]} : {5'b0_0001, M68K_ADDR[19:1], 1'b0} :
+															{9'b0_0001_0000, M68K_ADDR[15:1], 1'b0};
+			
+			// P2 ROM (cart) $0200000~$05FFFFF bankswitched
+			8'b00001zzz: sdram_addr = {2'b0_0, P2ROM_ADDR};
+			
+			// System ROM (CD)	$0600000~$067FFFF
+			// System ROM (cart)	$0600000~$061FFFF
+			8'b000001zz: sdram_addr = SYSTEM_CDx ? {6'b0_0110_0, M68K_ADDR[18:1], 1'b0} :
+															{8'b0_0110_000, M68K_ADDR[16:1], 1'b0};
+			
+			// S ROM $0680000~$06FFFFF, or SFIX ROM (cart only) $0620000~$063FFFF
+			8'b0000001z: sdram_addr = (nSYSTEM_G | SYSTEM_CDx) ?
+												{6'b0_0110_1, FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
+												{8'b0_0110_001, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
 			
 			// C ROMs Bytes $0800000~$1FFFFFF
-			7'b001zzzz: sdram_addr = CROM_ADDR;
-			
-			// S ROM $0080000~$009FFFF or SFIX ROM (cart) $0100000~$011FFFF
-			7'b0001zzz: sdram_addr = (nSYSTEM_G | SYSTEM_CDx) ?
-												{8'b0_0000_100, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
-												{8'b0_0001_000, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
-			
-			// P1 ROM $0200000~$02FFFFF
-			7'b00001zz: sdram_addr = {5'b0_0010, M68K_ADDR[19:1], 1'b0};
-			
-			// Extended RAM (CD)	$0300000~$03FFFFF
-			// P2 ROM (cart)		$0300000~$07FFFFF bankswitched
-			7'b000001z: sdram_addr = {2'b0_0, P2ROM_ADDR};
-			
-			// System ROM (CD)	$0000000~$007FFFF
-			// System ROM (cart)	$0000000~$001FFFF
-			7'b0000001: sdram_addr = SYSTEM_CDx ? {6'b0_0000_0, M68K_ADDR[18:1], 1'b0} :
-															{8'b0_0000_000, M68K_ADDR[16:1], 1'b0};
+			8'b00000001: sdram_addr = CROM_ADDR;
 			
 			// Default
-			7'b0000000: sdram_addr = 25'h0000000;
+			8'b00000000: sdram_addr = 25'h0000000;
 		endcase
 	end
 	
@@ -226,6 +234,7 @@ module sdram_mux(
 							// Start read cycle right now
 							M68K_RD_RUN <= 1;
 							SDRAM_RD_PULSE <= 1;
+							SDRAM_RD_TYPE <= 0;	// Single read
 						end
 						else
 							M68K_RD_REQ <= 1;	// Set request flag for later
@@ -235,6 +244,7 @@ module sdram_mux(
 						// Start read cycle right now
 						M68K_RD_RUN <= 1;
 						SDRAM_RD_PULSE <= 1;
+						SDRAM_RD_TYPE <= 0;	// Single read
 					end
 				end
 				else
@@ -245,7 +255,7 @@ module sdram_mux(
 			// Detect rising edge of PCK1B
 			// TODO: Does this really need 2 FFs ?
 			SDRAM_CROM_SIG_SR <= {SDRAM_CROM_SIG_SR[0], ~PCK1};
-			if ((SDRAM_CROM_SIG_SR == 2'b01))
+			if ((SDRAM_CROM_SIG_SR == 2'b01) & SPR_EN)
 			begin
 				// In DMA, start if: nothing is running (priority case C)
 				// Out of DMA, start if: nothing is running, no 68k read or write (priority cases A and B)
@@ -253,11 +263,12 @@ module sdram_mux(
 				if (~|{M68K_RD_RUN, SROM_RD_RUN, CD_WR_RUN, M68K_RD_REQ, SROM_RD_REQ} & sdram_ready)
 				begin
 					// Start C ROM read cycle right now
-					CROM_RD_RUN <= SPR_EN;
-					SDRAM_RD_PULSE <= SPR_EN;
+					CROM_RD_RUN <= 1;
+					SDRAM_RD_PULSE <= 1;
+					SDRAM_RD_TYPE <= 1;	// Burst read
 				end
 				else
-					CROM_RD_REQ <= SPR_EN;	// Set request flag for later
+					CROM_RD_REQ <= 1;	// Set request flag for later
 			end
 			
 			// Detect fix data read requests
@@ -266,7 +277,7 @@ module sdram_mux(
 			// See dev_notes.txt about why there's only one read for FIX graphics
 			// regardless of the S2H1 signal
 			SDRAM_SROM_SIG_SR <= {SDRAM_SROM_SIG_SR[0], ~PCK2};
-			if ((SDRAM_SROM_SIG_SR == 2'b01))
+			if ((SDRAM_SROM_SIG_SR == 2'b01) & FIX_EN)
 			begin
 				// In DMA, start if: nothing is running (priority case C)
 				// Out of DMA, start if: nothing is running, no 68k read or write (priority cases A and B)
@@ -274,11 +285,12 @@ module sdram_mux(
 				if (~|{M68K_RD_RUN, CROM_RD_RUN, CD_WR_RUN, M68K_RD_REQ, CROM_RD_REQ} & sdram_ready)
 				begin
 					// Start S ROM read cycle right now
-					SROM_RD_RUN <= FIX_EN;
-					SDRAM_RD_PULSE <= FIX_EN;
+					SROM_RD_RUN <= 1;
+					SDRAM_RD_PULSE <= 1;
+					SDRAM_RD_TYPE <= 0;	// Single read
 				end
 				else
-					SROM_RD_REQ <= FIX_EN;	// Set request flag for later
+					SROM_RD_REQ <= 1;	// Set request flag for later
 			end
 			
 			if (SDRAM_WR_PULSE)
@@ -299,20 +311,29 @@ module sdram_mux(
 				else if (CROM_RD_REQ && !CD_WR_RUN && !M68K_RD_RUN && !SROM_RD_RUN)
 				begin
 					CROM_RD_REQ <= 0;
-					CROM_RD_RUN <= SPR_EN;
-					SDRAM_RD_PULSE <= SPR_EN;
+					if (SPR_EN)
+					begin
+						CROM_RD_RUN <= 1;
+						SDRAM_RD_PULSE <= 1;
+						SDRAM_RD_TYPE <= 1;	// Burst read
+					end
 				end
 				else if (SROM_RD_REQ && !CD_WR_RUN && !M68K_RD_RUN && !CROM_RD_RUN)
 				begin
 					SROM_RD_REQ <= 0;
-					SROM_RD_RUN <= FIX_EN;
-					SDRAM_RD_PULSE <= FIX_EN;
+					if (FIX_EN)
+					begin
+						SROM_RD_RUN <= 1;
+						SDRAM_RD_PULSE <= 1;
+						SDRAM_RD_TYPE <= 0;	// Single read
+					end
 				end
 				else if (M68K_RD_REQ && !CD_WR_RUN && !SROM_RD_RUN && !CROM_RD_RUN)
 				begin
 					M68K_RD_REQ <= 0;
 					M68K_RD_RUN <= 1;
 					SDRAM_RD_PULSE <= 1;
+					SDRAM_RD_TYPE <= 0;	// Single read
 				end
 			end
 			
@@ -331,6 +352,8 @@ module sdram_mux(
 				SROM_DATA <= sdram_dout[63:48];
 				SROM_RD_RUN <= 0;
 			end
+			// TESTING
+			//if ((~SDRAM_READY_SR[0] & sdram_ready) & M68K_RD_RUN)	// 2020bb crashes with this
 			if ((SDRAM_READY_SR == 2'b01) & M68K_RD_RUN)
 			begin
 				PROM_DATA <= sdram_dout[63:48];
@@ -338,8 +361,9 @@ module sdram_mux(
 				DMA_SDRAM_BUSY <= 0;
 			end
 			
-			SDRAM_READY_FOURTH_SR <= {SDRAM_READY_FOURTH_SR[0], ready_fourth};
-			if ((SDRAM_READY_FOURTH_SR == 2'b01) & CROM_RD_RUN)
+			//SDRAM_READY_FOURTH_SR <= {SDRAM_READY_FOURTH_SR[0], ready_fourth};
+			//if ((SDRAM_READY_FOURTH_SR == 2'b01) & CROM_RD_RUN)
+			if ((SDRAM_READY_SR == 2'b01) & CROM_RD_RUN)
 			begin
 				CR_DOUBLE <= sdram_dout;
 				CROM_RD_RUN <= 0;
