@@ -18,7 +18,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-// Current status: Neo CD CD check ok but crashes when loading. No more video glitches.
+// Current status:
+// ADPCM kinda works, many loud glitches. DDR3 latency issue ? Signal are ready in Signaltap
+// Neo CD CD check ok but crashes when loading. No more video glitches.
 
 // How about not using a cache at all and DMAing directly from the data fed by the HPS ?
 // The "sector ready" IRQ could be triggered just when a sector is requested, and the actual transfer
@@ -114,7 +116,6 @@ module emu
 	output        SDRAM_nWE
 );
 
-assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 
 assign AUDIO_S   = 1;		// Signed
@@ -133,7 +134,7 @@ assign VGA_DE = ~CHBL & nBNKB;
 
 // status bit definition:
 // 31       23       15       7
-// --AA--SS -------- L--CGGDD DEEMVTTR
+// --AA-PSS -------- L--CGGDD DEEMVTTR
 // R:	status[0]		Reset, used by the HPS, keep it there
 // T:	status[2:1]		System type, 0=Console, 1=Arcade, 2=CD, 3=CDZ
 // V: status[3]		Video mode
@@ -143,7 +144,8 @@ assign VGA_DE = ~CHBL & nBNKB;
 // G:	status[11:10]	Neo CD region
 // C:	status[12]		Save memory card & backup RAM
 // L:	status[12]		CD lid state (DEBUG)
-// S:	status[25:24]	Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU
+// S:	status[25:24]	Special chip type, 0=None, 1=PRO-CT0, 2=Link MCU, 3=NEO-CMC
+// P:	status[26]		Use PCM chip or not
 // A: status[29:28]	Sprite tile # remap hack, 0=no remap, 1=kof95, 2=whp, 3=kizuna
 
 `include "build_id.v"
@@ -335,7 +337,7 @@ wire [24:0] ioctl_addr;
 wire [15:0] ioctl_dout;
 wire        ioctl_download;
 wire  [7:0] ioctl_index;
-wire        ioctl_wait;
+reg        ioctl_wait = 0;
 
 wire SYSTEM_MVS = (SYSTEM_TYPE == 2'd1);
 wire SYSTEM_CDx = SYSTEM_TYPE[1];
@@ -468,7 +470,9 @@ hps_io #(
 	wire nCARDWEN, CARDWENB;
 	
 	// Z80 stuff
-	wire [7:0] SDD;
+	wire [7:0] SDD_IN;
+	wire [7:0] SDD_OUT;
+	wire [7:0] SDD_RD_C1;
 	wire [15:0] SDA;
 	wire nSDRD, nSDWR, nMREQ, nIORQ;
 	wire nZ80INT, nZ80NMI, nSDW, nSDZ80R, nSDZ80W, nSDZ80CLR;
@@ -483,11 +487,12 @@ hps_io #(
 	wire [19:0] C_LATCH;
 	reg [3:0] C_LATCH_EXT;
 	wire [63:0] CR_DOUBLE;
-	wire [24:0] CROM_ADDR;
+	wire [25:0] CROM_ADDR;
 	
 	wire [1:0] FIX_BANK;
 	wire [15:0] S_LATCH;
 	wire [7:0] FIXD;
+	wire [14:0] FIXMAP_ADDR;
 	
 	wire CWE, BWE, BOE;
 	
@@ -527,11 +532,13 @@ hps_io #(
 	parameter INDEX_P2ROM = 6;
 	parameter INDEX_S1ROM = 8;
 	parameter INDEX_M1ROM = 9;
+	parameter INDEX_VROMS = 16;
 	parameter INDEX_CROMS = 64;
 	
 	wire memcard_save = status[12];
 	wire [1:0] cart_chip = status[25:24];
 	wire video_mode = status[3];
+	wire use_pcm = status[26];
 	
 	// Memory card and backup ram image save/load
 	always @(posedge clk_sys)
@@ -648,8 +655,7 @@ hps_io #(
 		.sd_rd(sd_rd[0]), .sd_ack(sd_ack), .sd_buff_wr(sd_buff_wr),
 		.sd_buff_dout(sd_buff_dout), .sd_lba(CD_sd_lba),
 		.DMA_RUNNING(DMA_RUNNING),
-		.DMA_DATA_OUT(DMA_DATA_OUT),
-		.DMA_DATA_IN(PROM_DATA),
+		.DMA_DATA_IN(PROM_DATA), .DMA_DATA_OUT(DMA_DATA_OUT),
 		.DMA_WR_OUT(DMA_WR_OUT), .DMA_RD_OUT(DMA_RD_OUT),
 		.DMA_ADDR_IN(DMA_ADDR_IN),		// Used for reading
 		.DMA_ADDR_OUT(DMA_ADDR_OUT),	// Used for writing
@@ -676,7 +682,7 @@ hps_io #(
 	
 	// ioctl_download is used to load the system ROM on CD systems, we need it !
 	wire sdram_we = SYSTEM_CDx ? (ioctl_download & (ioctl_index == INDEX_SPROM)) ? ioctl_wr : SDRAM_WR_PULSE :
-							(ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM)) ? ioctl_wr : 1'b0;
+							(ioctl_download & (ioctl_index != INDEX_LOROM) & (ioctl_index != INDEX_M1ROM) & ((ioctl_index < INDEX_VROMS) | (ioctl_index >= INDEX_CROMS))) ? ioctl_wr : 1'b0;
 	
 	wire [24:0] ioctl_addr_offset =
 		(ioctl_index == INDEX_SPROM) ?	{6'b0_0110_0, ioctl_addr[18:0]} :	// System ROM: $0600000~$067FFFF
@@ -693,7 +699,7 @@ hps_io #(
 		.clk_sys(clk_sys),
 		
 		.M68K_ADDR(M68K_ADDR), .M68K_DATA(M68K_DATA),
-		.nLDS(nLDS), .nUDS(nUDS),
+		.nAS(nAS), .nLDS(nLDS), .nUDS(nUDS),
 		
 		.SDRAM_DQ(SDRAM_DQ),
 		
@@ -712,12 +718,13 @@ hps_io #(
 		
 		.CD_BANK_SPR(CD_BANK_SPR),
 		.P_BANK(P_BANK),
-		.CROM_ADDR(CROM_ADDR),
+		.CROM_ADDR(CROM_ADDR[24:0]),
 		.S_LATCH(S_LATCH),
 		
 		.SDRAM_WR_PULSE(SDRAM_WR_PULSE),	.SDRAM_RD_PULSE(SDRAM_RD_PULSE), .SDRAM_RD_TYPE(sdram_rd_type),
 		
 		.SROM_DATA(SROM_DATA), .PROM_DATA(PROM_DATA), .CR_DOUBLE(CR_DOUBLE),
+		.PROM_DATA_READY(PROM_DATA_READY),
 		.FIX_BANK(FIX_BANK),
 		
 		.SPR_EN(SPR_EN), .FIX_EN(FIX_EN),
@@ -778,15 +785,16 @@ hps_io #(
 	wire IPL2_OUT = ~(SYSTEM_CDx & CD_IRQ);
 	
 	// Because of the SDRAM latency, nDTACK is handled differently for ROM zones
-	// If the address is in a ROM zone, nDTACK_ADJ is used instead of the normal nDTACK output by NEO-C1
-	//wire nDTACK_ADJ = SDRAM_M68K_SIG ? nDTACK | M68K_CACHE_MISS : nDTACK;
+	// If the address is in a ROM zone, PROM_DATA_READY is used to extend the normal nDTACK output by NEO-C1
+	wire nDTACK_ADJ = ~&{nSROMOE, nROMOE, nPORTOE} ? ~PROM_DATA_READY | nDTACK : nDTACK;
+	
 	cpu_68k M68KCPU(
 		.CLK_24M(CLK_24M),
 		.nRESET(nRESET),
 		.M68K_ADDR(M68K_ADDR),
 		.FX68K_DATAIN(FX68K_DATAIN), .FX68K_DATAOUT(FX68K_DATAOUT),
 		.nLDS(nLDS), .nUDS(nUDS), .nAS(nAS), .M68K_RW(M68K_RW),
-		.nDTACK(nDTACK),
+		.nDTACK(nDTACK_ADJ),	// nDTACK
 		.IPL2(IPL2_OUT), .IPL1(IPL1_OUT), .IPL0(IPL0_OUT),
 		.FC2(FC2), .FC1(FC1), .FC0(FC0),
 		.nBG(nBG), .nBR(nBR), .nBGACK(nBGACK)
@@ -877,12 +885,13 @@ hps_io #(
 								sd_lba[7] ? sd_buff_din_memcard : sd_buff_din_sram;
 	
 	// Cartridge stuff
-	gap_hack GAPHACK(
+	/*gap_hack GAPHACK(
 		{C_LATCH_EXT, C_LATCH[19:4]},
 		C_LATCH[3:0],
 		status[29:28],
 		CROM_ADDR
-	);
+	);*/
+	assign CROM_ADDR = {C_LATCH_EXT[1:0] + 2'd1, C_LATCH, 3'b000};
 	
 	zmc ZMC(
 		.nSDRD0(SDRD0),
@@ -934,8 +943,17 @@ hps_io #(
 	always @(negedge PCK1)
 		C_LATCH_EXT <= PBUS[23:20];
 	
+	wire [1:0] CMC_FIX_BANK;
+	
+	cmc_fix CMCFIX(
+		.PCK2B(~PCK2),
+		.PBUS(PBUS[15:0]),
+		.FIXMAP_ADDR(FIXMAP_ADDR),
+		.FIX_BANK(CMC_FIX_BANK)
+	);
+	
 	// NEO-CMC handles this, set to 0 for now ()
-	assign FIX_BANK = 2'b00;
+	assign FIX_BANK = (cart_chip == 2'd3) ? CMC_FIX_BANK : 2'b00;
 	
 	// Fake COM MCU
 	wire [15:0] COM_DOUT;
@@ -1018,7 +1036,8 @@ hps_io #(
 		.nCD1(nCD1), .nCD2(nCD2),
 		.nWP(0),			// Memory card is never write-protected
 		.nROMWAIT(1), .nPWAIT0(1), .nPWAIT1(1), .PDTACK(1),
-		.SDD(SDD),
+		.SDD_WR(SDD_OUT),
+		.SDD_RD(SDD_RD_C1),
 		.nSDZ80R(nSDZ80R), .nSDZ80W(nSDZ80W), .nSDZ80CLR(nSDZ80CLR),
 		.CLK_68KCLK(CLK_68KCLK),
 		.nDTACK(nDTACK),
@@ -1092,29 +1111,157 @@ hps_io #(
 	
 	z80_rom M1(M1_ADDR, ~clk_sys, ioctl_dout[7:0], m1_loading & ioctl_wr, M1_ROM_DATA);
 	
-	z80_ram Z80RAM(SDA[10:0], CLK_4M, SDD, ~(nZRAMCS | nSDMWR), Z80_RAM_DATA);		// Fast enough ?
+	z80_ram Z80RAM(SDA[10:0], CLK_4M, SDD_OUT, ~(nZRAMCS | nSDMWR), Z80_RAM_DATA);		// Fast enough ?
 	
-	assign SDD = (~SDRD0 | ~SDRD1) ? 8'b00000000 :	// Fix to prevent TV80 from going nuts because the data bus is open on port reads for NEO-ZMC
-						(~nSDROM & ~nSDMRD) ? M1_ROM_DATA :
-						(~nZRAMCS & ~nSDMRD) ? Z80_RAM_DATA :
+	assign SDD_IN = (~nSDZ80R) ? SDD_RD_C1 :
+						(~nSDMRD & ~nSDROM) ? M1_ROM_DATA :
+						(~nSDMRD & ~nZRAMCS) ? Z80_RAM_DATA :
 						(~n2610CS & ~n2610RD) ? YM2610_DOUT :
-						8'bzzzzzzzz;
+						8'b00000000;
 	
 	wire Z80_nRESET = SYSTEM_CDx ? nRESET & CD_nRESET_Z80 : nRESET;
 	
 	cpu_z80 Z80CPU(
 		.CLK_4M(CLK_4M),
 		.nRESET(Z80_nRESET),
-		.SDD(SDD), .SDA(SDA),
+		.SDA(SDA), .SDD_IN(SDD_IN), .SDD_OUT(SDD_OUT),
 		.nIORQ(nIORQ),	.nMREQ(nMREQ),	.nRD(nSDRD), .nWR(nSDWR),
 		.nINT(nZ80INT), .nNMI(nZ80NMI)
 	);
 	
 	wire [19:0] ADPCMA_ADDR;
 	wire [3:0] ADPCMA_BANK;
-	wire [7:0] ADPCMA_DATA = 8'h08;
+	//wire [7:0] ADPCMA_DATA = 8'h08;
 	wire [23:0] ADPCMB_ADDR;
-	wire [7:0] ADPCMB_DATA = SYSTEM_CDx ? 8'h08 : 8'h08;	// CD has no ADPCM-B
+	//wire [7:0] ADPCMB_DATA;
+	
+	/*pcm PCM(
+		.CLK_68KCLKB(CLK_68KCLKB),
+		.nSDROE(nSDROE
+		.SDRMPX(
+		.nSDPOE(nSDPOE
+		.SDPMPX(
+		.SDRAD(
+		.SDRA_L(
+		.SDRA_U(
+		.SDPAD(
+		.SDPA(
+		.D(
+		.A(
+	);*/
+	
+	reg adpcm_wr, adpcm_rd;
+	reg old_download, old_reset;
+	wire adpcm_wrack, adpcm_rdack;
+	
+	wire pcm_loading = ioctl_download & (ioctl_index >= INDEX_VROMS) & (ioctl_index < INDEX_CROMS);
+	
+	// Copied from Genesis_MiSTer/Genesis.sv
+	always @(posedge clk_sys)
+	begin
+		
+		old_download <= pcm_loading;
+		old_reset <= nRESET;
+
+		if (old_reset & ~nRESET) ioctl_wait <= 0;
+		
+		if (old_download & ~pcm_loading) begin
+			//rom_sz <= ioctl_addr[24:0];
+			ioctl_wait <= 0;	// Needed ?
+		end
+
+		if (~old_download & pcm_loading) begin
+			adpcm_wr <= 0;
+		end else if (pcm_loading)
+		begin
+			if (ioctl_wr) begin
+				ioctl_wait <= 1;
+				adpcm_wr <= ~adpcm_wr;
+			end else if (ioctl_wait & (adpcm_wr == adpcm_wrack)) begin
+				ioctl_wait <= 0;
+			end
+		end
+	end
+	
+	assign DDRAM_CLK = clk_sys;
+	
+	// The ddram request and ack signals work on either edge
+	// To trigger a read request, just set adpcm_rd to ~adpcm_rdack
+	
+	reg [1:0] ADPCMA_OE_SR;
+	reg [1:0] ADPCMB_OE_SR;
+	reg ADPCMA_READ_REQ, ADPCMB_READ_REQ;
+	reg ADPCMA_WAITING, ADPCMB_WAITING;
+	wire [15:0] adpcm_data;
+	wire [24:0] ADPCM_ADDR_LATCH;	// 32MB
+	reg [7:0] ADPCMA_DATA;
+	reg [7:0] ADPCMB_DATA;
+	
+	always @(posedge clk_sys)
+	begin
+		ADPCMA_OE_SR <= {ADPCMA_OE_SR[0], nSDROE};
+		if (ADPCMA_OE_SR == 2'b10)
+		begin
+			// Trigger ADPCM A data read on nSDROE falling edge
+			ADPCMA_READ_REQ <= 1;
+		end
+		
+		ADPCMB_OE_SR <= {ADPCMB_OE_SR[0], nSDPOE};
+		if (ADPCMB_OE_SR == 2'b10)
+		begin
+			// Trigger ADPCM A data read on nSDPOE falling edge
+			ADPCMB_READ_REQ <= 1;
+		end
+		
+		if (~ADPCMA_WAITING & ~ADPCMB_WAITING)
+		begin
+			if (ADPCMB_READ_REQ)
+			begin
+				// Prioritize ADPCMB reads because it may run faster than ADPCMA
+				ADPCM_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR};
+				adpcm_rd <= ~adpcm_rdack;
+				ADPCMB_READ_REQ <= 0;
+				ADPCMB_WAITING <= 1;
+			end
+			else if (ADPCMA_READ_REQ)
+			begin
+				ADPCM_ADDR_LATCH <= {1'b0, ADPCMA_BANK, ADPCMA_ADDR};
+				adpcm_rd <= ~adpcm_rdack;
+				ADPCMA_READ_REQ <= 0;
+				ADPCMA_WAITING <= 1;
+			end
+		end
+		
+		if (adpcm_rd == adpcm_rdack)
+		begin
+			if (ADPCMA_WAITING)
+			begin
+				ADPCMA_WAITING <= 0;
+				ADPCMA_DATA <= ADPCM_ADDR_LATCH[0] ? adpcm_data[15:8] : adpcm_data[7:0];
+			end
+			else if (ADPCMB_WAITING)
+			begin
+				ADPCMB_WAITING <= 0;
+				ADPCMB_DATA <= ADPCM_ADDR_LATCH[0] ? adpcm_data[15:8] : adpcm_data[7:0];
+			end
+		end
+	end
+	
+	wire [24:0] pcm_load_addr = ioctl_addr[24:0] + {ioctl_index[5:0] - 6'd16, 19'h00000};
+	
+	ddram DDRAM(
+		.*,
+		
+		.wraddr(pcm_load_addr),
+		.din(ioctl_dout),
+		.we_req(adpcm_wr),
+		.we_ack(adpcm_wrack),
+		
+		.rdaddr(ADPCM_ADDR_LATCH[24:1]),
+		.dout(adpcm_data),
+		.rd_req(adpcm_rd),
+		.rd_ack(adpcm_rdack)
+	);
 	
 	wire [7:0] YM2610_DOUT;
 	
@@ -1122,11 +1269,11 @@ hps_io #(
 		.rst(~nRESET),
 		.clk(CLK_8M), .cen(1),
 		.addr(SDA[1:0]),
-		.din(SDD), .dout(YM2610_DOUT),
+		.din(SDD_OUT), .dout(YM2610_DOUT),
 		.cs_n(n2610CS), .wr_n(n2610WR),
 		.irq_n(nZ80INT),
 		.adpcma_addr(ADPCMA_ADDR), .adpcma_bank(ADPCMA_BANK), .adpcma_roe_n(nSDROE), .adpcma_data(ADPCMA_DATA),
-		.adpcmb_addr(ADPCMB_ADDR), .adpcmb_roe_n(nSDPOE),
+		.adpcmb_addr(ADPCMB_ADDR), .adpcmb_roe_n(nSDPOE), .adpcmb_data(SYSTEM_CDx ? 8'h08 : ADPCMB_DATA),	// CD has no ADPCM-B
 		.snd_right(snd_right), .snd_left(snd_left)
 	);
 	 
@@ -1164,7 +1311,8 @@ hps_io #(
 		.FVRAM_ADDR(FAST_VRAM_ADDR),
 		.FVRAM_DATA_IN(FAST_VRAM_DATA_IN), .FVRAM_DATA_OUT(FAST_VRAM_DATA_OUT),
 		.CWE(CWE),
-		.VMODE(video_mode)
+		.VMODE(video_mode),
+		.FIXMAP_ADDR(FIXMAP_ADDR)	// Extracted for NEO-CMC
 	);
 	
 	neo_b1 B1(

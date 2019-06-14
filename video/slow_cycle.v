@@ -60,13 +60,15 @@ module slow_cycle(
 	//input [15:0] SVRAM_DATA,
 	input [15:0] SVRAM_DATA_IN,
 	output [15:0] SVRAM_DATA_OUT,
-	output BOE, BWE
+	output BOE, BWE,
+	
+	output [14:0] FIXMAP_ADDR		// Extracted for NEO-CMC
 );
 
 	wire [14:0] B;
 	wire [15:0] E;
 	wire [15:0] FIX_MAP_READ;
-	wire [14:0] FIXMAP_ADDR;
+	//wire [14:0] FIXMAP_ADDR;
 	wire [14:0] SPRMAP_ADDR;
 	wire [3:0] D233_Q;
 	wire [3:0] D283_Q;

@@ -19,7 +19,8 @@
 module cpu_z80(
 	input CLK_4M,
 	input nRESET,
-	inout [7:0] SDD,
+	input [7:0] SDD_IN,
+	output [7:0] SDD_OUT,
 	output [15:0] SDA,
 	output reg nIORQ, nMREQ,
 	output reg nRD, nWR,
@@ -27,9 +28,6 @@ module cpu_z80(
 );
 
 	reg [7:0] SDD_IN_REG;
-
-	wire [7:0] SDD_IN;
-	wire [7:0] SDD_OUT;
 	
 	wire [6:0] T_STATE;
 	wire [6:0] M_CYCLE;
@@ -37,9 +35,6 @@ module cpu_z80(
 	wire NO_READ;
 	wire WRITE;
 	wire IORQ;
-	
-	assign SDD = nWR ? 8'bzzzzzzzz : SDD_OUT;
-	assign SDD_IN = nRD ? 8'bzzzzzzzz : SDD;
 
 	tv80_core TV80( , IORQ, NO_READ, WRITE, , , , SDA, SDD_OUT, M_CYCLE,
 							T_STATE, nINTCYCLE, , , nRESET, CLK_4M, 1'b1, 1'b1,

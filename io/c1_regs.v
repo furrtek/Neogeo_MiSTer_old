@@ -22,7 +22,8 @@ module c1_regs(
 	input nICOM_ZONE,
 	input RW,
 	inout [15:8] M68K_DATA,
-	inout [7:0] SDD,
+	output [7:0] SDD_RD,
+	input [7:0] SDD_WR,
 	input nSDZ80R, nSDZ80W, nSDZ80CLR,
 	output nSDW
 );
@@ -31,14 +32,11 @@ module c1_regs(
 	reg [7:0] SDD_LATCH_REP;
 	
 	// Z80 command read
-	assign SDD = nSDZ80R ? 8'bzzzzzzzz : SDD_LATCH_CMD;
+	assign SDD_RD = SDD_LATCH_CMD;	//nSDZ80R ? 8'bzzzzzzzz : SDD_LATCH_CMD;
 	
 	// Z80 reply write
-	always @(posedge nSDZ80W)	// No edge at all ?
-	begin
-		$display("Z80 -> 68K: %H", SDD);		// DEBUG
-		SDD_LATCH_REP <= SDD;
-	end
+	always @(posedge nSDZ80W)
+		SDD_LATCH_REP <= SDD_WR;
 	
 	// REG_SOUND read
 	assign M68K_DATA = (RW & ~nICOM_ZONE) ? SDD_LATCH_REP : 8'bzzzzzzzz;

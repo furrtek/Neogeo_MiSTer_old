@@ -24,6 +24,7 @@ module sdram_mux(
 	input nRESET,
 	input clk_sys,
 	
+	input nAS,
 	input nLDS,
 	input nUDS,
 	
@@ -52,6 +53,7 @@ module sdram_mux(
 	output reg [15:0] PROM_DATA,
 	output reg [63:0] CR_DOUBLE,	// 16 pixels
 	output reg [15:0] SROM_DATA,	// 4 pixels
+	output reg PROM_DATA_READY,
 	input [1:0] FIX_BANK,
 	
 	input SPR_EN, FIX_EN,
@@ -79,7 +81,7 @@ module sdram_mux(
 	reg M68K_RD_REQ, SROM_RD_REQ, CROM_RD_REQ, CD_WR_REQ;
 	reg M68K_RD_RUN, SROM_RD_RUN, CROM_RD_RUN, CD_WR_RUN;
 	
-	reg nDS_PREV, DMA_WR_OUT_PREV;
+	reg nDS_PREV, nAS_PREV, DMA_WR_OUT_PREV;
 	reg [1:0] SDRAM_READY_SR;
 	//reg [1:0] SDRAM_READY_FOURTH_SR;
 	reg [1:0] SDRAM_M68K_SIG_SR;
@@ -126,8 +128,11 @@ module sdram_mux(
 			8'b000001zz: sdram_addr = SYSTEM_CDx ? {6'b0_0110_0, M68K_ADDR[18:1], 1'b0} :
 															{8'b0_0110_000, M68K_ADDR[16:1], 1'b0};
 			
-			// S ROM $0680000~$06FFFFF, or SFIX ROM (cart only) $0620000~$063FFFF
-			8'b0000001z: sdram_addr = (nSYSTEM_G | SYSTEM_CDx) ?
+			// SFIX ROM (CD)		$0680000~$069FFFF
+			// S1 ROM (cart)		$0680000~$06FFFFF
+			// SFIX ROM (cart)	$0620000~$063FFFF
+			8'b0000001z: sdram_addr = SYSTEM_CDx ? {8'b0_0110_100, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
+												(nSYSTEM_G) ?
 												{6'b0_0110_1, FIX_BANK, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0} :
 												{8'b0_0110_001, S_LATCH[15:4], S_LATCH[2:0], ~S_LATCH[3], 1'b0};
 			
@@ -161,6 +166,10 @@ module sdram_mux(
 		end
 		else
 		begin
+			nAS_PREV <= nAS;
+			
+			if ({nAS_PREV, nAS} == 2'b01)
+				PROM_DATA_READY <= 0;
 			
 			if (!DMA_RUNNING)
 				DMA_SDRAM_BUSY <= 0;
@@ -178,7 +187,7 @@ module sdram_mux(
 				casez({CD_EXT_WR, CD_TR_AREA})
 					4'b1_???: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {4'b0_001, DMA_ADDR_OUT[20:1], 1'b0} : {4'b0_001, M68K_ADDR[20:1], ~nLDS};	// EXT zone SDRAM
 					4'b0_000: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {3'b0_10, CD_BANK_SPR, DMA_ADDR_OUT[19:7], DMA_ADDR_OUT[5:2], ~DMA_ADDR_OUT[6], ~DMA_ADDR_OUT[1], 1'b0} : {3'b0_10, CD_BANK_SPR, M68K_ADDR[19:7], M68K_ADDR[5:2], ~M68K_ADDR[6], ~M68K_ADDR[1], 1'b0};	// Sprites SDRAM
-					//4'b0_001: CD_REMAP_TR_ADDR <= {4'b0_000, CD_BANK_PCM, CD_TR_WR_ADDR, 1'b0};	// ADPCM DDRAM
+					//4'b0_001: CD_REMAP_TR_ADDR <= {4'b0_000, CD_BANK_PCM, CD_TR_WR_ADDR, 1'b0};		// ADPCM DDRAM
 					4'b0_101: CD_REMAP_TR_ADDR <= DMA_RUNNING ? {8'b0_0000_100, DMA_ADDR_OUT[17:6], DMA_ADDR_OUT[3:1], ~DMA_ADDR_OUT[5], ~DMA_ADDR_OUT[4]} : {8'b0_0000_100, M68K_ADDR[17:6], M68K_ADDR[3:1], ~M68K_ADDR[5], ~M68K_ADDR[4]};	// Fix SDRAM
 					//4'b0_100: CD_REMAP_TR_ADDR <= {8'b0_0000_000, CD_TR_WR_ADDR[16:1], 1'b0};		// Z80 BRAM
 					default: CD_REMAP_TR_ADDR <= 25'h0AAAAAA;		// DEBUG
@@ -357,12 +366,10 @@ module sdram_mux(
 			if ((SDRAM_READY_SR == 2'b01) & M68K_RD_RUN)
 			begin
 				PROM_DATA <= sdram_dout[63:48];
+				PROM_DATA_READY <= 1;
 				M68K_RD_RUN <= 0;
 				DMA_SDRAM_BUSY <= 0;
 			end
-			
-			//SDRAM_READY_FOURTH_SR <= {SDRAM_READY_FOURTH_SR[0], ready_fourth};
-			//if ((SDRAM_READY_FOURTH_SR == 2'b01) & CROM_RD_RUN)
 			if ((SDRAM_READY_SR == 2'b01) & CROM_RD_RUN)
 			begin
 				CR_DOUBLE <= sdram_dout;

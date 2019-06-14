@@ -98,11 +98,26 @@ ioctl_index is used to tell the core where to store the data being loaded. The c
 * 6: P2 ROM
 * 8: S1 ROM
 * 9: M1 ROM
+* 16+: V ROMs, add 512kB bank number
 * 64+: C ROMs, the lower 6 bits are used as a bitfield like this:
  x1BBBBBS
  B: 512kB bank number
  S: word shift (used to interleave odd/even ROMs)
  So SDRAM address = 0x0800000 + 0b1_BBBBB000_00000000_000000S0 + ioctl_addr
+
+## romsets.xml file
+
+* hw: Special cart chip. 0=None, 1=PRO-CT0, 2=Link MCU, 3=NEO-CMC
+* pcm: 0=Game uses separate V1x and V2x ROMs, 1=Game uses PCM chip with V1, V2... ROMs
+* type: P (68k program), S (fix gfx), C (sprite gfx), M (z80 program) or V (voice samples). See ROM file extension.
+* offset: Where to start reading in file.
+* size: How many bytes to load.
+* index: Where to start writing data in SDRAM. Depends on type.
+** P: 4=First P1 half (0x000000), 5=Second P1 half (0x080000), 6=P2 (0x200000)
+** S: Always 8
+** M: Always 9
+** V: 16 + (512kB bank). Non-PCM games must have their .v1x ROMs between 16~47, and their .v2x ROMs between 48~63
+** C: 64 + (0=odd, 1=even) + (1MB bank * 2)
 
 ## BRAM zones
 
@@ -122,6 +137,8 @@ Backup RAM | 32kB
 Total  | 385kB
 
 ## SDRAM cart map
+
+See [sdram_map.odg](sdram_map.odg)
 
 Memory | Size | Start | End
 ------ | ---- | ----- | ---

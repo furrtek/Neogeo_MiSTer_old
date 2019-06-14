@@ -29,13 +29,15 @@ module c1_wait(
 	// Notes:
 	// Normally, nDTACK = nAS for nROM_ZONE
 	
+	parameter WAIT_SDRAM = 5;	// Was 4
+	
 	assign nDTACK = nAS | ~WAIT_MUX;					// Is it nVALID instead of nAS ?
 	
-	wire WAIT_MUX = (!nROM_ZONE) ? (WAIT_CNT < 4) :
-			(!nWRAM_ZONE & SYSTEM_CDx) ? (WAIT_CNT < 4) :
-			(!nPORT_ZONE) ? (WAIT_CNT < 4) :
+	wire WAIT_MUX = (!nROM_ZONE) ? (WAIT_CNT < WAIT_SDRAM) :
+			(!nWRAM_ZONE & SYSTEM_CDx) ? (WAIT_CNT < WAIT_SDRAM) :
+			(!nPORT_ZONE) ? (WAIT_CNT < WAIT_SDRAM) :
 			(!nCARD_ZONE) ? (WAIT_CNT < 3) :
-			(!nSROM_ZONE) ? (WAIT_CNT < 4) :
+			(!nSROM_ZONE) ? (WAIT_CNT < WAIT_SDRAM) :
 			1'b1;
 	
 	//assign nCLK_68KCLK = ~nCLK_68KCLK;
