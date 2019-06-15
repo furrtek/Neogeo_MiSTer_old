@@ -113,11 +113,11 @@ ioctl_index is used to tell the core where to store the data being loaded. The c
 * offset: Where to start reading in file.
 * size: How many bytes to load.
 * index: Where to start writing data in SDRAM. Depends on type.
-** P: 4=First P1 half (0x000000), 5=Second P1 half (0x080000), 6=P2 (0x200000)
-** S: Always 8
-** M: Always 9
-** V: 16 + (512kB bank). Non-PCM games must have their .v1x ROMs between 16~47, and their .v2x ROMs between 48~63
-** C: 64 + (0=odd, 1=even) + (1MB bank * 2)
+	* P: 4=First P1 half (0x000000), 5=Second P1 half (0x080000), 6=P2 (0x200000)
+	* S: Always 8
+	* M: Always 9
+	* V: 16 + (512kB bank). Non-PCM games must have their .v1x ROMs between 16-47, and their .v2x ROMs between 48-63
+	* C: 64 + (0=odd, 1=even) + (1MB bank * 2)
 
 ## BRAM zones
 
@@ -142,26 +142,29 @@ See [sdram_map.odg](sdram_map.odg)
 
 Memory | Size | Start | End
 ------ | ---- | ----- | ---
-System ROM | 128kB | 0000000 | 001FFFF
-Free | 384kB | 0020000 | 007FFFF
-S ROM | 512kB | 0080000 | 00FFFFF
-SFIX ROM | 128kB | 0100000 | 011FFFF
-Free | 896kB | 0120000 | 01FFFFF
-P ROMs | 6MB | 0200000 | 07FFFFF
+P1 ROM | 1MB | 0000000 | 00FFFFF
+P2 ROMs | 4MB | 0200000 | 05FFFFF
+System ROM | 128kB | 0600000 | 061FFFF
+SFIX ROM | 128kB | 0620000 | 063FFFF
+Free | 256kB | 0640000 | 067FFFF
+S ROM | 512kB | 0680000 | 06FFFFF
+Free | 1MB | 0700000 | 07FFFFF
 C ROM | 24MB | 0800000 | 1FFFFFF
 
 Games using NEO-CMC are able to bankswitch S ROMs larger than 128kB
 
 ## SDRAM CD map
 
+See [sdram_map.odg](sdram_map.odg)
+
 Memory | Size | Start | End
 ------ | ---- | ----- | ---
-System ROM | 512kB | 0000000 | 007FFFF
-S ROM | 128kB | 0080000 | 009FFFF
-Free | 1408kB | 00A0000 | 01FFFFF
-P ROM | 1MB | 0200000 | 02FFFFF
-Extended RAM | 1MB | 0300000 | 03FFFFF
-Free | 4MB | 0400000 | 07FFFFF
+P1 ROM | 1MB | 0000000 | 00FFFFF
+Extended RAM | 1MB | 0100000 | 01FFFFF
+Free | 4MB | 0200000 | 05FFFFF
+System ROM | 512kB | 0600000 | 067FFFF
+S ROM | 512kB | 0680000 | 06FFFFF
+Free | 1MB | 0700000 | 07FFFFF
 C ROM | 4MB | 0800000 | 0BFFFFF
 Free | 20MB | 0C00000 | 1FFFFFF
 
