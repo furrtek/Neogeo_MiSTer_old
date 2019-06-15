@@ -15,9 +15,9 @@
 		<file name="001-c6.c6" type="C" index="69" offset="0" size="0x80000"/>
 		<file name="001-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
 		<file name="001-v11.v11" type="V" index="16" offset="0" size="0x80000"/>
-		<file name="001-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
-		<file name="001-v22.v22" type="V" index="33" offset="0" size="0x80000"/>
-		<file name="001-v23.v23" type="V" index="34" offset="0" size="0x80000"/>
+		<file name="001-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
+		<file name="001-v22.v22" type="V" index="49" offset="0" size="0x80000"/>
+		<file name="001-v23.v23" type="V" index="50" offset="0" size="0x80000"/>
     </romset>
     <romset name="bstars" hw="0" pcm="0">
 		<file name="002-pg.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -33,7 +33,7 @@
 		<file name="002-v12.v12" type="V" index="17" offset="0" size="0x80000"/>
 		<file name="002-v13.v13" type="V" index="18" offset="0" size="0x80000"/>
 		<file name="002-v14.v14" type="V" index="19" offset="0" size="0x80000"/>
-		<file name="002-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
+		<file name="002-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
     </romset>
     <romset name="tpgolf" hw="0" pcm="0">
 		<file name="003-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -49,10 +49,10 @@
 		<file name="003-c8.c8" type="C" index="70" offset="0" size="0x80000"/>
 		<file name="003-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
 		<file name="003-v11.v11" type="V" index="16" offset="0" size="0x80000"/>
-		<file name="003-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
-		<file name="003-v22.v22" type="V" index="33" offset="0" size="0x80000"/>
-		<file name="003-v23.v23" type="V" index="34" offset="0" size="0x80000"/>
-		<file name="003-v24.v24" type="V" index="35" offset="0" size="0x80000"/>
+		<file name="003-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
+		<file name="003-v22.v22" type="V" index="49" offset="0" size="0x80000"/>
+		<file name="003-v23.v23" type="V" index="50" offset="0" size="0x80000"/>
+		<file name="003-v24.v24" type="V" index="51" offset="0" size="0x80000"/>
     </romset>
     <romset name="mahretsu" hw="0" pcm="0">
 		<file name="004-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -64,9 +64,9 @@
 		<file name="004-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
 		<file name="004-v11.v11" type="V" index="16" offset="0" size="0x80000"/>
 		<file name="004-v12.v12" type="V" index="17" offset="0" size="0x80000"/>
-		<file name="004-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
-		<file name="004-v22.v22" type="V" index="33" offset="0" size="0x80000"/>
-		<file name="004-v23.v23" type="V" index="34" offset="0" size="0x80000"/>
+		<file name="004-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
+		<file name="004-v22.v22" type="V" index="49" offset="0" size="0x80000"/>
+		<file name="004-v23.v23" type="V" index="50" offset="0" size="0x80000"/>
     </romset>
     <romset name="maglord" hw="0" pcm="0">
 		<file name="005-pg1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -79,8 +79,8 @@
 		<file name="005-c6.c6" type="C" index="69" offset="0" size="0x80000"/>
 		<file name="005-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
 		<file name="005-v11.v11" type="V" index="16" offset="0" size="0x80000"/>
-		<file name="005-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
-		<file name="005-v22.v22" type="V" index="33" offset="0" size="0x80000"/>
+		<file name="005-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
+		<file name="005-v22.v22" type="V" index="49" offset="0" size="0x80000"/>
     </romset>
     <romset name="ridhero" hw="2" pcm="0">
 		<file name="006-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -92,10 +92,10 @@
 		<file name="006-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
 		<file name="006-v11.v11" type="V" index="16" offset="0" size="0x80000"/>
 		<file name="006-v12.v12" type="V" index="17" offset="0" size="0x80000"/>
-		<file name="006-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
-		<file name="006-v22.v22" type="V" index="33" offset="0" size="0x80000"/>
-		<file name="006-v23.v23" type="V" index="34" offset="0" size="0x80000"/>
-		<file name="006-v24.v24" type="V" index="35" offset="0" size="0x80000"/>
+		<file name="006-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
+		<file name="006-v22.v22" type="V" index="49" offset="0" size="0x80000"/>
+		<file name="006-v23.v23" type="V" index="50" offset="0" size="0x80000"/>
+		<file name="006-v24.v24" type="V" index="51" offset="0" size="0x80000"/>
     </romset>
     <romset name="alpham2" hw="0" pcm="1">
 		<file name="007-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -122,7 +122,7 @@
 		<file name="009-v11.v11" type="V" index="16" offset="0" size="0x80000"/>
 		<file name="009-v12.v12" type="V" index="17" offset="0" size="0x80000"/>
 		<file name="009-v13.v13" type="V" index="18" offset="0" size="0x80000"/>
-		<file name="009-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
+		<file name="009-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
     </romset>
     <romset name="cyberlip" hw="0" pcm="0">
 		<file name="010-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -138,7 +138,7 @@
 		<file name="010-v12.v12" type="V" index="17" offset="0" size="0x80000"/>
 		<file name="010-v13.v13" type="V" index="18" offset="0" size="0x80000"/>
 		<file name="010-v14.v14" type="V" index="19" offset="0" size="0x80000"/>
-		<file name="010-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
+		<file name="010-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
     </romset>
     <romset name="superspy" hw="0" pcm="0">
 		<file name="011-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -151,7 +151,7 @@
 		<file name="011-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
 		<file name="011-v11.v11" type="V" index="16" offset="0" size="0x100000"/>
 		<file name="011-v12.v12" type="V" index="18" offset="0" size="0x80000"/>
-		<file name="011-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
+		<file name="011-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
     </romset>
     <romset name="mutnat" hw="0" pcm="1">
 		<file name="014-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -207,7 +207,7 @@
 		<file name="019-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
 		<file name="019-v11.v11" type="V" index="16" offset="0" size="0x80000"/>
 		<file name="019-v12.v12" type="V" index="17" offset="0" size="0x80000"/>
-		<file name="019-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
+		<file name="019-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
     </romset>
     <romset name="gpilots" hw="0" pcm="0">
 		<file name="020-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -220,7 +220,7 @@
 		<file name="020-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
 		<file name="020-v11.v11" type="V" index="16" offset="0" size="0x100000"/>
 		<file name="020-v12.v12" type="V" index="18" offset="0" size="0x80000"/>
-		<file name="020-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
+		<file name="020-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
     </romset>
     <romset name="joyjoy" hw="0" pcm="0">
 		<file name="021-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -229,7 +229,7 @@
 		<file name="021-c2.c2" type="C" index="65" offset="0" size="0x80000"/>
 		<file name="021-m1.m1" type="M" index="9" offset="0" size="0x40000"/>
 		<file name="021-v11.v11" type="V" index="16" offset="0" size="0x80000"/>
-		<file name="021-v21.v21" type="V" index="32" offset="0" size="0x80000"/>
+		<file name="021-v21.v21" type="V" index="48" offset="0" size="0x80000"/>
     </romset>
     <romset name="bjourney" hw="0" pcm="1">
 		<file name="022-p1.p1" type="P" index="4" offset="0" size="0x100000"/>
@@ -281,7 +281,7 @@
 		<file name="027-c4.c4" type="C" index="69" offset="0" size="0x100000"/>
 		<file name="027-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
 		<file name="027-v11.v11" type="V" index="16" offset="0" size="0x100000"/>
-		<file name="027-v21.v21" type="V" index="32" offset="0" size="0x100000"/>
+		<file name="027-v21.v21" type="V" index="48" offset="0" size="0x100000"/>
     </romset>
     <romset name="legendos" hw="0" pcm="1">
 		<file name="029-p1.p1" type="P" index="4" offset="0" size="0x80000"/>
@@ -681,10 +681,10 @@
 		<file name="062-c2.c2" type="C" index="65" offset="0" size="0x100000"/>
 		<file name="062-c3.c3" type="C" index="68" offset="0" size="0x100000"/>
 		<file name="062-c4.c4" type="C" index="69" offset="0" size="0x100000"/>
-		<file name="062-c5.c1" type="C" index="72" offset="0" size="0x100000"/>
-		<file name="062-c6.c2" type="C" index="73" offset="0" size="0x100000"/>
-		<file name="062-c7.c3" type="C" index="76" offset="0" size="0x100000"/>
-		<file name="062-c8.c4" type="C" index="77" offset="0" size="0x100000"/>
+		<file name="062-c5.c5" type="C" index="72" offset="0" size="0x100000"/>
+		<file name="062-c6.c6" type="C" index="73" offset="0" size="0x100000"/>
+		<file name="062-c7.c7" type="C" index="76" offset="0" size="0x100000"/>
+		<file name="062-c8.c8" type="C" index="77" offset="0" size="0x100000"/>
 		<file name="062-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
 		<file name="062-v1.v1" type="V" index="16" offset="0" size="0x100000"/>
     </romset>
@@ -878,7 +878,7 @@
 		<file name="079-c4.c4" type="C" index="73" offset="0" size="0x200000"/>
 		<file name="079-m1.m1" type="M" index="9" offset="0" size="0x20000"/>
 		<file name="079-v1.v1" type="V" index="16" offset="0" size="0x200000"/>
-		<file name="078-v2.v2" type="V" index="20" offset="0" size="0x100000"/>
+		<file name="079-v2.v2" type="V" index="20" offset="0" size="0x100000"/>
     </romset>
     <romset name="quizkof" hw="0" pcm="1">
 		<file name="080-p1.p1" type="P" index="4" offset="0" size="0x100000"/>

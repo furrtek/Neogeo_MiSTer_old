@@ -750,7 +750,6 @@ hps_io #(
 		.dout(sdram_dout), .din(sdram_din),
 		.wtbt(wtbt),		// Always used in 16-bit mode except for CD fix data write
 		.we(sdram_we),	.rd(sdram_rd), .rd_type(sdram_rd_type),
-		//.ready_first(sdram_ready),	.ready_fourth(ready_fourth)
 		.ready(sdram_ready)
 	);
 	
@@ -1131,9 +1130,7 @@ hps_io #(
 	
 	wire [19:0] ADPCMA_ADDR;
 	wire [3:0] ADPCMA_BANK;
-	//wire [7:0] ADPCMA_DATA = 8'h08;
 	wire [23:0] ADPCMB_ADDR;
-	//wire [7:0] ADPCMB_DATA;
 	
 	/*pcm PCM(
 		.CLK_68KCLKB(CLK_68KCLKB),
@@ -1165,10 +1162,8 @@ hps_io #(
 
 		if (old_reset & ~nRESET) ioctl_wait <= 0;
 		
-		if (old_download & ~pcm_loading) begin
-			//rom_sz <= ioctl_addr[24:0];
+		if (old_download & ~pcm_loading)
 			ioctl_wait <= 0;	// Needed ?
-		end
 
 		if (~old_download & pcm_loading) begin
 			adpcm_wr <= 0;
@@ -1193,7 +1188,8 @@ hps_io #(
 	reg ADPCMA_READ_REQ, ADPCMB_READ_REQ;
 	reg ADPCMA_WAITING, ADPCMB_WAITING;
 	wire [15:0] adpcm_data;
-	wire [24:0] ADPCM_ADDR_LATCH;	// 32MB
+	reg [24:0] ADPCMA_ADDR_LATCH;	// 32MB
+	reg [24:0] ADPCMB_ADDR_LATCH;	// 32MB
 	reg [7:0] ADPCMA_DATA;
 	reg [7:0] ADPCMB_DATA;
 	
@@ -1218,14 +1214,14 @@ hps_io #(
 			if (ADPCMB_READ_REQ)
 			begin
 				// Prioritize ADPCMB reads because it may run faster than ADPCMA
-				ADPCM_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR};
+				ADPCMB_ADDR_LATCH <= {~use_pcm, ADPCMB_ADDR};
 				adpcm_rd <= ~adpcm_rdack;
 				ADPCMB_READ_REQ <= 0;
 				ADPCMB_WAITING <= 1;
 			end
 			else if (ADPCMA_READ_REQ)
 			begin
-				ADPCM_ADDR_LATCH <= {1'b0, ADPCMA_BANK, ADPCMA_ADDR};
+				ADPCMA_ADDR_LATCH <= {1'b0, ADPCMA_BANK, ADPCMA_ADDR};
 				adpcm_rd <= ~adpcm_rdack;
 				ADPCMA_READ_REQ <= 0;
 				ADPCMA_WAITING <= 1;
@@ -1237,12 +1233,12 @@ hps_io #(
 			if (ADPCMA_WAITING)
 			begin
 				ADPCMA_WAITING <= 0;
-				ADPCMA_DATA <= ADPCM_ADDR_LATCH[0] ? adpcm_data[15:8] : adpcm_data[7:0];
+				ADPCMA_DATA <= ADPCMA_ADDR_LATCH[0] ? adpcm_data[15:8] : adpcm_data[7:0];
 			end
 			else if (ADPCMB_WAITING)
 			begin
 				ADPCMB_WAITING <= 0;
-				ADPCMB_DATA <= ADPCM_ADDR_LATCH[0] ? adpcm_data[15:8] : adpcm_data[7:0];
+				ADPCMB_DATA <= ADPCMB_ADDR_LATCH[0] ? adpcm_data[15:8] : adpcm_data[7:0];
 			end
 		end
 	end
@@ -1257,7 +1253,7 @@ hps_io #(
 		.we_req(adpcm_wr),
 		.we_ack(adpcm_wrack),
 		
-		.rdaddr(ADPCM_ADDR_LATCH[24:1]),
+		.rdaddr(ADPCMA_WAITING ? ADPCMA_ADDR_LATCH[24:1] : ADPCMB_ADDR_LATCH[24:1]),
 		.dout(adpcm_data),
 		.rd_req(adpcm_rd),
 		.rd_ack(adpcm_rdack)
